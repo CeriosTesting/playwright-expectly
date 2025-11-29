@@ -1,0 +1,62 @@
+{
+	"name": "@cerios/playwright-expectly",
+	"version": "0.0.0",
+	"author": "Ronald Veth - Cerios",
+	"description": "",
+	"license": "MIT",
+	"keywords": ["typescript", "playwright", "cerios"],
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"files": ["dist"],
+	"type": "commonjs",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			},
+			"require": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			}
+		},
+		"./package.json": "./package.json"
+	},
+	"bugs": {
+		"url": "https://github.com/CeriosTesting/playwright-expectly/issues"
+	},
+	"homepage": "https://github.com/CeriosTesting/playwright-expectly#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CeriosTesting/playwright-expectly.git"
+	},
+	"scripts": {
+		"biome:migrate": "biome migrate --write",
+		"build": "tsup",
+		"changeset": "npx changeset",
+		"changeset:publish": "tsup && changeset publish",
+		"changeset:version": "changeset version && npm i",
+		"check": "biome check --write",
+		"check-exports": "attw --pack .",
+		"compile": "tsc --noEmit",
+		"dev": "tsc --watch",
+		"lint": "biome lint",
+		"prepare": "husky",
+		"test": "playwright test",
+		"update-all-packages": "npx npm-check-updates -u && npm i"
+	},
+	"devDependencies": {
+		"@arethetypeswrong/cli": "^0.18.2",
+		"@biomejs/biome": "2.3.6",
+		"@changesets/cli": "^2.29.7",
+		"@playwright/test": "^1.57.0",
+		"@types/node": "^24.10.1",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.6",
+		"npm-check-updates": "^19.1.2",
+		"tsup": "^8.5.1",
+		"typescript": "^5.9.3"
+	}
+}
