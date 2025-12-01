@@ -1,4 +1,4 @@
-# @cerios/playwright-expectly
+# 🎭 Playwright Expectly | By Cerios
 
 [![npm version](https://badge.fury.io/js/%40cerios%2Fplaywright-expectly.svg)](https://www.npmjs.com/package/@cerios/playwright-expectly)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
