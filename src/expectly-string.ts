@@ -8,7 +8,10 @@ import {
 	isValidUUID,
 } from "./matchers/text-validation-utils";
 
-export const expectString = baseExpect.extend({
+/**
+ * Expextly Custom matchers for string validations.
+ */
+export const expectlyString = baseExpect.extend({
 	/**
 	 * Asserts that a string starts with the expected substring.
 	 *
@@ -17,13 +20,13 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check URL protocol
-	 * await expectString('https://example.com').toStartWith('https://');
+	 * expectString('https://example.com').toStartWith('https://');
 	 *
 	 * @example
 	 * // Validate file path prefix
-	 * await expectString('/home/user/documents').toStartWith('/home/');
+	 * expectString('/home/user/documents').toStartWith('/home/');
 	 */
-	async toStartWith(matcher: string, expected: string) {
+	toStartWith(matcher: string, expected: string) {
 		const assertionName = "toStartWith";
 		const actual = matcher;
 		const pass = matcher.startsWith(expected);
@@ -73,13 +76,13 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check file extension
-	 * await expectString('document.pdf').toEndWith('.pdf');
+	 * expectString('document.pdf').toEndWith('.pdf');
 	 *
 	 * @example
 	 * // Validate domain suffix
-	 * await expectString('example.com').toEndWith('.com');
+	 * expectString('example.com').toEndWith('.com');
 	 */
-	async toEndWith(matcher: string, expected: string) {
+	toEndWith(matcher: string, expected: string) {
 		const assertionName = "toEndWith";
 		const actual = matcher;
 		const pass = matcher.endsWith(expected);
@@ -129,13 +132,13 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Validate phone number format
-	 * await expectString('555-123-4567').toMatchPattern(/^\d{3}-\d{3}-\d{4}$/);
+	 * expectString('555-123-4567').toMatchPattern(/^\d{3}-\d{3}-\d{4}$/);
 	 *
 	 * @example
 	 * // Check version string
-	 * await expectString('v1.2.3').toMatchPattern(/^v\d+\.\d+\.\d+$/);
+	 * expectString('v1.2.3').toMatchPattern(/^v\d+\.\d+\.\d+$/);
 	 */
-	async toMatchPattern(matcher: string, pattern: RegExp) {
+	toMatchPattern(matcher: string, pattern: RegExp) {
 		const assertionName = "toMatchPattern";
 		const actual = matcher;
 		const pass = pattern.test(matcher);
@@ -181,17 +184,17 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Validate email
-	 * await expectString('user@example.com').toBeValidEmail();
+	 * expectString('user@example.com').toBeValidEmail();
 	 *
 	 * @example
 	 * // Check various formats
-	 * await expectString('john.doe+tag@company.co.uk').toBeValidEmail();
+	 * expectString('john.doe+tag@company.co.uk').toBeValidEmail();
 	 *
 	 * @example
 	 * // Invalid email
-	 * await expectString('not-an-email').not.toBeValidEmail();
+	 * expectString('not-an-email').not.toBeValidEmail();
 	 */
-	async toBeValidEmail(matcher: string) {
+	toBeValidEmail(matcher: string) {
 		const assertionName = "toBeValidEmail";
 		const actual = matcher;
 		const pass = isValidEmail(matcher);
@@ -236,18 +239,18 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Validate URL
-	 * await expectString('https://example.com').toBeValidUrl();
+	 * expectString('https://example.com').toBeValidUrl();
 	 *
 	 * @example
 	 * // Check various protocols
-	 * await expectString('ftp://files.example.com').toBeValidUrl();
-	 * await expectString('ws://socket.example.com').toBeValidUrl();
+	 * expectString('ftp://files.example.com').toBeValidUrl();
+	 * expectString('ws://socket.example.com').toBeValidUrl();
 	 *
 	 * @example
 	 * // Invalid URL
-	 * await expectString('not a url').not.toBeValidUrl();
+	 * expectString('not a url').not.toBeValidUrl();
 	 */
-	async toBeValidUrl(matcher: string) {
+	toBeValidUrl(matcher: string) {
 		const assertionName = "toBeValidUrl";
 		const actual = matcher;
 		const pass = isValidUrl(matcher);
@@ -282,17 +285,17 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Validate username
-	 * await expectString('user123').toBeAlphanumeric();
+	 * expectString('user123').toBeAlphanumeric();
 	 *
 	 * @example
 	 * // Check product code
-	 * await expectString('ABC123XYZ').toBeAlphanumeric();
+	 * expectString('ABC123XYZ').toBeAlphanumeric();
 	 *
 	 * @example
 	 * // Not alphanumeric (has space)
-	 * await expectString('user 123').not.toBeAlphanumeric();
+	 * expectString('user 123').not.toBeAlphanumeric();
 	 */
-	async toBeAlphanumeric(matcher: string) {
+	toBeAlphanumeric(matcher: string) {
 		const assertionName = "toBeAlphanumeric";
 		const actual = matcher;
 		const pass = isAlphanumeric(matcher);
@@ -337,17 +340,17 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Validate PIN
-	 * await expectString('1234').toBeNumericString();
+	 * expectString('1234').toBeNumericString();
 	 *
 	 * @example
 	 * // Check phone number digits
-	 * await expectString('5551234567').toBeNumericString();
+	 * expectString('5551234567').toBeNumericString();
 	 *
 	 * @example
 	 * // Not numeric (has letters)
-	 * await expectString('12a34').not.toBeNumericString();
+	 * expectString('12a34').not.toBeNumericString();
 	 */
-	async toBeNumericString(matcher: string) {
+	toBeNumericString(matcher: string) {
 		const assertionName = "toBeNumericString";
 		const actual = matcher;
 		const pass = isNumericString(matcher);
@@ -393,17 +396,17 @@ export const expectString = baseExpect.extend({
 	 *
 	 * @example
 	 * // Validate any UUID
-	 * await expectString('550e8400-e29b-41d4-a716-446655440000').toBeUUID();
+	 * expectString('550e8400-e29b-41d4-a716-446655440000').toBeUUID();
 	 *
 	 * @example
 	 * // Validate specific UUID v4
-	 * await expectString('f47ac10b-58cc-4372-a567-0e02b2c3d479').toBeUUID(4);
+	 * expectString('f47ac10b-58cc-4372-a567-0e02b2c3d479').toBeUUID(4);
 	 *
 	 * @example
 	 * // Invalid UUID
-	 * await expectString('not-a-uuid').not.toBeUUID();
+	 * expectString('not-a-uuid').not.toBeUUID();
 	 */
-	async toBeUUID(matcher: string, version?: 1 | 3 | 4 | 5) {
+	toBeUUID(matcher: string, version?: 1 | 3 | 4 | 5) {
 		const assertionName = "toBeUUID";
 		const actual = matcher;
 		const pass = isValidUUID(matcher, version);

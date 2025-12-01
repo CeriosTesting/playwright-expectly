@@ -1,6 +1,9 @@
 import { expect as baseExpect } from "@playwright/test";
 
-export const expectObjectArray = baseExpect.extend({
+/**
+ * Expextly Custom matchers for object array validations.
+ */
+export const expectlyObjectArray = baseExpect.extend({
 	/**
 	 * Asserts that an array contains only unique objects (no duplicates).
 	 *
@@ -23,7 +26,7 @@ export const expectObjectArray = baseExpect.extend({
 	 * const items = [{ id: 1 }, { id: 1 }];
 	 * await expectObjectArray(items).not.toHaveOnlyUniqueObjects();
 	 */
-	async toHaveOnlyUniqueObjects(actual: object[]) {
+	toHaveOnlyUniqueObjects(actual: object[]) {
 		const assertionName = "toHaveOnlyUniqueObjects";
 		const duplicateObjects = getDuplicateObjects(actual);
 		const pass = duplicateObjects.length === 0;
@@ -75,7 +78,7 @@ export const expectObjectArray = baseExpect.extend({
 	 * ];
 	 * await expectObjectArray(products).toHaveObjectsInAscendingOrderBy('name');
 	 */
-	async toHaveObjectsInAscendingOrderBy(actual: object[], propertyName: string) {
+	toHaveObjectsInAscendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInAscendingOrderBy";
 		const validation = validateSortOrder(actual, propertyName, "ascending");
 		const pass = validation.isValid;
@@ -138,7 +141,7 @@ export const expectObjectArray = baseExpect.extend({
 	 * ];
 	 * await expectObjectArray(posts).toHaveObjectsInDescendingOrderBy('date');
 	 */
-	async toHaveObjectsInDescendingOrderBy(actual: object[], propertyName: string) {
+	toHaveObjectsInDescendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInDescendingOrderBy";
 		const validation = validateSortOrder(actual, propertyName, "descending");
 		const pass = validation.isValid;
@@ -179,11 +182,23 @@ export const expectObjectArray = baseExpect.extend({
 	},
 });
 
+// Cache for memoizing safeStringify results
+const stringifyCache = new WeakMap<object, string>();
+
 /**
  * Safely serializes an object to a string for comparison.
  * Handles circular references by tracking them during traversal.
+ * Uses memoization to cache results for better performance.
  */
 function safeStringify(obj: any): string {
+	// Check cache first for non-primitive values
+	if (obj !== null && typeof obj === "object") {
+		const cached = stringifyCache.get(obj);
+		if (cached !== undefined) {
+			return cached;
+		}
+	}
+
 	try {
 		const seen = new WeakMap<object, number>();
 		let counter = 0;
@@ -219,29 +234,46 @@ function safeStringify(obj: any): string {
 			return normalized;
 		};
 
-		return JSON.stringify(normalize(obj));
+		const result = JSON.stringify(normalize(obj));
+
+		// Cache the result for objects
+		if (obj !== null && typeof obj === "object") {
+			stringifyCache.set(obj, result);
+		}
+
+		return result;
 	} catch (error) {
 		// Fallback for any other serialization errors
-		return `[Unserializable: ${error instanceof Error ? error.message : String(error)}]`;
+		const result = `[Unserializable: ${error instanceof Error ? error.message : String(error)}]`;
+		if (obj !== null && typeof obj === "object") {
+			stringifyCache.set(obj, result);
+		}
+		return result;
 	}
 }
 
 function getDuplicateObjects(arr: object[]): object[] {
-	const duplicateObjects: object[] = [];
-	const seen = new Map<string, number>();
+	const seen = new Map<string, boolean>();
+	const duplicateSet = new Set<string>();
 
+	// First pass: identify all duplicate serialized values
 	for (let i = 0; i < arr.length; i++) {
 		const serialized = safeStringify(arr[i]);
-		const firstIndex = seen.get(serialized);
-
-		if (firstIndex !== undefined) {
-			// Only add to duplicates if we haven't already added this duplicate
-			const isDuplicateAlreadyAdded = duplicateObjects.some(dup => safeStringify(dup) === serialized);
-			if (!isDuplicateAlreadyAdded) {
-				duplicateObjects.push(arr[i]);
-			}
+		if (seen.has(serialized)) {
+			duplicateSet.add(serialized);
 		} else {
-			seen.set(serialized, i);
+			seen.set(serialized, true);
+		}
+	}
+
+	// Second pass: collect unique duplicate objects
+	const duplicateObjects: object[] = [];
+	const addedDuplicates = new Set<string>();
+	for (let i = 0; i < arr.length; i++) {
+		const serialized = safeStringify(arr[i]);
+		if (duplicateSet.has(serialized) && !addedDuplicates.has(serialized)) {
+			duplicateObjects.push(arr[i]);
+			addedDuplicates.add(serialized);
 		}
 	}
 

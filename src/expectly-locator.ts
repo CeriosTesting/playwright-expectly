@@ -12,7 +12,10 @@ import {
 	toTitleCase,
 } from "./matchers/text-validation-utils";
 
-export const expectLocator = baseExpect.extend({
+/**
+ * Expextly Custom matchers for locator validations.
+ */
+export const expectlyLocator = baseExpect.extend({
 	/**
 	 * Asserts that the locator's text content starts with the expected string.
 	 *

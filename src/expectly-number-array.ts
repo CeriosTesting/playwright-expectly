@@ -1,10 +1,21 @@
 import { expect as baseExpect } from "@playwright/test";
+import {
+	checkMonotonic,
+	findDuplicates,
+	findNonMatching,
+	findStrictAscendingViolation,
+	findStrictDescendingViolation,
+	sortedExpected,
+} from "./matchers/common-utils";
 
-export const expectNumber = baseExpect.extend({
+/**
+ * Expextly Custom matchers for number array validations.
+ */
+export const expectlyNumberArray = baseExpect.extend({
 	/**
 	 * Asserts that an array of numbers is in ascending order (smallest to largest).
 	 *
-	 * @param actual - Array of numbers or numeric strings
+	 * @param actual - Array of numbers
 	 *
 	 * @example
 	 * // Validate sorted prices
@@ -12,16 +23,16 @@ export const expectNumber = baseExpect.extend({
 	 * await expectNumber(prices).toHaveAscendingOrder();
 	 *
 	 * @example
-	 * // Check scores from API
-	 * const scores = await page.locator('.score').allTextContents();
+	 * // Check numeric scores
+	 * const scores = [85, 90, 92, 95];
 	 * await expectNumber(scores).toHaveAscendingOrder();
 	 */
-	async toHaveAscendingOrder(actual: number[] | string[]) {
+	toHaveAscendingOrder(actual: number[]) {
 		const assertionName = "toHaveAscendingOrder";
 		let pass: boolean;
 		let matcherResult: any;
 
-		const expected: string[] | number[] = sortedExpected(actual, "ascending");
+		const expected: number[] = sortedExpected(actual, "ascending");
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = actual;
@@ -51,7 +62,7 @@ export const expectNumber = baseExpect.extend({
 	/**
 	 * Asserts that an array of numbers is in descending order (largest to smallest).
 	 *
-	 * @param actual - Array of numbers or numeric strings
+	 * @param actual - Array of numbers
 	 *
 	 * @example
 	 * // Validate ranked scores
@@ -60,14 +71,14 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check leaderboard
-	 * await expectNumber(leaderboardScores).toHaveDescendingOrder();
+	 * expectNumber(leaderboardScores).toHaveDescendingOrder();
 	 */
-	async toHaveDescendingOrder(actual: number[] | string[]) {
+	toHaveDescendingOrder(actual: number[]) {
 		const assertionName = "toHaveDescendingOrder";
 		let pass: boolean;
 		let matcherResult: any;
 
-		const expected: string[] | number[] = sortedExpected(actual, "descending");
+		const expected: number[] = sortedExpected(actual, "descending");
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = { actual };
@@ -107,11 +118,14 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check vote count
-	 * await expectNumber([45, 32, 23]).toHaveSum(100);
+	 * expectNumber([45, 32, 23]).toHaveSum(100);
 	 */
-	async toHaveSum(actual: number[], expected: number) {
+	toHaveSum(actual: number[], expected: number) {
 		const assertionName = "toHaveSum";
-		const sum = actual.reduce((acc, val) => acc + val, 0);
+		let sum = 0;
+		for (let i = 0; i < actual.length; i++) {
+			sum += actual[i];
+		}
 		const pass = Math.abs(sum - expected) < Number.EPSILON;
 
 		const message = () => {
@@ -162,11 +176,15 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check rating average
-	 * await expectNumber(ratings).toHaveAverage(4.5);
+	 * expectNumber(ratings).toHaveAverage(4.5);
 	 */
-	async toHaveAverage(actual: number[], expected: number) {
+	toHaveAverage(actual: number[], expected: number) {
 		const assertionName = "toHaveAverage";
-		const average = actual.length > 0 ? actual.reduce((acc, val) => acc + val, 0) / actual.length : 0;
+		let sum = 0;
+		for (let i = 0; i < actual.length; i++) {
+			sum += actual[i];
+		}
+		const average = actual.length > 0 ? sum / actual.length : 0;
 		const pass = Math.abs(average - expected) < Number.EPSILON;
 
 		const message = () => {
@@ -217,9 +235,9 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check median response time
-	 * await expectNumber(responseTimes).toHaveMedian(250);
+	 * expectNumber(responseTimes).toHaveMedian(250);
 	 */
-	async toHaveMedian(actual: number[], expected: number) {
+	toHaveMedian(actual: number[], expected: number) {
 		const assertionName = "toHaveMedian";
 		const sorted = [...actual].sort((a, b) => a - b);
 		const median =
@@ -278,11 +296,19 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check minimum temperature
-	 * await expectNumber(temperatures).toHaveMin(-5);
+	 * expectNumber(temperatures).toHaveMin(-5);
 	 */
-	async toHaveMin(actual: number[], expected: number) {
+	toHaveMin(actual: number[], expected: number) {
 		const assertionName = "toHaveMin";
-		const min = actual.length > 0 ? Math.min(...actual) : Number.NaN;
+		let min = Number.NaN;
+		if (actual.length > 0) {
+			min = actual[0];
+			for (let i = 1; i < actual.length; i++) {
+				if (actual[i] < min) {
+					min = actual[i];
+				}
+			}
+		}
 		const pass = min === expected;
 
 		const message = () => {
@@ -333,11 +359,19 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check peak value
-	 * await expectNumber(metrics).toHaveMax(1000);
+	 * expectNumber(metrics).toHaveMax(1000);
 	 */
-	async toHaveMax(actual: number[], expected: number) {
+	toHaveMax(actual: number[], expected: number) {
 		const assertionName = "toHaveMax";
-		const max = actual.length > 0 ? Math.max(...actual) : Number.NaN;
+		let max = Number.NaN;
+		if (actual.length > 0) {
+			max = actual[0];
+			for (let i = 1; i < actual.length; i++) {
+				if (actual[i] > max) {
+					max = actual[i];
+				}
+			}
+		}
 		const pass = max === expected;
 
 		const message = () => {
@@ -388,12 +422,20 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check temperature variation
-	 * await expectNumber(dailyTemps).toHaveRange(15);
+	 * expectNumber(dailyTemps).toHaveRange(15);
 	 */
-	async toHaveRange(actual: number[], expected: number) {
+	toHaveRange(actual: number[], expected: number) {
 		const assertionName = "toHaveRange";
-		const min = actual.length > 0 ? Math.min(...actual) : Number.NaN;
-		const max = actual.length > 0 ? Math.max(...actual) : Number.NaN;
+		let min = Number.NaN;
+		let max = Number.NaN;
+		if (actual.length > 0) {
+			min = actual[0];
+			max = actual[0];
+			for (let i = 1; i < actual.length; i++) {
+				if (actual[i] < min) min = actual[i];
+				if (actual[i] > max) max = actual[i];
+			}
+		}
 		const range = max - min;
 		const pass = range === expected;
 
@@ -446,11 +488,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check scores within range
-	 * await expectNumber(testScores).toBeAllBetween(60, 100);
+	 * expectNumber(testScores).toBeAllBetween(60, 100);
 	 */
-	async toBeAllBetween(actual: number[], min: number, max: number) {
+	toBeAllBetween(actual: number[], min: number, max: number) {
 		const assertionName = "toBeAllBetween";
-		const outOfRange = actual.filter(val => val < min || val > max);
+		const outOfRange = findNonMatching(actual, val => val >= min && val <= max);
 		const pass = outOfRange.length === 0;
 
 		const message = () => {
@@ -499,11 +541,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check counts
-	 * await expectNumber(userCounts).toBeAllPositive();
+	 * expectNumber(userCounts).toBeAllPositive();
 	 */
-	async toBeAllPositive(actual: number[]) {
+	toBeAllPositive(actual: number[]) {
 		const assertionName = "toBeAllPositive";
-		const nonPositive = actual.filter(val => val <= 0);
+		const nonPositive = findNonMatching(actual, val => val > 0);
 		const pass = nonPositive.length === 0;
 
 		const message = () => {
@@ -551,11 +593,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check losses
-	 * await expectNumber(lossValues).toBeAllNegative();
+	 * expectNumber(lossValues).toBeAllNegative();
 	 */
-	async toBeAllNegative(actual: number[]) {
+	toBeAllNegative(actual: number[]) {
 		const assertionName = "toBeAllNegative";
-		const nonNegative = actual.filter(val => val >= 0);
+		const nonNegative = findNonMatching(actual, val => val < 0);
 		const pass = nonNegative.length === 0;
 
 		const message = () => {
@@ -603,11 +645,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check whole numbers
-	 * await expectNumber(votes).toBeAllIntegers();
+	 * expectNumber(votes).toBeAllIntegers();
 	 */
-	async toBeAllIntegers(actual: number[]) {
+	toBeAllIntegers(actual: number[]) {
 		const assertionName = "toBeAllIntegers";
-		const nonIntegers = actual.filter(val => !Number.isInteger(val));
+		const nonIntegers = findNonMatching(actual, val => Number.isInteger(val));
 		const pass = nonIntegers.length === 0;
 
 		const message = () => {
@@ -651,11 +693,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check above baseline
-	 * await expectNumber(measurements).toBeAllGreaterThan(0);
+	 * expectNumber(measurements).toBeAllGreaterThan(0);
 	 */
-	async toBeAllGreaterThan(actual: number[], value: number) {
+	toBeAllGreaterThan(actual: number[], value: number) {
 		const assertionName = "toBeAllGreaterThan";
-		const notGreater = actual.filter(val => val <= value);
+		const notGreater = findNonMatching(actual, val => val > value);
 		const pass = notGreater.length === 0;
 
 		const message = () => {
@@ -705,11 +747,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check under cap
-	 * await expectNumber(costs).toBeAllLessThan(1000);
+	 * expectNumber(costs).toBeAllLessThan(1000);
 	 */
-	async toBeAllLessThan(actual: number[], value: number) {
+	toBeAllLessThan(actual: number[], value: number) {
 		const assertionName = "toBeAllLessThan";
-		const notLess = actual.filter(val => val >= value);
+		const notLess = findNonMatching(actual, val => val < value);
 		const pass = notLess.length === 0;
 
 		const message = () => {
@@ -760,19 +802,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // This would fail (has equal consecutive values)
-	 * await expectNumber([1, 2, 2, 3]).not.toHaveStrictlyAscendingOrder();
+	 * expectNumber([1, 2, 2, 3]).not.toHaveStrictlyAscendingOrder();
 	 */
-	async toHaveStrictlyAscendingOrder(actual: number[]) {
+	toHaveStrictlyAscendingOrder(actual: number[]) {
 		const assertionName = "toHaveStrictlyAscendingOrder";
-		let firstViolationIndex = -1;
-
-		for (let i = 0; i < actual.length - 1; i++) {
-			if (actual[i] >= actual[i + 1]) {
-				firstViolationIndex = i;
-				break;
-			}
-		}
-
+		const firstViolationIndex = findStrictAscendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
 		const message = () => {
@@ -822,19 +856,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // This would fail (has equal consecutive values)
-	 * await expectNumber([5, 4, 4, 3]).not.toHaveStrictlyDescendingOrder();
+	 * expectNumber([5, 4, 4, 3]).not.toHaveStrictlyDescendingOrder();
 	 */
-	async toHaveStrictlyDescendingOrder(actual: number[]) {
+	toHaveStrictlyDescendingOrder(actual: number[]) {
 		const assertionName = "toHaveStrictlyDescendingOrder";
-		let firstViolationIndex = -1;
-
-		for (let i = 0; i < actual.length - 1; i++) {
-			if (actual[i] <= actual[i + 1]) {
-				firstViolationIndex = i;
-				break;
-			}
-		}
-
+		const firstViolationIndex = findStrictDescendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
 		const message = () => {
@@ -880,15 +906,15 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Valid monotonic arrays
-	 * await expectNumber([1, 2, 2, 3, 4]).toBeMonotonic(); // Ascending
+	 * expectNumber([1, 2, 2, 3, 4]).toBeMonotonic(); // Ascending
 	 * await expectNumber([5, 4, 3, 3, 1]).toBeMonotonic(); // Descending
 	 * await expectNumber([2, 2, 2, 2]).toBeMonotonic(); // Flat
 	 *
 	 * @example
 	 * // Not monotonic (changes direction)
-	 * await expectNumber([1, 3, 2, 4]).not.toBeMonotonic();
+	 * expectNumber([1, 3, 2, 4]).not.toBeMonotonic();
 	 */
-	async toBeMonotonic(actual: number[]) {
+	toBeMonotonic(actual: number[]) {
 		const assertionName = "toBeMonotonic";
 
 		if (actual.length <= 1) {
@@ -902,11 +928,7 @@ export const expectNumber = baseExpect.extend({
 			};
 		}
 
-		// Check if ascending (or equal)
-		const isAscending = actual.every((val, i) => i === 0 || actual[i - 1] <= val);
-		// Check if descending (or equal)
-		const isDescending = actual.every((val, i) => i === 0 || actual[i - 1] >= val);
-
+		const { isAscending, isDescending } = checkMonotonic(actual);
 		const pass = isAscending || isDescending;
 
 		const message = () => {
@@ -953,20 +975,11 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Check for duplicates
-	 * await expectNumber([1, 2, 2, 3]).not.toHaveUniqueValues();
+	 * expectNumber([1, 2, 2, 3]).not.toHaveUniqueValues();
 	 */
-	async toHaveUniqueValues(actual: number[]) {
+	toHaveUniqueValues(actual: number[]) {
 		const assertionName = "toHaveUniqueValues";
-		const seen = new Set<number>();
-		const duplicates = new Set<number>();
-
-		for (const val of actual) {
-			if (seen.has(val)) {
-				duplicates.add(val);
-			}
-			seen.add(val);
-		}
-
+		const duplicates = findDuplicates(actual);
 		const pass = duplicates.size === 0;
 
 		const message = () => {
@@ -1017,13 +1030,13 @@ export const expectNumber = baseExpect.extend({
 	 *
 	 * @example
 	 * // Order doesn't matter
-	 * await expectNumber([5, 3, 4, 2, 1]).toHaveConsecutiveIntegers();
+	 * expectNumber([5, 3, 4, 2, 1]).toHaveConsecutiveIntegers();
 	 *
 	 * @example
 	 * // This would fail (missing 3)
-	 * await expectNumber([1, 2, 4, 5]).not.toHaveConsecutiveIntegers();
+	 * expectNumber([1, 2, 4, 5]).not.toHaveConsecutiveIntegers();
 	 */
-	async toHaveConsecutiveIntegers(actual: number[]) {
+	toHaveConsecutiveIntegers(actual: number[]) {
 		const assertionName = "toHaveConsecutiveIntegers";
 
 		if (actual.length === 0) {
@@ -1105,13 +1118,3 @@ export const expectNumber = baseExpect.extend({
 		};
 	},
 });
-
-function sortedExpected(actual: number[] | string[], order: "ascending" | "descending"): number[] | string[] {
-	if (actual.every(item => typeof item === "number")) {
-		const copy = [...actual] as number[];
-		return order === "ascending" ? copy.sort((n1, n2) => n1 - n2) : copy.sort((n1, n2) => n2 - n1);
-	} else {
-		const copy = [...actual] as string[];
-		return order === "ascending" ? copy.sort() : copy.sort().reverse();
-	}
-}

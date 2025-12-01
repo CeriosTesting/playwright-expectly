@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectObjectArray } from "../src/expect-object-array-extensions";
+import { expectlyObjectArray } from "../src/expectly-object-array";
 
 test.describe("toHaveOnlyUniqueObjects", () => {
 	test("should pass when array contains only unique objects", async () => {
@@ -9,17 +9,17 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			{ id: 3, name: "Charlie" },
 		];
 
-		await expectObjectArray(uniqueArray).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(uniqueArray).toHaveOnlyUniqueObjects();
 	});
 
 	test("should pass for empty array", async () => {
-		await expectObjectArray([]).toHaveOnlyUniqueObjects();
+		expectlyObjectArray([]).toHaveOnlyUniqueObjects();
 	});
 
 	test("should pass for array with single object", async () => {
 		const singleObject = [{ id: 1, name: "Alice" }];
 
-		await expectObjectArray(singleObject).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(singleObject).toHaveOnlyUniqueObjects();
 	});
 
 	test("should fail when array contains duplicate objects", async () => {
@@ -31,7 +31,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(duplicateArray).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(duplicateArray).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -50,7 +50,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(multipleDuplicates).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(multipleDuplicates).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -68,7 +68,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 		// These ARE considered duplicates since we normalize property order
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(array).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -84,7 +84,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(array).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -99,7 +99,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			{ id: 3, details: { age: 25, city: "NYC" } },
 		];
 
-		await expectObjectArray(uniqueNested).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(uniqueNested).toHaveOnlyUniqueObjects();
 	});
 
 	test("should detect duplicate nested objects", async () => {
@@ -111,7 +111,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(duplicateNested).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(duplicateNested).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -126,7 +126,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			{ id: 3, value: "something" },
 		];
 
-		await expectObjectArray(arrayWithNulls).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(arrayWithNulls).toHaveOnlyUniqueObjects();
 	});
 
 	test("should handle objects with undefined values", async () => {
@@ -136,7 +136,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			{ id: 3, value: "something" },
 		];
 
-		await expectObjectArray(arrayWithUndefined).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(arrayWithUndefined).toHaveOnlyUniqueObjects();
 	});
 
 	test("should handle objects with array properties", async () => {
@@ -146,7 +146,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			{ id: 3, tags: ["a", "b"] },
 		];
 
-		await expectObjectArray(arrayWithArrays).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(arrayWithArrays).toHaveOnlyUniqueObjects();
 	});
 
 	test("should detect duplicate objects with array properties", async () => {
@@ -158,7 +158,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(duplicateWithArrays).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(duplicateWithArrays).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -186,7 +186,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			},
 		];
 
-		await expectObjectArray(complexArray).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(complexArray).toHaveOnlyUniqueObjects();
 	});
 
 	test("should work with .not for unique arrays", async () => {
@@ -197,7 +197,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(uniqueArray).not.toHaveOnlyUniqueObjects();
+			expectlyObjectArray(uniqueArray).not.toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -211,7 +211,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 			{ id: 1, name: "Alice" },
 		];
 
-		await expectObjectArray(duplicateArray).not.toHaveOnlyUniqueObjects();
+		expectlyObjectArray(duplicateArray).not.toHaveOnlyUniqueObjects();
 	});
 
 	test("should handle circular references without throwing", async () => {
@@ -224,7 +224,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 		const arrayWithCircular = [obj1, obj2];
 
 		// Should not throw an error due to circular references
-		await expectObjectArray(arrayWithCircular).toHaveOnlyUniqueObjects();
+		expectlyObjectArray(arrayWithCircular).toHaveOnlyUniqueObjects();
 	});
 
 	test("should detect duplicate circular references", async () => {
@@ -235,7 +235,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(arrayWithDuplicateCircular).toHaveOnlyUniqueObjects();
+			expectlyObjectArray(arrayWithDuplicateCircular).toHaveOnlyUniqueObjects();
 		} catch (e) {
 			error = e as Error;
 		}
@@ -248,27 +248,27 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 	test("should pass for array sorted in ascending order by numeric property", async () => {
 		const sortedArray = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
 
-		await expectObjectArray(sortedArray).toHaveObjectsInAscendingOrderBy("id");
+		expectlyObjectArray(sortedArray).toHaveObjectsInAscendingOrderBy("id");
 	});
 
 	test("should pass for array sorted in ascending order by string property", async () => {
 		const sortedArray = [{ name: "Alice" }, { name: "Bob" }, { name: "Charlie" }];
 
-		await expectObjectArray(sortedArray).toHaveObjectsInAscendingOrderBy("name");
+		expectlyObjectArray(sortedArray).toHaveObjectsInAscendingOrderBy("name");
 	});
 
 	test("should pass for array with equal consecutive values", async () => {
 		const sortedArray = [{ score: 1 }, { score: 2 }, { score: 2 }, { score: 3 }];
 
-		await expectObjectArray(sortedArray).toHaveObjectsInAscendingOrderBy("score");
+		expectlyObjectArray(sortedArray).toHaveObjectsInAscendingOrderBy("score");
 	});
 
 	test("should pass for empty array", async () => {
-		await expectObjectArray([]).toHaveObjectsInAscendingOrderBy("id");
+		expectlyObjectArray([]).toHaveObjectsInAscendingOrderBy("id");
 	});
 
 	test("should pass for single element array", async () => {
-		await expectObjectArray([{ id: 1 }]).toHaveObjectsInAscendingOrderBy("id");
+		expectlyObjectArray([{ id: 1 }]).toHaveObjectsInAscendingOrderBy("id");
 	});
 
 	test("should fail for array not sorted in ascending order", async () => {
@@ -276,7 +276,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(unsortedArray).toHaveObjectsInAscendingOrderBy("id");
+			expectlyObjectArray(unsortedArray).toHaveObjectsInAscendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -289,7 +289,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(descendingArray).toHaveObjectsInAscendingOrderBy("id");
+			expectlyObjectArray(descendingArray).toHaveObjectsInAscendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -302,7 +302,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInAscendingOrderBy("name");
+			expectlyObjectArray(array).toHaveObjectsInAscendingOrderBy("name");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -315,7 +315,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInAscendingOrderBy("id");
+			expectlyObjectArray(array).toHaveObjectsInAscendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -328,7 +328,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInAscendingOrderBy("id");
+			expectlyObjectArray(array).toHaveObjectsInAscendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -341,7 +341,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInAscendingOrderBy("value");
+			expectlyObjectArray(array).toHaveObjectsInAscendingOrderBy("value");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -356,7 +356,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 		// For nested properties, users would need to pass "age" and ensure objects are structured accordingly
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInAscendingOrderBy("age");
+			expectlyObjectArray(array).toHaveObjectsInAscendingOrderBy("age");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -367,13 +367,13 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 	test("should work with date strings", async () => {
 		const array = [{ date: "2023-01-01" }, { date: "2023-06-15" }, { date: "2023-12-31" }];
 
-		await expectObjectArray(array).toHaveObjectsInAscendingOrderBy("date");
+		expectlyObjectArray(array).toHaveObjectsInAscendingOrderBy("date");
 	});
 
 	test("should work with .not for unsorted arrays", async () => {
 		const unsortedArray = [{ id: 3 }, { id: 1 }, { id: 2 }];
 
-		await expectObjectArray(unsortedArray).not.toHaveObjectsInAscendingOrderBy("id");
+		expectlyObjectArray(unsortedArray).not.toHaveObjectsInAscendingOrderBy("id");
 	});
 
 	test("should fail with .not for sorted arrays", async () => {
@@ -381,7 +381,7 @@ test.describe("toHaveObjectsInAscendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(sortedArray).not.toHaveObjectsInAscendingOrderBy("id");
+			expectlyObjectArray(sortedArray).not.toHaveObjectsInAscendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -394,27 +394,27 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 	test("should pass for array sorted in descending order by numeric property", async () => {
 		const sortedArray = [{ id: 4 }, { id: 3 }, { id: 2 }, { id: 1 }];
 
-		await expectObjectArray(sortedArray).toHaveObjectsInDescendingOrderBy("id");
+		expectlyObjectArray(sortedArray).toHaveObjectsInDescendingOrderBy("id");
 	});
 
 	test("should pass for array sorted in descending order by string property", async () => {
 		const sortedArray = [{ name: "Charlie" }, { name: "Bob" }, { name: "Alice" }];
 
-		await expectObjectArray(sortedArray).toHaveObjectsInDescendingOrderBy("name");
+		expectlyObjectArray(sortedArray).toHaveObjectsInDescendingOrderBy("name");
 	});
 
 	test("should pass for array with equal consecutive values", async () => {
 		const sortedArray = [{ score: 3 }, { score: 2 }, { score: 2 }, { score: 1 }];
 
-		await expectObjectArray(sortedArray).toHaveObjectsInDescendingOrderBy("score");
+		expectlyObjectArray(sortedArray).toHaveObjectsInDescendingOrderBy("score");
 	});
 
 	test("should pass for empty array", async () => {
-		await expectObjectArray([]).toHaveObjectsInDescendingOrderBy("id");
+		expectlyObjectArray([]).toHaveObjectsInDescendingOrderBy("id");
 	});
 
 	test("should pass for single element array", async () => {
-		await expectObjectArray([{ id: 1 }]).toHaveObjectsInDescendingOrderBy("id");
+		expectlyObjectArray([{ id: 1 }]).toHaveObjectsInDescendingOrderBy("id");
 	});
 
 	test("should fail for array not sorted in descending order", async () => {
@@ -422,7 +422,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(unsortedArray).toHaveObjectsInDescendingOrderBy("id");
+			expectlyObjectArray(unsortedArray).toHaveObjectsInDescendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -435,7 +435,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(ascendingArray).toHaveObjectsInDescendingOrderBy("id");
+			expectlyObjectArray(ascendingArray).toHaveObjectsInDescendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -448,7 +448,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInDescendingOrderBy("name");
+			expectlyObjectArray(array).toHaveObjectsInDescendingOrderBy("name");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -461,7 +461,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInDescendingOrderBy("id");
+			expectlyObjectArray(array).toHaveObjectsInDescendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -474,7 +474,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInDescendingOrderBy("id");
+			expectlyObjectArray(array).toHaveObjectsInDescendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -487,7 +487,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(array).toHaveObjectsInDescendingOrderBy("value");
+			expectlyObjectArray(array).toHaveObjectsInDescendingOrderBy("value");
 		} catch (e) {
 			error = e as Error;
 		}
@@ -498,13 +498,13 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 	test("should work with date strings", async () => {
 		const array = [{ date: "2023-12-31" }, { date: "2023-06-15" }, { date: "2023-01-01" }];
 
-		await expectObjectArray(array).toHaveObjectsInDescendingOrderBy("date");
+		expectlyObjectArray(array).toHaveObjectsInDescendingOrderBy("date");
 	});
 
 	test("should work with .not for unsorted arrays", async () => {
 		const unsortedArray = [{ id: 3 }, { id: 1 }, { id: 2 }];
 
-		await expectObjectArray(unsortedArray).not.toHaveObjectsInDescendingOrderBy("id");
+		expectlyObjectArray(unsortedArray).not.toHaveObjectsInDescendingOrderBy("id");
 	});
 
 	test("should fail with .not for sorted arrays", async () => {
@@ -512,7 +512,7 @@ test.describe("toHaveObjectsInDescendingOrderBy", () => {
 
 		let error: Error | undefined;
 		try {
-			await expectObjectArray(sortedArray).not.toHaveObjectsInDescendingOrderBy("id");
+			expectlyObjectArray(sortedArray).not.toHaveObjectsInDescendingOrderBy("id");
 		} catch (e) {
 			error = e as Error;
 		}

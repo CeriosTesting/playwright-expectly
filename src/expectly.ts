@@ -1,10 +1,11 @@
 import { mergeExpects } from "@playwright/test";
-import { expectAny } from "src/expect-any-extensions";
-import { expectDate } from "src/expect-date-extensions";
-import { expectLocator } from "src/expect-locator-extensions";
-import { expectNumber } from "src/expect-number-extensions";
-import { expectObjectArray } from "src/expect-object-array-extensions";
-import { expectString } from "src/expect-string-extensions";
+import { expectlyAny } from "src/expectly-any";
+import { expectlyDate } from "src/expectly-date";
+import { expectlyLocator } from "src/expectly-locator";
+import { expectlyNumberArray } from "src/expectly-number-array";
+import { expectlyObjectArray } from "src/expectly-object-array";
+import { expectlyString } from "src/expectly-string";
+import { expectlyStringArray } from "src/expectly-string-array";
 
 /**
  * Expectly - Enhanced Playwright Test Assertions
@@ -18,16 +19,18 @@ import { expectString } from "src/expect-string-extensions";
  * - **Number Matchers**: Statistical checks, ordering, ranges, and numeric validations
  * - **Object Array Matchers**: Sort validation and uniqueness checks for object collections
  * - **String Matchers**: Pattern matching, format validation, and text assertions
+ * - **String Array Matchers**: Sorting, ordering, and uniqueness validations for string arrays
  *
  * Simply import and use like Playwright's standard expect:
  *
  * Made with ❤️ by Ronald Veth from Cerios
  */
 export const expectly = mergeExpects(
-	expectAny,
-	expectDate,
-	expectLocator,
-	expectNumber,
-	expectObjectArray,
-	expectString
+	expectlyAny,
+	expectlyDate,
+	expectlyLocator,
+	expectlyNumberArray,
+	expectlyObjectArray,
+	expectlyString,
+	expectlyStringArray
 );

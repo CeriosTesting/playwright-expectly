@@ -1,6 +1,9 @@
 import { expect as baseExpect } from "@playwright/test";
 
-export const expectAny = baseExpect.extend({
+/**
+ * Expextly Custom matchers for any type validations.
+ */
+export const expectlyAny = baseExpect.extend({
 	/**
 	 * Asserts that the received value matches at least one of the provided possibilities.
 	 *
@@ -14,21 +17,21 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Primitive values
-	 * await expectAny(status).toBeAnyOf(200, 201, 204);
-	 * await expectAny(color).toBeAnyOf('red', 'green', 'blue');
+	 * expectAny(status).toBeAnyOf(200, 201, 204);
+	 * expectAny(color).toBeAnyOf('red', 'green', 'blue');
 	 *
 	 * @example
 	 * // Objects
-	 * await expectAny(response).toBeAnyOf(
+	 * expectAny(response).toBeAnyOf(
 	 *   { status: 'success', code: 200 },
 	 *   { status: 'created', code: 201 }
 	 * );
 	 *
 	 * @example
 	 * // Mixed types
-	 * await expectAny(value).toBeAnyOf(null, undefined, 0, '');
+	 * expectAny(value).toBeAnyOf(null, undefined, 0, '');
 	 */
-	async toBeAnyOf(received: any, ...possibilities: any[]) {
+	toBeAnyOf(received: any, ...possibilities: any[]) {
 		const assertionName = "toBeAnyOf";
 		const pass = possibilities.some(possibility => {
 			try {
@@ -97,15 +100,15 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Testing optional values
-	 * await expectAny(user.middleName).toBeNullish();
-	 * await expectAny(response.data).not.toBeNullish();
+	 * expectAny(user.middleName).toBeNullish();
+	 * expectAny(response.data).not.toBeNullish();
 	 *
 	 * @example
 	 * // API response validation
 	 * const config = await api.getConfig();
-	 * await expectAny(config.optionalField).toBeNullish();
+	 * expectAny(config.optionalField).toBeNullish();
 	 */
-	async toBeNullish(received: any) {
+	toBeNullish(received: any) {
 		const assertionName = "toBeNullish";
 		const pass = received === null || received === undefined;
 
@@ -153,21 +156,21 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Valid integers
-	 * await expectAny(42).toBeInteger();
-	 * await expectAny(0).toBeInteger();
-	 * await expectAny(-100).toBeInteger();
+	 * expectAny(42).toBeInteger();
+	 * expectAny(0).toBeInteger();
+	 * expectAny(-100).toBeInteger();
 	 *
 	 * @example
 	 * // Testing API responses
 	 * const userCount = await page.locator('.user-count').textContent();
-	 * await expectAny(Number(userCount)).toBeInteger();
+	 * expectAny(Number(userCount)).toBeInteger();
 	 *
 	 * @example
 	 * // Negative assertions
-	 * await expectAny(3.14).not.toBeInteger();
-	 * await expectAny('42').not.toBeInteger();
+	 * expectAny(3.14).not.toBeInteger();
+	 * expectAny('42').not.toBeInteger();
 	 */
-	async toBeInteger(received: any) {
+	toBeInteger(received: any) {
 		const assertionName = "toBeInteger";
 		const pass = Number.isInteger(received);
 
@@ -213,23 +216,23 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Valid floats
-	 * await expectAny(3.14).toBeFloat();
-	 * await expectAny(0.5).toBeFloat();
-	 * await expectAny(-2.718).toBeFloat();
+	 * expectAny(3.14).toBeFloat();
+	 * expectAny(0.5).toBeFloat();
+	 * expectAny(-2.718).toBeFloat();
 	 *
 	 * @example
 	 * // Testing calculations
 	 * const price = 19.99;
 	 * const tax = price * 0.08;
-	 * await expectAny(tax).toBeFloat();
+	 * expectAny(tax).toBeFloat();
 	 *
 	 * @example
 	 * // Not floats
-	 * await expectAny(42).not.toBeFloat(); // Integer
-	 * await expectAny(NaN).not.toBeFloat(); // NaN
-	 * await expectAny(Infinity).not.toBeFloat(); // Infinity
+	 * expectAny(42).not.toBeFloat(); // Integer
+	 * expectAny(NaN).not.toBeFloat(); // NaN
+	 * expectAny(Infinity).not.toBeFloat(); // Infinity
 	 */
-	async toBeFloat(received: any) {
+	toBeFloat(received: any) {
 		const assertionName = "toBeFloat";
 		const pass =
 			typeof received === "number" &&
@@ -297,26 +300,26 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Valid primitives
-	 * await expectAny('hello').toBePrimitive();
-	 * await expectAny(123).toBePrimitive();
-	 * await expectAny(true).toBePrimitive();
-	 * await expectAny(null).toBePrimitive();
-	 * await expectAny(undefined).toBePrimitive();
-	 * await expectAny(BigInt(9007199254740991)).toBePrimitive();
-	 * await expectAny(Symbol('key')).toBePrimitive();
+	 * expectAny('hello').toBePrimitive();
+	 * expectAny(123).toBePrimitive();
+	 * expectAny(true).toBePrimitive();
+	 * expectAny(null).toBePrimitive();
+	 * expectAny(undefined).toBePrimitive();
+	 * expectAny(BigInt(9007199254740991)).toBePrimitive();
+	 * expectAny(Symbol('key')).toBePrimitive();
 	 *
 	 * @example
 	 * // Not primitives
-	 * await expectAny({}).not.toBePrimitive();
-	 * await expectAny([]).not.toBePrimitive();
-	 * await expectAny(new Date()).not.toBePrimitive();
+	 * expectAny({}).not.toBePrimitive();
+	 * expectAny([]).not.toBePrimitive();
+	 * expectAny(new Date()).not.toBePrimitive();
 	 *
 	 * @example
 	 * // Testing API responses
 	 * const apiValue = response.data.value;
-	 * await expectAny(apiValue).toBePrimitive();
+	 * expectAny(apiValue).toBePrimitive();
 	 */
-	async toBePrimitive(received: any) {
+	toBePrimitive(received: any) {
 		const assertionName = "toBePrimitive";
 		const receivedType = typeof received;
 		const pass =
@@ -371,26 +374,26 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Valid arrays
-	 * await expectAny([]).toBeArray();
-	 * await expectAny([1, 2, 3]).toBeArray();
-	 * await expectAny(['a', 'b', 'c']).toBeArray();
+	 * expectAny([]).toBeArray();
+	 * expectAny([1, 2, 3]).toBeArray();
+	 * expectAny(['a', 'b', 'c']).toBeArray();
 	 *
 	 * @example
 	 * // Testing API responses
 	 * const users = await api.getUsers();
-	 * await expectAny(users).toBeArray();
+	 * expectAny(users).toBeArray();
 	 *
 	 * @example
 	 * // Testing page data
 	 * const items = await page.locator('.item').allTextContents();
-	 * await expectAny(items).toBeArray();
+	 * expectAny(items).toBeArray();
 	 *
 	 * @example
 	 * // Not arrays
-	 * await expectAny('not array').not.toBeArray();
-	 * await expectAny({ length: 3 }).not.toBeArray();
+	 * expectAny('not array').not.toBeArray();
+	 * expectAny({ length: 3 }).not.toBeArray();
 	 */
-	async toBeArray(received: any) {
+	toBeArray(received: any) {
 		const assertionName = "toBeArray";
 		const pass = Array.isArray(received);
 
@@ -438,28 +441,28 @@ export const expectAny = baseExpect.extend({
 	 *
 	 * @example
 	 * // Valid objects
-	 * await expectAny({}).toBeObject();
-	 * await expectAny({ name: 'John', age: 30 }).toBeObject();
-	 * await expectAny(new Date()).toBeObject();
+	 * expectAny({}).toBeObject();
+	 * expectAny({ name: 'John', age: 30 }).toBeObject();
+	 * expectAny(new Date()).toBeObject();
 	 *
 	 * @example
 	 * // Testing API responses
 	 * const user = await api.getUser(123);
-	 * await expectAny(user).toBeObject();
-	 * await expectAny(user.profile).toBeObject();
+	 * expectAny(user).toBeObject();
+	 * expectAny(user.profile).toBeObject();
 	 *
 	 * @example
 	 * // Testing configuration
 	 * const config = JSON.parse(await fs.readFile('config.json'));
-	 * await expectAny(config).toBeObject();
+	 * expectAny(config).toBeObject();
 	 *
 	 * @example
 	 * // Not objects
-	 * await expectAny([]).not.toBeObject(); // Arrays are excluded
-	 * await expectAny(null).not.toBeObject(); // Null is excluded
-	 * await expectAny('string').not.toBeObject();
+	 * expectAny([]).not.toBeObject(); // Arrays are excluded
+	 * expectAny(null).not.toBeObject(); // Null is excluded
+	 * expectAny('string').not.toBeObject();
 	 */
-	async toBeObject(received: any) {
+	toBeObject(received: any) {
 		const assertionName = "toBeObject";
 		const pass = typeof received === "object" && received !== null && !Array.isArray(received);
 
@@ -498,4 +501,156 @@ export const expectAny = baseExpect.extend({
 			actual: received,
 		};
 	},
+	/**
+	 * Asserts that an object partially matches the expected structure.
+	 *
+	 * This matcher extracts only the fields specified in the expected structure
+	 * from the actual value and compares them using toEqual:
+	 * - Objects: only checks properties present in expected (extra properties ignored)
+	 * - Arrays: finds matching items regardless of position or extra items
+	 * - Nested structures: applies partial matching recursively
+	 *
+	 * @param actual - The object to check
+	 * @param expected - The partial structure to match
+	 *
+	 * @example
+	 * // Match object with extra properties
+	 * const user = { id: 1, name: 'Alice', email: 'alice@example.com', role: 'admin' };
+	 * expectAny(user).toEqualPartially({ name: 'Alice', role: 'admin' });
+	 *
+	 * @example
+	 * // Match array with extra items and any order
+	 * const items = [
+	 *   { id: 1, name: 'Item 1' },
+	 *   { id: 2, name: 'Item 2' },
+	 *   { id: 3, name: 'Item 3' }
+	 * ];
+	 * expectAny(items).toEqualPartially([
+	 *   { id: 2, name: 'Item 2' }
+	 * ]); // Passes even though array has more items
+	 *
+	 * @example
+	 * // Nested partial matching
+	 * const data = {
+	 *   user: { id: 1, name: 'Test', email: 'test@example.com' },
+	 *   items: [{ id: 1 }, { id: 2 }, { id: 3 }],
+	 *   metadata: { count: 10, page: 1 }
+	 * };
+	 * expectAny(data).toEqualPartially({
+	 *   user: { name: 'Test' },
+	 *   items: [{ id: 2 }]
+	 * });
+	 */
+	toEqualPartially(actual: any, expected: any) {
+		const assertionName = "toEqualPartially";
+		let pass = false;
+		let comparisonError = "";
+
+		// Extract only the expected fields from actual for comparison
+		const actualSubset = extractMatchingStructure(actual, expected);
+
+		try {
+			// Compare the subset directly - this gives us a clean diff
+			baseExpect(actualSubset).toEqual(expected);
+			pass = true;
+		} catch (e: any) {
+			pass = false;
+			// Extract just the diff part from Playwright's error message
+			comparisonError = e.message;
+		}
+
+		const message = () => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
+				isNot: this.isNot,
+			});
+
+			if (pass && this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					"Expected value to not partially match:\n" +
+					`${this.utils.printExpected(expected)}\n\n` +
+					"Received:\n" +
+					`${this.utils.printReceived(actual)}`
+				);
+			}
+
+			if (!pass && !this.isNot) {
+				// Parse the error to extract just the diff portion
+				const diffMatch = comparisonError.match(/(?:- Expected.*\n[\s\S]*)/);
+				const diffOnly = diffMatch ? diffMatch[0] : comparisonError;
+
+				return `${hint} // partial match\n\n${diffOnly}`;
+			}
+
+			return hint;
+		};
+
+		return {
+			message,
+			pass,
+			name: assertionName,
+			expected,
+			actual: actualSubset,
+		};
+	},
 });
+
+/**
+ * Extracts a subset of the actual value that matches the structure of expected.
+ * This allows us to compare only the relevant fields and get a clean diff.
+ *
+ * For objects: extracts only the properties present in expected
+ * For arrays: returns the full array (partial matching is value-based, not index-based)
+ * For primitives: returns as-is
+ */
+function extractMatchingStructure(actual: any, expected: any): any {
+	// Handle null/undefined
+	if (actual === null || actual === undefined) {
+		return actual;
+	}
+
+	// For expected array, we need to check if actual array contains matching items
+	if (Array.isArray(expected)) {
+		if (!Array.isArray(actual)) {
+			return actual; // Type mismatch will be caught by comparison
+		}
+
+		// For array partial matching, we find matching items
+		const result: any[] = [];
+		for (const expectedItem of expected) {
+			// Find a matching item in actual
+			const matchingItem = actual.find(actualItem => {
+				try {
+					const extractedItem = extractMatchingStructure(actualItem, expectedItem);
+					baseExpect(extractedItem).toEqual(expectedItem);
+					return true;
+				} catch {
+					return false;
+				}
+			});
+			result.push(matchingItem !== undefined ? extractMatchingStructure(matchingItem, expectedItem) : undefined);
+		}
+		return result;
+	}
+
+	// For expected object, extract only matching properties
+	if (typeof expected === "object" && expected !== null && expected.constructor === Object) {
+		if (typeof actual !== "object" || actual === null || Array.isArray(actual)) {
+			return actual; // Type mismatch will be caught by comparison
+		}
+
+		const result: any = {};
+		for (const key of Object.keys(expected)) {
+			if (key in actual) {
+				result[key] = extractMatchingStructure(actual[key], expected[key]);
+			} else {
+				result[key] = undefined;
+			}
+		}
+		return result;
+	}
+
+	// For primitives and special objects, return as-is
+	return actual;
+}
