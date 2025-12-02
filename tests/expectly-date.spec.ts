@@ -74,42 +74,21 @@ test.describe("toBeCloseTo", () => {
 		const actual = new Date("2023-01-01T12:10:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(actual).toBeCloseTo(expected, { minutes: 5 });
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toBeCloseTo");
+		expect(() => expectlyDate(actual).toBeCloseTo(expected, { minutes: 5 })).toThrow(/toBeCloseTo/);
 	});
 
 	test("should fail when dates are outside hours deviation", async () => {
 		const actual = new Date("2023-01-01T16:00:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(actual).toBeCloseTo(expected, { hours: 3 });
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toBeCloseTo");
+		expect(() => expectlyDate(actual).toBeCloseTo(expected, { hours: 3 })).toThrow(/toBeCloseTo/);
 	});
 
 	test("should fail when dates are outside days deviation", async () => {
 		const actual = new Date("2023-01-05T12:00:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(actual).toBeCloseTo(expected, { days: 2 });
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toBeCloseTo");
+		expect(() => expectlyDate(actual).toBeCloseTo(expected, { days: 2 })).toThrow(/toBeCloseTo/);
 	});
 
 	test("should work with .not for dates outside deviation", async () => {
@@ -122,14 +101,7 @@ test.describe("toBeCloseTo", () => {
 		const actual = new Date("2023-01-01T12:00:05Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(actual).not.toBeCloseTo(expected, { seconds: 10 });
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyDate(actual).not.toBeCloseTo(expected, { seconds: 10 })).toThrow(/not/);
 	});
 
 	test("should handle millisecond precision", async () => {
@@ -221,13 +193,7 @@ test.describe("toHaveDatesAscendingOrder", () => {
 	test("should fail when Date array is in descending order", async () => {
 		const dates = [new Date("2023-01-03"), new Date("2023-01-02"), new Date("2023-01-01")];
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).toHaveDatesAscendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(dates).toHaveDatesAscendingOrder()).toThrow();
 	});
 
 	test("should work with .not for descending arrays", async () => {
@@ -238,14 +204,7 @@ test.describe("toHaveDatesAscendingOrder", () => {
 	test("should fail with .not for ascending arrays", async () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-02"), new Date("2023-01-03")];
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).not.toHaveDatesAscendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyDate(dates).not.toHaveDatesAscendingOrder()).toThrow(/not/);
 	});
 
 	test("should handle dates spanning years", async () => {
@@ -305,13 +264,7 @@ test.describe("toHaveDatesDescendingOrder", () => {
 	test("should fail when Date array is in ascending order", async () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-02"), new Date("2023-01-03")];
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).toHaveDatesDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(dates).toHaveDatesDescendingOrder()).toThrow();
 	});
 
 	test("should work with .not for ascending arrays", async () => {
@@ -322,14 +275,7 @@ test.describe("toHaveDatesDescendingOrder", () => {
 	test("should fail with .not for descending arrays", async () => {
 		const dates = [new Date("2023-01-03"), new Date("2023-01-02"), new Date("2023-01-01")];
 
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).not.toHaveDatesDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyDate(dates).not.toHaveDatesDescendingOrder()).toThrow(/not/);
 	});
 
 	test("should handle dates spanning years", async () => {
@@ -363,25 +309,14 @@ test.describe("toBeBefore", () => {
 	});
 
 	test("should fail when actual date is after expected", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-02")).toBeBefore(new Date("2023-01-01"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be before");
+		expect(() => expectlyDate(new Date("2023-01-02")).toBeBefore(new Date("2023-01-01"))).toThrow(
+			/Expected date to be before/
+		);
 	});
 
 	test("should fail when dates are equal", async () => {
 		const date = new Date("2023-01-01T12:00:00Z");
-		let error: Error | undefined;
-		try {
-			expectlyDate(date).toBeBefore(date);
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(date).toBeBefore(date)).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -389,14 +324,9 @@ test.describe("toBeBefore", () => {
 	});
 
 	test("should fail with .not when actual is before", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-01")).not.toBeBefore(new Date("2023-01-02"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to not be before");
+		expect(() => expectlyDate(new Date("2023-01-01")).not.toBeBefore(new Date("2023-01-02"))).toThrow(
+			/Expected date to not be before/
+		);
 	});
 });
 
@@ -414,25 +344,14 @@ test.describe("toBeAfter", () => {
 	});
 
 	test("should fail when actual date is before expected", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-01")).toBeAfter(new Date("2023-01-02"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be after");
+		expect(() => expectlyDate(new Date("2023-01-01")).toBeAfter(new Date("2023-01-02"))).toThrow(
+			/Expected date to be after/
+		);
 	});
 
 	test("should fail when dates are equal", async () => {
 		const date = new Date("2023-01-01T12:00:00Z");
-		let error: Error | undefined;
-		try {
-			expectlyDate(date).toBeAfter(date);
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(date).toBeAfter(date)).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -440,14 +359,9 @@ test.describe("toBeAfter", () => {
 	});
 
 	test("should fail with .not when actual is after", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-02")).not.toBeAfter(new Date("2023-01-01"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to not be after");
+		expect(() => expectlyDate(new Date("2023-01-02")).not.toBeAfter(new Date("2023-01-01"))).toThrow(
+			/Expected date to not be after/
+		);
 	});
 });
 
@@ -465,24 +379,15 @@ test.describe("toBeBetween", () => {
 	});
 
 	test("should fail when date is before start", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2022-12-31")).toBeBetween(new Date("2023-01-01"), new Date("2023-01-31"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be between");
+		expect(() =>
+			expectlyDate(new Date("2022-12-31")).toBeBetween(new Date("2023-01-01"), new Date("2023-01-31"))
+		).toThrow(/Expected date to be between/);
 	});
 
 	test("should fail when date is after end", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-02-01")).toBeBetween(new Date("2023-01-01"), new Date("2023-01-31"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() =>
+			expectlyDate(new Date("2023-02-01")).toBeBetween(new Date("2023-01-01"), new Date("2023-01-31"))
+		).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -490,14 +395,9 @@ test.describe("toBeBetween", () => {
 	});
 
 	test("should fail with .not when date is between", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-15")).not.toBeBetween(new Date("2023-01-01"), new Date("2023-01-31"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to not be between");
+		expect(() =>
+			expectlyDate(new Date("2023-01-15")).not.toBeBetween(new Date("2023-01-01"), new Date("2023-01-31"))
+		).toThrow(/Expected date to not be between/);
 	});
 });
 
@@ -512,24 +412,13 @@ test.describe("toBeSameDay", () => {
 	});
 
 	test("should fail when dates are on different days", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-15")).toBeSameDay(new Date("2023-01-16"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to be the same day");
+		expect(() => expectlyDate(new Date("2023-01-15")).toBeSameDay(new Date("2023-01-16"))).toThrow(
+			/Expected dates to be the same day/
+		);
 	});
 
 	test("should fail when dates are in different months", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-31")).toBeSameDay(new Date("2023-02-01"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(new Date("2023-01-31")).toBeSameDay(new Date("2023-02-01"))).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -537,14 +426,9 @@ test.describe("toBeSameDay", () => {
 	});
 
 	test("should fail with .not when dates are same day", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-15T08:00:00Z")).not.toBeSameDay(new Date("2023-01-15T20:00:00Z"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to not be the same day");
+		expect(() =>
+			expectlyDate(new Date("2023-01-15T08:00:00Z")).not.toBeSameDay(new Date("2023-01-15T20:00:00Z"))
+		).toThrow(/Expected dates to not be the same day/);
 	});
 });
 
@@ -554,24 +438,13 @@ test.describe("toBeSameMonth", () => {
 	});
 
 	test("should fail when dates are in different months", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-31")).toBeSameMonth(new Date("2023-02-01"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to be in the same month");
+		expect(() => expectlyDate(new Date("2023-01-31")).toBeSameMonth(new Date("2023-02-01"))).toThrow(
+			/Expected dates to be in the same month/
+		);
 	});
 
 	test("should fail when dates are in different years", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-15")).toBeSameMonth(new Date("2024-01-15"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(new Date("2023-01-15")).toBeSameMonth(new Date("2024-01-15"))).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -579,14 +452,9 @@ test.describe("toBeSameMonth", () => {
 	});
 
 	test("should fail with .not when dates are same month", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-01")).not.toBeSameMonth(new Date("2023-01-31"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to not be in the same month");
+		expect(() => expectlyDate(new Date("2023-01-01")).not.toBeSameMonth(new Date("2023-01-31"))).toThrow(
+			/Expected dates to not be in the same month/
+		);
 	});
 });
 
@@ -596,14 +464,9 @@ test.describe("toBeSameYear", () => {
 	});
 
 	test("should fail when dates are in different years", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-12-31")).toBeSameYear(new Date("2024-01-01"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to be in the same year");
+		expect(() => expectlyDate(new Date("2023-12-31")).toBeSameYear(new Date("2024-01-01"))).toThrow(
+			/Expected dates to be in the same year/
+		);
 	});
 
 	test("should work with .not", async () => {
@@ -611,14 +474,9 @@ test.describe("toBeSameYear", () => {
 	});
 
 	test("should fail with .not when dates are same year", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-01")).not.toBeSameYear(new Date("2023-12-31"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to not be in the same year");
+		expect(() => expectlyDate(new Date("2023-01-01")).not.toBeSameYear(new Date("2023-12-31"))).toThrow(
+			/Expected dates to not be in the same year/
+		);
 	});
 });
 
@@ -636,26 +494,13 @@ test.describe("toBeToday", () => {
 	test("should fail when date is yesterday", async () => {
 		const yesterday = new Date();
 		yesterday.setDate(yesterday.getDate() - 1);
-		let error: Error | undefined;
-		try {
-			expectlyDate(yesterday).toBeToday();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be today");
+		expect(() => expectlyDate(yesterday).toBeToday()).toThrow(/Expected date to be today/);
 	});
 
 	test("should fail when date is tomorrow", async () => {
 		const tomorrow = new Date();
 		tomorrow.setDate(tomorrow.getDate() + 1);
-		let error: Error | undefined;
-		try {
-			expectlyDate(tomorrow).toBeToday();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(tomorrow).toBeToday()).toThrow();
 	});
 
 	test("should work with .not for past dates", async () => {
@@ -663,14 +508,7 @@ test.describe("toBeToday", () => {
 	});
 
 	test("should fail with .not when date is today", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date()).not.toBeToday();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to not be today");
+		expect(() => expectlyDate(new Date()).not.toBeToday()).toThrow(/Expected date to not be today/);
 	});
 });
 
@@ -689,26 +527,13 @@ test.describe("toBeYesterday", () => {
 	});
 
 	test("should fail when date is today", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date()).toBeYesterday();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be yesterday");
+		expect(() => expectlyDate(new Date()).toBeYesterday()).toThrow(/Expected date to be yesterday/);
 	});
 
 	test("should fail when date is two days ago", async () => {
 		const twoDaysAgo = new Date();
 		twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-		let error: Error | undefined;
-		try {
-			expectlyDate(twoDaysAgo).toBeYesterday();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(twoDaysAgo).toBeYesterday()).toThrow();
 	});
 
 	test("should work with .not for today", async () => {
@@ -731,26 +556,13 @@ test.describe("toBeTomorrow", () => {
 	});
 
 	test("should fail when date is today", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date()).toBeTomorrow();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be tomorrow");
+		expect(() => expectlyDate(new Date()).toBeTomorrow()).toThrow(/Expected date to be tomorrow/);
 	});
 
 	test("should fail when date is two days from now", async () => {
 		const twoDaysLater = new Date();
 		twoDaysLater.setDate(twoDaysLater.getDate() + 2);
-		let error: Error | undefined;
-		try {
-			expectlyDate(twoDaysLater).toBeTomorrow();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(twoDaysLater).toBeTomorrow()).toThrow();
 	});
 
 	test("should work with .not for today", async () => {
@@ -867,14 +679,7 @@ test.describe("toBeInThePast", () => {
 
 	test("should fail for future dates", async () => {
 		const future = new Date(Date.now() + 10000);
-		let error: Error | undefined;
-		try {
-			expectlyDate(future).toBeInThePast();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be in the past");
+		expect(() => expectlyDate(future).toBeInThePast()).toThrow(/Expected date to be in the past/);
 	});
 
 	test("should work with .not for future dates", async () => {
@@ -895,14 +700,7 @@ test.describe("toBeInTheFuture", () => {
 	});
 
 	test("should fail for past dates", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2020-01-01")).toBeInTheFuture();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be in the future");
+		expect(() => expectlyDate(new Date("2020-01-01")).toBeInTheFuture()).toThrow(/Expected date to be in the future/);
 	});
 
 	test("should work with .not for past dates", async () => {
@@ -924,24 +722,11 @@ test.describe("toBeLeapYear", () => {
 	});
 
 	test("should fail for non-leap year", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("2023-01-01")).toBeLeapYear();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected year to be a leap year");
+		expect(() => expectlyDate(new Date("2023-01-01")).toBeLeapYear()).toThrow(/Expected year to be a leap year/);
 	});
 
 	test("should fail for year divisible by 100 but not 400", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate(new Date("1900-01-01")).toBeLeapYear();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(new Date("1900-01-01")).toBeLeapYear()).toThrow();
 	});
 
 	test("should work with .not for non-leap year", async () => {
@@ -977,25 +762,11 @@ test.describe("toHaveDateRange", () => {
 
 	test("should fail when range doesn't match", async () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-11")];
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).toHaveDateRange({ days: 20 });
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date range to match");
+		expect(() => expectlyDate(dates).toHaveDateRange({ days: 20 })).toThrow(/Expected date range to match/);
 	});
 
 	test("should throw for empty array", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate([]).toHaveDateRange({ days: 10 });
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Array must contain at least one date");
+		expect(() => expectlyDate([]).toHaveDateRange({ days: 10 })).toThrow(/Array must contain at least one date/);
 	});
 });
 
@@ -1035,24 +806,13 @@ test.describe("toHaveConsecutiveDates", () => {
 
 	test("should fail for non-consecutive months", async () => {
 		const dates = [new Date("2023-01-15"), new Date("2023-03-15")];
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).toHaveConsecutiveDates("month");
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(dates).toHaveConsecutiveDates("month")).toThrow();
 	});
 
 	test("should throw for array with less than 2 dates", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate([new Date()]).toHaveConsecutiveDates("day");
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Array must contain at least two dates");
+		expect(() => expectlyDate([new Date()]).toHaveConsecutiveDates("day")).toThrow(
+			/Array must contain at least two dates/
+		);
 	});
 });
 
@@ -1081,14 +841,9 @@ test.describe("toHaveDatesWithinRange", () => {
 	});
 
 	test("should throw for empty array", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate([]).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"));
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Array must contain at least one date");
+		expect(() => expectlyDate([]).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"))).toThrow(
+			/Array must contain at least one date/
+		);
 	});
 });
 
@@ -1123,13 +878,7 @@ test.describe("toHaveUniqueDates", () => {
 
 	test("should fail when same day but different times with ignoreTime", async () => {
 		const dates = [new Date("2023-01-01T08:00:00Z"), new Date("2023-01-01T12:00:00Z")];
-		let error: Error | undefined;
-		try {
-			expectlyDate(dates).toHaveUniqueDates(true);
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate(dates).toHaveUniqueDates(true)).toThrow();
 	});
 
 	test("should pass when same day but different times without ignoreTime", async () => {
@@ -1138,14 +887,7 @@ test.describe("toHaveUniqueDates", () => {
 	});
 
 	test("should throw for empty array", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate([]).toHaveUniqueDates();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Array must contain at least one date");
+		expect(() => expectlyDate([]).toHaveUniqueDates()).toThrow(/Array must contain at least one date/);
 	});
 });
 
@@ -1163,34 +905,15 @@ test.describe("toBeValidISODate", () => {
 	});
 
 	test("should fail for invalid ISO format", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate("2023-01-15").toBeValidISODate();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected string to be a valid ISO 8601 date");
+		expect(() => expectlyDate("2023-01-15").toBeValidISODate()).toThrow(/Expected string to be a valid ISO 8601 date/);
 	});
 
 	test("should fail for invalid date values", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate("2023-13-45T99:99:99Z").toBeValidISODate();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate("2023-13-45T99:99:99Z").toBeValidISODate()).toThrow();
 	});
 
 	test("should fail for non-ISO format", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate("01/15/2023").toBeValidISODate();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyDate("01/15/2023").toBeValidISODate()).toThrow();
 	});
 
 	test("should work with .not for invalid format", async () => {
@@ -1198,14 +921,9 @@ test.describe("toBeValidISODate", () => {
 	});
 
 	test("should fail with .not for valid ISO date", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyDate("2023-01-15T12:30:45.123Z").not.toBeValidISODate();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected string to not be a valid ISO 8601 date");
+		expect(() => expectlyDate("2023-01-15T12:30:45.123Z").not.toBeValidISODate()).toThrow(
+			/Expected string to not be a valid ISO 8601 date/
+		);
 	});
 });
 
@@ -1243,14 +961,7 @@ test.describe("toMatchTimeZone", () => {
 		const localOffset = -date.getTimezoneOffset();
 		// Test with an offset that's definitely different from local
 		const wrongOffset = localOffset === 330 ? 0 : 330;
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(date).toMatchTimeZone(wrongOffset);
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(date).toMatchTimeZone(wrongOffset)).toThrow(/Expected date to match timezone offset/);
 	});
 
 	test("should fail with wrong string offset", async () => {
@@ -1258,14 +969,7 @@ test.describe("toMatchTimeZone", () => {
 		const localOffset = -date.getTimezoneOffset();
 		// Test with an offset that's different from local
 		const wrongOffset = localOffset === 330 ? "+00:00" : "+05:30";
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(date).toMatchTimeZone(wrongOffset);
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(date).toMatchTimeZone(wrongOffset)).toThrow(/Expected date to match timezone offset/);
 	});
 
 	test("should work with negation (numeric)", async () => {
@@ -1284,14 +988,7 @@ test.describe("toMatchTimeZone", () => {
 
 	test("should throw for invalid offset format", async () => {
 		const date = new Date("2024-06-15T12:00:00Z");
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(date).toMatchTimeZone("invalid");
-				throw new Error("Expected error to be thrown");
-			} catch (error: any) {
-				if (error.message === "Expected error to be thrown") throw error;
-			}
-		});
+		expect(() => expectlyDate(date).toMatchTimeZone("invalid")).toThrow(/Invalid timezone offset format/);
 	});
 });
 
@@ -1303,14 +1000,9 @@ test.describe("toBeStartOfMonth", () => {
 	});
 
 	test("should fail for non-first day of month", async () => {
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(new Date("2024-01-15")).toBeStartOfMonth();
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-15")).toBeStartOfMonth()).toThrow(
+			/Expected date to be the start of the month/
+		);
 	});
 
 	test("should work with negation", async () => {
@@ -1328,14 +1020,9 @@ test.describe("toBeEndOfMonth", () => {
 	});
 
 	test("should fail for non-last day of month", async () => {
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(new Date("2024-01-15")).toBeEndOfMonth();
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-15")).toBeEndOfMonth()).toThrow(
+			/Expected date to be the end of the month/
+		);
 	});
 
 	test("should handle February in non-leap year", async () => {
@@ -1361,14 +1048,9 @@ test.describe("toHaveDateGapsLargerThan", () => {
 
 	test("should fail when no gaps larger than specified duration", async () => {
 		const dates = [new Date("2024-01-01"), new Date("2024-01-02"), new Date("2024-01-03")];
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(dates).toHaveDateGapsLargerThan({ days: 7 });
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(dates).toHaveDateGapsLargerThan({ days: 7 })).toThrow(
+			/Expected dates to have gaps larger than/
+		);
 	});
 
 	test("should work with hours", async () => {
@@ -1428,14 +1110,9 @@ test.describe("toHaveDateGapsLargerThan", () => {
 
 	test("should fail when no gaps match months criteria", async () => {
 		const dates = [new Date("2024-01-01"), new Date("2024-01-15"), new Date("2024-02-01")];
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(dates).toHaveDateGapsLargerThan({ months: 2 });
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(dates).toHaveDateGapsLargerThan({ months: 2 })).toThrow(
+			/Expected dates to have gaps larger than/
+		);
 	});
 });
 
@@ -1465,14 +1142,7 @@ test.describe("toBeInQuarter", () => {
 	});
 
 	test("should fail for wrong quarter", async () => {
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(new Date("2024-01-15")).toBeInQuarter(2);
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-15")).toBeInQuarter(2)).toThrow(/Expected date to be in Q/);
 	});
 
 	test("should work with negation", async () => {
@@ -1500,14 +1170,7 @@ test.describe("toBeSpecificDayOfWeek", () => {
 	});
 
 	test("should fail for wrong day", async () => {
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek("Tuesday");
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek("Tuesday")).toThrow(/Expected date to be/);
 	});
 
 	test("should work with negation", async () => {
@@ -1516,14 +1179,7 @@ test.describe("toBeSpecificDayOfWeek", () => {
 	});
 
 	test("should throw for invalid day number", async () => {
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek(7);
-				throw new Error("Expected error to be thrown");
-			} catch (error: any) {
-				if (error.message === "Expected error to be thrown") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek(7)).toThrow(/Invalid day/);
 	});
 });
 
@@ -1541,14 +1197,7 @@ test.describe("toBeInMonth", () => {
 	});
 
 	test("should fail for wrong month", async () => {
-		await test.step("expect to throw", async () => {
-			try {
-				expectlyDate(new Date("2024-01-15")).toBeInMonth("February");
-				throw new Error("Expected assertion to fail");
-			} catch (error: any) {
-				if (error.message === "Expected assertion to fail") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-15")).toBeInMonth("February")).toThrow(/Expected date to be in/);
 	});
 
 	test("should work with negation", async () => {
@@ -1557,22 +1206,7 @@ test.describe("toBeInMonth", () => {
 	});
 
 	test("should throw for invalid month number", async () => {
-		await test.step("expect to throw for 0", async () => {
-			try {
-				expectlyDate(new Date("2024-01-01")).toBeInMonth(0);
-				throw new Error("Expected error to be thrown");
-			} catch (error: any) {
-				if (error.message === "Expected error to be thrown") throw error;
-			}
-		});
-
-		await test.step("expect to throw for 13", async () => {
-			try {
-				expectlyDate(new Date("2024-01-01")).toBeInMonth(13);
-				throw new Error("Expected error to be thrown");
-			} catch (error: any) {
-				if (error.message === "Expected error to be thrown") throw error;
-			}
-		});
+		expect(() => expectlyDate(new Date("2024-01-01")).toBeInMonth(0)).toThrow(/Invalid month/);
+		expect(() => expectlyDate(new Date("2024-01-01")).toBeInMonth(13)).toThrow(/Invalid month/);
 	});
 });

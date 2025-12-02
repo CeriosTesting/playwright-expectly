@@ -59,15 +59,7 @@ test.describe("toHaveAscendingOrder", () => {
 
 	test("should fail with .not for ascending arrays", async () => {
 		const ascending = ["apple", "banana", "cherry", "date"];
-
-		let error: Error | undefined;
-		try {
-			expectlyStringArray(ascending).not.toHaveAscendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyStringArray(ascending).not.toHaveAscendingOrder()).toThrow(/not/);
 	});
 
 	test("should handle large arrays", async () => {
@@ -139,15 +131,7 @@ test.describe("toHaveDescendingOrder", () => {
 
 	test("should fail with .not for descending arrays", async () => {
 		const descending = ["date", "cherry", "banana", "apple"];
-
-		let error: Error | undefined;
-		try {
-			expectlyStringArray(descending).not.toHaveDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyStringArray(descending).not.toHaveDescendingOrder()).toThrow(/not/);
 	});
 
 	test("should handle large arrays", async () => {
@@ -163,13 +147,7 @@ test.describe("toHaveDescendingOrder", () => {
 	test("should handle mixed case strings", async () => {
 		const mixed = ["Zebra", "apple", "Cherry", "BANANA"];
 		// This should fail since the order is not descending
-		let error: Error | undefined;
-		try {
-			expectlyStringArray(mixed).toHaveDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyStringArray(mixed).toHaveDescendingOrder()).toThrow();
 	});
 });
 
@@ -195,13 +173,7 @@ test.describe("toHaveStrictlyAscendingOrder", () => {
 	});
 
 	test("should fail for descending order", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyStringArray(["c", "b", "a"]).toHaveStrictlyAscendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyStringArray(["c", "b", "a"]).toHaveStrictlyAscendingOrder()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -231,13 +203,7 @@ test.describe("toHaveStrictlyDescendingOrder", () => {
 	});
 
 	test("should fail for ascending order", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyStringArray(["a", "b", "c"]).toHaveStrictlyDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyStringArray(["a", "b", "c"]).toHaveStrictlyDescendingOrder()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -315,13 +281,7 @@ test.describe("toHaveUniqueValues", () => {
 	});
 
 	test("should fail for multiple duplicates", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyStringArray(["a", "b", "b", "c", "c", "d"]).toHaveUniqueValues();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyStringArray(["a", "b", "b", "c", "c", "d"]).toHaveUniqueValues()).toThrow();
 	});
 
 	test("should work with .not", async () => {

@@ -64,15 +64,7 @@ test.describe("toHaveAscendingOrder", () => {
 
 	test("should fail with .not for ascending arrays", async () => {
 		const ascending = [1, 2, 3, 4, 5];
-
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray(ascending).not.toHaveAscendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyNumberArray(ascending).not.toHaveAscendingOrder()).toThrow(/not/);
 	});
 
 	test("should handle large arrays", async () => {
@@ -149,15 +141,7 @@ test.describe("toHaveDescendingOrder", () => {
 
 	test("should fail with .not for descending arrays", async () => {
 		const descending = [5, 4, 3, 2, 1];
-
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray(descending).not.toHaveDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
+		expect(() => expectlyNumberArray(descending).not.toHaveDescendingOrder()).toThrow(/not/);
 	});
 
 	test("should handle large arrays", async () => {
@@ -439,13 +423,7 @@ test.describe("toBeAllPositive", () => {
 	});
 
 	test("should fail for negative values", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([1, 2, -1]).toBeAllPositive();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([1, 2, -1]).toBeAllPositive()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -474,13 +452,7 @@ test.describe("toBeAllNegative", () => {
 	});
 
 	test("should fail for positive values", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([-1, -2, 1]).toBeAllNegative();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([-1, -2, 1]).toBeAllNegative()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -534,13 +506,7 @@ test.describe("toBeAllGreaterThan", () => {
 	});
 
 	test("should fail when value is less than threshold", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([5, 6, 3]).toBeAllGreaterThan(4);
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([5, 6, 3]).toBeAllGreaterThan(4)).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -565,13 +531,7 @@ test.describe("toBeAllLessThan", () => {
 	});
 
 	test("should fail when value is greater than threshold", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([3, 4, 6]).toBeAllLessThan(5);
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([3, 4, 6]).toBeAllLessThan(5)).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -604,13 +564,7 @@ test.describe("toHaveStrictlyAscendingOrder", () => {
 	});
 
 	test("should fail for descending order", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([5, 4, 3]).toHaveStrictlyAscendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([5, 4, 3]).toHaveStrictlyAscendingOrder()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -643,13 +597,7 @@ test.describe("toHaveStrictlyDescendingOrder", () => {
 	});
 
 	test("should fail for ascending order", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([1, 2, 3]).toHaveStrictlyDescendingOrder();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([1, 2, 3]).toHaveStrictlyDescendingOrder()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -727,13 +675,7 @@ test.describe("toHaveUniqueValues", () => {
 	});
 
 	test("should fail for multiple duplicates", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([1, 2, 2, 3, 3, 4]).toHaveUniqueValues();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([1, 2, 2, 3, 3, 4]).toHaveUniqueValues()).toThrow();
 	});
 
 	test("should work with .not", async () => {
@@ -781,13 +723,7 @@ test.describe("toHaveConsecutiveIntegers", () => {
 	});
 
 	test("should fail for duplicates", async () => {
-		let error: Error | undefined;
-		try {
-			expectlyNumberArray([1, 2, 2, 3]).toHaveConsecutiveIntegers();
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyNumberArray([1, 2, 2, 3]).toHaveConsecutiveIntegers()).toThrow();
 	});
 
 	test("should work with .not", async () => {
