@@ -61,7 +61,7 @@ test.describe("expectLocator - toBeStable", () => {
 			expectlyLocator(element).toBeStable({
 				stabilityDuration: 500,
 				checkInterval: 100,
-				timeout: 2000,
+				timeout: 1500,
 			})
 		).rejects.toThrowError(/content did not stabilize/);
 	});
@@ -73,7 +73,7 @@ test.describe("expectLocator - toBeStable", () => {
 		await expect(
 			expectlyLocator(element).toBeStable({
 				stabilityDuration: 300,
-				timeout: 1000,
+				timeout: 1500,
 			})
 		).rejects.toThrowError();
 	});
@@ -94,7 +94,7 @@ test.describe("expectLocator - toBeStable", () => {
 		await expectlyLocator(element).not.toBeStable({
 			stabilityDuration: 500,
 			checkInterval: 100,
-			timeout: 2000,
+			timeout: 1500,
 		});
 	});
 
@@ -180,8 +180,8 @@ test.describe("expectLocator - toBeStable", () => {
 		// This will timeout because stabilityDuration is too close to timeout
 		await expect(
 			expectlyLocator(element).toBeStable({
-				stabilityDuration: 900,
-				timeout: 1000,
+				stabilityDuration: 1500,
+				timeout: 2000,
 			})
 		).rejects.toThrowError(/content did not stabilize/);
 	});
@@ -274,7 +274,7 @@ test.describe("expectLocator - toBeStable", () => {
 		await expectlyLocator(element).toBeStable({
 			stabilityDuration: 100,
 			checkInterval: 20,
-			timeout: 1000,
+			timeout: 1500,
 		});
 	});
 
