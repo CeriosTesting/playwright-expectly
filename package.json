@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"author": "Ronald Veth - Cerios",
 	"description": "Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions like toBeAlphanumeric, toHaveAscendingOrder, toBeInTheFuture, and 50+ more matchers.",
 	"license": "MIT",
