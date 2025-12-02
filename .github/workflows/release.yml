@@ -35,8 +35,7 @@ jobs:
       - name: Version and Publish to npm
         uses: changesets/action@v1
         with:
-          version: changeset version
-          publish: changeset publish --provenance
+          publish: npx changeset publish --provenance
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
