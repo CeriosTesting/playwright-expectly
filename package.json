@@ -54,8 +54,6 @@
 		"biome:migrate": "biome migrate --write",
 		"build": "tsup",
 		"changeset": "npx changeset",
-		"changeset:publish": "tsup && changeset publish",
-		"changeset:version": "changeset version && npm i",
 		"check": "biome check --write",
 		"check-exports": "attw --pack .",
 		"compile": "tsc --noEmit",
