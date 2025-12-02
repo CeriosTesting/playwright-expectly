@@ -70,34 +70,15 @@ test.describe("toStartWith", () => {
 		});
 
 		test("should fail when expected is longer than actual", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("Hi").toStartWith("Hello");
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to start with");
+			expect(() => expectlyString("Hi").toStartWith("Hello")).toThrow(/Expected string to start with/);
 		});
 
 		test("should fail for empty string with non-empty expected", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("").toStartWith("Hello");
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("").toStartWith("Hello")).toThrow();
 		});
 
 		test("should fail when substring is in middle", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("The Hello World").toStartWith("Hello");
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("The Hello World").toStartWith("Hello")).toThrow();
 		});
 
 		test("should work with .not when string doesn't start with value", async () => {
@@ -125,14 +106,7 @@ test.describe("toStartWith", () => {
 		});
 
 		test("should fail with .not when entire string matches", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("Hello").not.toStartWith("Hello");
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("not");
+			expect(() => expectlyString("Hello").not.toStartWith("Hello")).toThrow(/not/);
 		});
 
 		test("should handle very long strings", async () => {
@@ -218,13 +192,7 @@ test.describe("toEndWith", () => {
 		});
 
 		test("should fail when case doesn't match", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("hello world").toEndWith("WORLD");
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("hello world").toEndWith("WORLD")).toThrow();
 		});
 
 		test("should work with .not when string doesn't end with value", async () => {
@@ -232,14 +200,7 @@ test.describe("toEndWith", () => {
 		});
 
 		test("should fail with .not when string ends with expected", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("Hello World").not.toEndWith("World");
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not end with");
+			expect(() => expectlyString("Hello World").not.toEndWith("World")).toThrow(/Expected string to not end with/);
 		});
 	});
 });
@@ -275,14 +236,7 @@ test.describe("toMatchPattern", () => {
 		});
 
 		test("should fail when string doesn't match pattern", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("abc").toMatchPattern(/\d+/);
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to match pattern");
+			expect(() => expectlyString("abc").toMatchPattern(/\d+/)).toThrow(/Expected string to match pattern/);
 		});
 
 		test("should work with .not when string doesn't match", async () => {
@@ -290,14 +244,9 @@ test.describe("toMatchPattern", () => {
 		});
 
 		test("should fail with .not when string matches pattern", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("test123").not.toMatchPattern(/test\d+/);
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not match pattern");
+			expect(() => expectlyString("test123").not.toMatchPattern(/test\d+/)).toThrow(
+				/Expected string to not match pattern/
+			);
 		});
 	});
 });
@@ -329,44 +278,21 @@ test.describe("toBeValidEmail", () => {
 		});
 
 		test("should fail with invalid email - no @", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("userexample.com").toBeValidEmail();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to be a valid email address");
+			expect(() => expectlyString("userexample.com").toBeValidEmail()).toThrow(
+				/Expected string to be a valid email address/
+			);
 		});
 
 		test("should fail with invalid email - no domain", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("user@").toBeValidEmail();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("user@").toBeValidEmail()).toThrow();
 		});
 
 		test("should fail with invalid email - no TLD", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("user@example").toBeValidEmail();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("user@example").toBeValidEmail()).toThrow();
 		});
 
 		test("should fail with spaces", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("user @example.com").toBeValidEmail();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("user @example.com").toBeValidEmail()).toThrow();
 		});
 
 		test("should work with .not for invalid email", async () => {
@@ -374,14 +300,9 @@ test.describe("toBeValidEmail", () => {
 		});
 
 		test("should fail with .not for valid email", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("user@example.com").not.toBeValidEmail();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not be a valid email address");
+			expect(() => expectlyString("user@example.com").not.toBeValidEmail()).toThrow(
+				/Expected string to not be a valid email address/
+			);
 		});
 	});
 });
@@ -425,34 +346,15 @@ test.describe("toBeValidUrl", () => {
 		});
 
 		test("should fail with invalid URL - no protocol", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("example.com").toBeValidUrl();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to be a valid URL");
+			expect(() => expectlyString("example.com").toBeValidUrl()).toThrow(/Expected string to be a valid URL/);
 		});
 
 		test("should fail with invalid URL - malformed", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("http://").toBeValidUrl();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("http://").toBeValidUrl()).toThrow();
 		});
 
 		test("should fail with spaces", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("http://example .com").toBeValidUrl();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("http://example .com").toBeValidUrl()).toThrow();
 		});
 
 		test("should work with .not for invalid URL", async () => {
@@ -460,14 +362,9 @@ test.describe("toBeValidUrl", () => {
 		});
 
 		test("should fail with .not for valid URL", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("https://example.com").not.toBeValidUrl();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not be a valid URL");
+			expect(() => expectlyString("https://example.com").not.toBeValidUrl()).toThrow(
+				/Expected string to not be a valid URL/
+			);
 		});
 	});
 });
@@ -495,44 +392,19 @@ test.describe("toBeAlphanumeric", () => {
 		});
 
 		test("should fail with spaces", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("abc 123").toBeAlphanumeric();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to be alphanumeric");
+			expect(() => expectlyString("abc 123").toBeAlphanumeric()).toThrow(/Expected string to be alphanumeric/);
 		});
 
 		test("should fail with special characters", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("abc-123").toBeAlphanumeric();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("abc-123").toBeAlphanumeric()).toThrow();
 		});
 
 		test("should fail with punctuation", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("abc!").toBeAlphanumeric();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("abc!").toBeAlphanumeric()).toThrow();
 		});
 
 		test("should fail with empty string", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("").toBeAlphanumeric();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("").toBeAlphanumeric()).toThrow();
 		});
 
 		test("should work with .not for non-alphanumeric", async () => {
@@ -540,14 +412,7 @@ test.describe("toBeAlphanumeric", () => {
 		});
 
 		test("should fail with .not for alphanumeric", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("abc123").not.toBeAlphanumeric();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not be alphanumeric");
+			expect(() => expectlyString("abc123").not.toBeAlphanumeric()).toThrow(/Expected string to not be alphanumeric/);
 		});
 	});
 });
@@ -567,64 +432,27 @@ test.describe("toBeNumericString", () => {
 		});
 
 		test("should fail with letters", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("abc").toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to be numeric");
+			expect(() => expectlyString("abc").toBeNumericString()).toThrow(/Expected string to be numeric/);
 		});
 
 		test("should fail with mixed letters and numbers", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("123abc").toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("123abc").toBeNumericString()).toThrow();
 		});
 
 		test("should fail with decimal point", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("123.456").toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("123.456").toBeNumericString()).toThrow();
 		});
 
 		test("should fail with negative sign", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("-123").toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("-123").toBeNumericString()).toThrow();
 		});
 
 		test("should fail with spaces", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("123 456").toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("123 456").toBeNumericString()).toThrow();
 		});
 
 		test("should fail with empty string", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("").toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString("").toBeNumericString()).toThrow();
 		});
 
 		test("should work with .not for non-numeric", async () => {
@@ -632,14 +460,7 @@ test.describe("toBeNumericString", () => {
 		});
 
 		test("should fail with .not for numeric", async () => {
-			let error: Error | undefined;
-			try {
-				expectlyString("123456").not.toBeNumericString();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not be numeric");
+			expect(() => expectlyString("123456").not.toBeNumericString()).toThrow(/Expected string to not be numeric/);
 		});
 	});
 
@@ -693,26 +514,13 @@ test.describe("toBeNumericString", () => {
 			];
 
 			for (const uuid of invalidUuids) {
-				let error: Error | undefined;
-				try {
-					expectlyString(uuid).toBeUUID();
-				} catch (e) {
-					error = e as Error;
-				}
-				expect(error).toBeDefined();
+				expect(() => expectlyString(uuid).toBeUUID()).toThrow();
 			}
 		});
 
 		test("should fail when UUID version doesn't match", async () => {
 			const uuidV4 = "550e8400-e29b-41d4-a716-446655440000";
-
-			let error: Error | undefined;
-			try {
-				expectlyString(uuidV4).toBeUUID(1); // Wrong version
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
+			expect(() => expectlyString(uuidV4).toBeUUID(1)).toThrow(); // Wrong version
 		});
 
 		test("should work with .not", async () => {
@@ -722,15 +530,7 @@ test.describe("toBeNumericString", () => {
 
 		test("should fail with .not for valid UUID", async () => {
 			const uuid = "550e8400-e29b-41d4-a716-446655440000";
-
-			let error: Error | undefined;
-			try {
-				expectlyString(uuid).not.toBeUUID();
-			} catch (e) {
-				error = e as Error;
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to not be a valid UUID");
+			expect(() => expectlyString(uuid).not.toBeUUID()).toThrow(/Expected string to not be a valid UUID/);
 		});
 
 		test("should handle case insensitivity", async () => {

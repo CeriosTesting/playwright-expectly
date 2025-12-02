@@ -190,16 +190,11 @@ test.describe("toEqualPartially", () => {
 			name: "Alice",
 		};
 
-		let error: Error | undefined;
-		try {
+		expect(() =>
 			expectlyAny(actual).toEqualPartially({
 				name: "Bob",
-			});
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toEqualPartially");
+			})
+		).toThrow(/toEqualPartially/);
 	});
 
 	test("should fail when expected array item is missing", async () => {
@@ -208,13 +203,7 @@ test.describe("toEqualPartially", () => {
 			{ id: 2, name: "Item 2" },
 		];
 
-		let error: Error | undefined;
-		try {
-			expectlyAny(actual).toEqualPartially([{ id: 3, name: "Item 3" }]);
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+		expect(() => expectlyAny(actual).toEqualPartially([{ id: 3, name: "Item 3" }])).toThrow();
 	});
 
 	test("should fail when expected nested property is missing", async () => {
@@ -225,17 +214,13 @@ test.describe("toEqualPartially", () => {
 			},
 		};
 
-		let error: Error | undefined;
-		try {
+		expect(() =>
 			expectlyAny(actual).toEqualPartially({
 				user: {
 					email: "alice@example.com",
 				},
-			});
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
+			})
+		).toThrow();
 	});
 
 	test("should work with .not for non-matching values", async () => {
@@ -256,16 +241,11 @@ test.describe("toEqualPartially", () => {
 			extra: "data",
 		};
 
-		let error: Error | undefined;
-		try {
+		expect(() =>
 			expectlyAny(actual).not.toEqualPartially({
 				name: "Alice",
-			});
-		} catch (e) {
-			error = e as Error;
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not partially match");
+			})
+		).toThrow(/not partially match/);
 	});
 
 	test("should handle mixed array and object nesting", async () => {

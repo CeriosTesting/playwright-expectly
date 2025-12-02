@@ -2,7 +2,7 @@ import type { Expect } from "@playwright/test";
 import { mergeExpects } from "@playwright/test";
 import { expectlyAny } from "src/expectly-any";
 import { expectlyDate } from "src/expectly-date";
-import { expectlyLocator } from "src/expectly-locator";
+import { expectlyLocator } from "src/expectly-locator/index";
 import { expectlyNumberArray } from "src/expectly-number-array";
 import { expectlyObjectArray } from "src/expectly-object-array";
 import { expectlyString } from "src/expectly-string";
