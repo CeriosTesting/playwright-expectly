@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"author": "Ronald Veth - Cerios",
 	"description": "Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions like toBeAlphanumeric, toHaveAscendingOrder, toBeInTheFuture, and 50+ more matchers.",
 	"license": "MIT",
@@ -54,8 +54,6 @@
 		"biome:migrate": "biome migrate --write",
 		"build": "tsup",
 		"changeset": "npx changeset",
-		"changeset:publish": "tsup && changeset publish",
-		"changeset:version": "changeset version && npm i",
 		"check": "biome check --write",
 		"check-exports": "attw --pack .",
 		"compile": "tsc --noEmit",

@@ -1,3 +1,4 @@
+import type { Expect } from "@playwright/test";
 import { mergeExpects } from "@playwright/test";
 import { expectlyAny } from "src/expectly-any";
 import { expectlyDate } from "src/expectly-date";
@@ -6,6 +7,17 @@ import { expectlyNumberArray } from "src/expectly-number-array";
 import { expectlyObjectArray } from "src/expectly-object-array";
 import { expectlyString } from "src/expectly-string";
 import { expectlyStringArray } from "src/expectly-string-array";
+
+// Extract matcher types from each expectly module
+type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
+
+type ExpectlyMatchers = ExtractMatchers<typeof expectlyAny> &
+	ExtractMatchers<typeof expectlyDate> &
+	ExtractMatchers<typeof expectlyLocator> &
+	ExtractMatchers<typeof expectlyNumberArray> &
+	ExtractMatchers<typeof expectlyObjectArray> &
+	ExtractMatchers<typeof expectlyString> &
+	ExtractMatchers<typeof expectlyStringArray>;
 
 /**
  * Expectly - Enhanced Playwright Test Assertions
@@ -25,7 +37,7 @@ import { expectlyStringArray } from "src/expectly-string-array";
  *
  * Made with ❤️ by Ronald Veth from Cerios
  */
-export const expectly = mergeExpects(
+export const expectly: Expect<ExpectlyMatchers> = mergeExpects(
 	expectlyAny,
 	expectlyDate,
 	expectlyLocator,
@@ -33,4 +45,4 @@ export const expectly = mergeExpects(
 	expectlyObjectArray,
 	expectlyString,
 	expectlyStringArray
-);
+) as any;

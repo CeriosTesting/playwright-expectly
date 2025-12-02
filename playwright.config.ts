@@ -35,8 +35,13 @@ export default defineConfig({
 	/* Configure projects for major browsers */
 	projects: [
 		{
-			name: "chromium",
+			name: "locator",
 			use: { ...devices["Desktop Chrome"] },
+			testMatch: /.*-locator\.spec\.ts/,
+		},
+		{
+			name: "non-locator",
+			testMatch: /^(?!.*-locator\.spec\.ts$).*\.spec\.ts$/,
 		},
 	],
 });

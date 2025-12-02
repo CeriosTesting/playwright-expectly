@@ -603,10 +603,18 @@ export const expectlyAny = baseExpect.extend({
  * For objects: extracts only the properties present in expected
  * For arrays: returns the full array (partial matching is value-based, not index-based)
  * For primitives: returns as-is
+ * For asymmetric matchers: returns actual as-is (let Playwright's toEqual handle the matching)
  */
 function extractMatchingStructure(actual: any, expected: any): any {
 	// Handle null/undefined
 	if (actual === null || actual === undefined) {
+		return actual;
+	}
+
+	// Handle Playwright's asymmetric matchers (expect.any, expect.objectContaining, etc.)
+	// These have an $$typeof property that identifies them as asymmetric matchers
+	if (expected && typeof expected === "object" && "$$typeof" in expected) {
+		// Return actual as-is; let Playwright's toEqual handle the asymmetric matcher comparison
 		return actual;
 	}
 

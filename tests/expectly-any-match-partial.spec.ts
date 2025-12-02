@@ -370,4 +370,52 @@ test.describe("toEqualPartially", () => {
 		// The error should NOT show 'home' address since it's not in expected
 		expect(error?.message).not.toContain('"home"');
 	});
+
+	test("should support asymmetric matchers (expect.any, expect.objectContaining, etc.)", async () => {
+		const actual = {
+			id: 123,
+			name: "Alice",
+			email: "alice@example.com",
+			createdAt: new Date("2024-01-01"),
+			tags: ["typescript", "playwright", "testing"],
+			address: {
+				street: "123 Main St",
+				city: "Wonderland",
+				zipCode: "12345",
+			},
+		};
+
+		// Should work with expect.any()
+		expectlyAny(actual).toEqualPartially({
+			id: expect.any(Number),
+			name: expect.any(String),
+			createdAt: expect.any(Date),
+		});
+
+		// Should work with expect.stringContaining()
+		expectlyAny(actual).toEqualPartially({
+			email: expect.stringContaining("@example.com"),
+		});
+
+		// Should work with expect.arrayContaining()
+		expectlyAny(actual).toEqualPartially({
+			tags: expect.arrayContaining(["playwright", "typescript"]),
+		});
+
+		// Should work with expect.objectContaining()
+		expectlyAny(actual).toEqualPartially({
+			address: expect.objectContaining({
+				city: "Wonderland",
+			}),
+		});
+
+		// Should work with nested asymmetric matchers
+		expectlyAny(actual).toEqualPartially({
+			id: expect.any(Number),
+			address: expect.objectContaining({
+				city: expect.stringContaining("Wonder"),
+				zipCode: expect.any(String),
+			}),
+		});
+	});
 });
