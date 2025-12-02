@@ -669,11 +669,11 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			}
 
 			if (pass && this.isNot) {
-				return hint + "\n\n" + `Expected element to not be required\nBut it has the required attribute`;
+				return `${hint}\n\nExpected element to not be required\nBut it has the required attribute`;
 			}
 
 			if (!pass && !this.isNot) {
-				return hint + "\n\n" + `Expected element to be required\nBut it does not have the required attribute`;
+				return `${hint}\n\nExpected element to be required\nBut it does not have the required attribute`;
 			}
 
 			return hint;
