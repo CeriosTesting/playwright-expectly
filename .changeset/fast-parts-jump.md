@@ -1,0 +1,5 @@
+---
+"@cerios/playwright-expectly": minor
+---
+
+.
