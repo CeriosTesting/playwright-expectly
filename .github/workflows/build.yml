@@ -39,11 +39,14 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps
 
-      - name: Build
-        run: npm run compile
-
       - name: Lint code
         run: npm run lint
 
+      - name: Type checking
+        run: npm run compile
+
       - name: Run tests
         run: npm run test
+
+      - name: Build
+        run: npm run build
