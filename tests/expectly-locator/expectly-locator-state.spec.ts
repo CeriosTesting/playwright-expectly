@@ -120,70 +120,93 @@ test.describe("expectLocator - toBeStable", () => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		await expect(
-			expectlyLocator(element).toBeStable({
+		const error = await expectlyLocator(element)
+			.toBeStable({
 				checkInterval: 0,
 			})
-		).rejects.toThrowError(/checkInterval must be positive/);
+			.catch(e => e);
+
+		expect(error.message).toMatch(/checkInterval must be positive/);
 	});
 
 	test("should validate stabilityDuration is positive", async ({ page }) => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		await expect(
-			expectlyLocator(element).toBeStable({
+		const error = await expectlyLocator(element)
+			.toBeStable({
 				stabilityDuration: -100,
 			})
-		).rejects.toThrowError(/stabilityDuration must be positive/);
+			.catch(e => e);
+
+		expect(error.message).toMatch(/stabilityDuration must be positive/);
 	});
 
 	test("should validate timeout is positive", async ({ page }) => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		await expect(
-			expectlyLocator(element).toBeStable({
+		const error = await expectlyLocator(element)
+			.toBeStable({
 				timeout: 0,
 			})
-		).rejects.toThrowError(/timeout must be positive/);
+			.catch(e => e);
+
+		expect(error.message).toMatch(/timeout must be positive/);
 	});
 
 	test("should validate checkInterval is not too large", async ({ page }) => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		await expect(
-			expectlyLocator(element).toBeStable({
+		const error = await expectlyLocator(element)
+			.toBeStable({
 				stabilityDuration: 500,
 				checkInterval: 600,
 			})
-		).rejects.toThrowError(/checkInterval.*cannot be greater than half of stabilityDuration/);
+			.catch(e => e);
+
+		expect(error.message).toMatch(/checkInterval.*cannot be greater than half of stabilityDuration/);
 	});
 
 	test("should validate stabilityDuration is less than timeout", async ({ page }) => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		await expect(
-			expectlyLocator(element).toBeStable({
+		const error = await expectlyLocator(element)
+			.toBeStable({
 				stabilityDuration: 3000,
 				timeout: 2000,
 			})
-		).rejects.toThrowError(/stabilityDuration.*must be less than timeout/);
+			.catch(e => e);
+
+		expect(error.message).toMatch(/stabilityDuration.*must be less than timeout/);
 	});
 
-	test("should validate timeout allows for stabilization", async ({ page }) => {
-		await page.setContent('<div id="stable">Content</div>');
-		const element = page.locator("#stable");
+	test("should timeout when stability window is too close to timeout", async ({ page }) => {
+		await page.setContent(`
+			<div id="changing">Initial</div>
+			<script>
+				// Keep changing content so it never stabilizes
+				let count = 0;
+				setInterval(() => {
+					count++;
+					document.getElementById('changing').innerHTML = 'Update ' + count;
+				}, 200);
+			</script>
+		`);
+		const element = page.locator("#changing");
 
-		// This will timeout because stabilityDuration is too close to timeout
-		await expect(
-			expectlyLocator(element).toBeStable({
-				stabilityDuration: 1500,
-				timeout: 2000,
+		// This will timeout because content keeps changing
+		const error = await expectlyLocator(element)
+			.toBeStable({
+				stabilityDuration: 500,
+				checkInterval: 100,
+				timeout: 1000,
 			})
-		).rejects.toThrowError(/content did not stabilize/);
+			.catch(e => e);
+
+		expect(error.message).toMatch(/content did not stabilize/);
 	});
 
 	test("should handle rapidly changing content", async ({ page }) => {
