@@ -15,6 +15,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
+    needs: ci
 
     steps:
       - name: Checkout repository
@@ -45,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json CHANGELOG.md
+          git add -A
           git commit -m "chore: version packages" || echo "No changes"
           git push
 
