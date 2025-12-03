@@ -871,4 +871,92 @@ export const expectlyLocatorText = baseExpect.extend({
 			actual,
 		};
 	},
+
+	/**
+	 * Asserts that the locator has the expected text, ignoring the text from any child elements.
+	 *
+	 * @param locator - The Playwright locator to check
+	 * @param expectedText - The expected direct text (excluding nested elements)
+	 * @param options - Optional configuration
+	 *
+	 * @example
+	 * // HTML: <div>new value<span class="example-class">old value</span></div>
+	 * // This will pass:
+	 * await expectLocator(page.locator('div')).toHaveDirectText('new value');
+	 *
+	 * @example
+	 * // This will fail (nested elements are ignored):
+	 * await expectLocator(page.locator('div')).toHaveDirectText('new valueold value');
+	 */
+	async toHaveDirectText(
+		locator: Locator,
+		expectedText: string,
+		options?: {
+			/**
+			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+			 */
+			timeout?: number;
+		}
+	) {
+		const assertionName = "toHaveDirectText";
+		let pass: boolean;
+		let actual: string;
+		let errorMessage: string | undefined;
+
+		try {
+			actual = await locator.evaluate(
+				el =>
+					Array.from(el.childNodes)
+						.filter(n => n.nodeType === Node.TEXT_NODE)
+						.map(n => n.textContent)
+						.join("")
+						.trim(),
+				{ timeout: options?.timeout ?? this.timeout }
+			);
+			pass = actual === expectedText;
+		} catch (e: any) {
+			actual = "";
+			errorMessage = e.message;
+			pass = false;
+		}
+
+		const message = () => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
+				isNot: this.isNot,
+			});
+
+			if (errorMessage) {
+				return `${hint}\n\nFailed to get direct text from locator:\n${this.utils.printReceived(errorMessage)}`;
+			}
+
+			if (pass && this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected locator direct text to not be: ${this.utils.printExpected(expectedText)}\n` +
+					`Received: ${this.utils.printReceived(actual)}`
+				);
+			}
+
+			if (!pass && !this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected locator direct text to be: ${this.utils.printExpected(expectedText)}\n` +
+					`Received: ${this.utils.printReceived(actual)}\n` +
+					`Note: This matcher ignores text from nested child elements`
+				);
+			}
+
+			return hint;
+		};
+
+		return {
+			message,
+			pass,
+			name: assertionName,
+			expected: expectedText,
+			actual,
+		};
+	},
 });

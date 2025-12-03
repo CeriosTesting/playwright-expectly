@@ -4,6 +4,7 @@ import { expectlyLocatorAttributes } from "./expectly-locator-attributes";
 import { expectlyLocatorPositioning } from "./expectly-locator-positioning";
 import { expectlyLocatorState } from "./expectly-locator-state";
 import { expectlyLocatorText } from "./expectly-locator-text";
+import { expectlyVisibility } from "./expectly-locator-visibility";
 
 // Extract matcher types from each module
 type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
@@ -11,7 +12,8 @@ type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
 type ExpectlyLocatorMatchers = ExtractMatchers<typeof expectlyLocatorText> &
 	ExtractMatchers<typeof expectlyLocatorAttributes> &
 	ExtractMatchers<typeof expectlyLocatorPositioning> &
-	ExtractMatchers<typeof expectlyLocatorState>;
+	ExtractMatchers<typeof expectlyLocatorState> &
+	ExtractMatchers<typeof expectlyVisibility>;
 
 /**
  * Unified expectly locator matchers.
@@ -24,10 +26,12 @@ export const expectlyLocator: Expect<ExpectlyLocatorMatchers> = mergeExpects(
 	expectlyLocatorText,
 	expectlyLocatorAttributes,
 	expectlyLocatorPositioning,
-	expectlyLocatorState
+	expectlyLocatorState,
+	expectlyVisibility
 ) as any;
 
 export { expectlyLocatorAttributes } from "./expectly-locator-attributes";
 export { expectlyLocatorPositioning } from "./expectly-locator-positioning";
 export { expectlyLocatorState } from "./expectly-locator-state";
 export { expectlyLocatorText } from "./expectly-locator-text";
+export { expectlyVisibility } from "./expectly-locator-visibility";
