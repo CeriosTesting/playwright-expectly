@@ -891,72 +891,30 @@ export const expectlyLocatorText = baseExpect.extend({
 	async toHaveDirectText(
 		locator: Locator,
 		expectedText: string,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-		}
-	) {
-		const assertionName = "toHaveDirectText";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
-
-		try {
-			actual = await locator.evaluate(
-				el =>
-					Array.from(el.childNodes)
-						.filter(n => n.nodeType === Node.TEXT_NODE)
-						.map(n => n.textContent)
-						.join("")
-						.trim(),
-				{ timeout: options?.timeout ?? this.timeout }
+		options: { timeout?: number } = { timeout: 3000 }
+	): Promise<{ pass: boolean; message: () => string }> {
+		const pollInterval = 100;
+		const timeout = options.timeout ?? 3000;
+		const start = Date.now();
+		let directText = "";
+		while (Date.now() - start < timeout) {
+			directText = await locator.evaluate(el =>
+				Array.from(el.childNodes)
+					.filter(n => n.nodeType === Node.TEXT_NODE)
+					.map(n => n.textContent)
+					.join("")
+					.trim()
 			);
-			pass = actual === expectedText;
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			if (directText === expectedText) break;
+			await new Promise(res => setTimeout(res, pollInterval));
 		}
-
-		const message = () => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get direct text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected locator direct text to not be: ${this.utils.printExpected(expectedText)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected locator direct text to be: ${this.utils.printExpected(expectedText)}\n` +
-					`Received: ${this.utils.printReceived(actual)}\n` +
-					`Note: This matcher ignores text from nested child elements`
-				);
-			}
-
-			return hint;
-		};
-
+		const pass = directText === expectedText;
 		return {
-			message,
 			pass,
-			name: assertionName,
-			expected: expectedText,
-			actual,
+			message: () =>
+				pass
+					? `Expected direct text NOT to be "${expectedText}", but it was.`
+					: `Timed out: ${timeout}ms.\n\nLocator: ${locator}\nExpected string: "${expectedText}" \nReceived string: "${directText}"`,
 		};
 	},
 });

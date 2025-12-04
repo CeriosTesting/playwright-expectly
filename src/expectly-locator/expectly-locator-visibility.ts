@@ -2,9 +2,8 @@ import { expect as baseExpect, Locator } from "@playwright/test";
 
 /**
  * Visibility validation matchers for Playwright locators.
- * These matchers validate the visibility state and count of elements.
  */
-export const expectlyVisibility = baseExpect.extend({
+export const expectlyLocatorVisibility = baseExpect.extend({
 	/**
 	 * Asserts that the locator has the expected number of visible elements.
 	 *
@@ -25,34 +24,26 @@ export const expectlyVisibility = baseExpect.extend({
 		count: number,
 		options: { timeout?: number } = { timeout: 3000 }
 	): Promise<{ pass: boolean; message: () => string }> {
-		try {
-			const pollInterval = 100;
-			const timeout = options.timeout ?? 3000;
-			const start = Date.now();
-			let visibleCount = 0;
+		const pollInterval = 100;
+		const timeout = options.timeout ?? 3000;
+		const start = Date.now();
+		let visibleCount = 0;
 
-			while (Date.now() - start < timeout) {
-				const handles = await locator.elementHandles();
-				const visArr = await Promise.all(handles.map(h => h.isVisible()));
-				visibleCount = visArr.filter(Boolean).length;
-				if (visibleCount === count) break;
-				await new Promise(res => setTimeout(res, pollInterval));
-			}
-
-			const pass = visibleCount === count;
-			return {
-				pass,
-				message: () =>
-					pass
-						? `Expected number of visible elements NOT to be ${count}, but it was.`
-						: `Timed out: ${timeout}ms.\n\nLocator: ${locator}\nExpected number of visible elements: "${count}" \nReceived number of visible elements: "${visibleCount}"`,
-			};
-		} catch (error) {
-			return {
-				pass: false,
-				message: () =>
-					`Error checking visible element count: ${error instanceof Error ? error.message : String(error)}`,
-			};
+		while (Date.now() - start < timeout) {
+			const handles = await locator.elementHandles();
+			const visArr = await Promise.all(handles.map(h => h.isVisible()));
+			visibleCount = visArr.filter(Boolean).length;
+			if (visibleCount === count) break;
+			await new Promise(res => setTimeout(res, pollInterval));
 		}
+
+		const pass = visibleCount === count;
+		return {
+			pass,
+			message: () =>
+				pass
+					? `Expected number of visible elements NOT to be ${count}, but it was.`
+					: `Timed out: ${timeout}ms.\n\nLocator: ${locator}\nExpected number of visible elements: "${count}" \nReceived number of visible elements: "${visibleCount}"`,
+		};
 	},
 });
