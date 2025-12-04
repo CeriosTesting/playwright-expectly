@@ -871,4 +871,47 @@ export const expectlyLocatorText = baseExpect.extend({
 			actual,
 		};
 	},
+
+	/**
+	 * Asserts that the locator has the expected text, ignoring the text from any child elements.
+	 *
+	 * @param locator - The Playwright locator to check
+	 * @param expectedText - The expected direct text (excluding nested elements)
+	 * @param options - Optional configuration
+	 *
+	 * @example
+	 * // HTML: <div>new value<span class="example-class">old value</span></div>
+	 * // This will pass:
+	 * await expectLocator(page.locator('div')).toHaveDirectText('new value');
+	 *
+	 * @example
+	 * // This will fail (nested elements are ignored):
+	 * await expectLocator(page.locator('div')).toHaveDirectText('new valueold value');
+	 */
+	async toHaveDirectText(locator: Locator, expectedText: string, options?: { timeout?: number }) {
+		const pollInterval = 100;
+		const timeout = options?.timeout ?? this.timeout;
+		const start = Date.now();
+		let directText = "";
+		while (Date.now() - start < timeout) {
+			directText = await locator.evaluate(el =>
+				Array.from(el.childNodes)
+					.filter(n => n.nodeType === Node.TEXT_NODE)
+					.map(n => n.textContent)
+					.join("")
+					.trim()
+					.replace(/\s+/g, " ")
+			);
+			if (directText === expectedText) break;
+			await new Promise(res => setTimeout(res, pollInterval));
+		}
+		const pass = directText === expectedText;
+		return {
+			pass,
+			message: () =>
+				pass
+					? `Expected direct text NOT to be "${expectedText}", but it was.`
+					: `Timed out: ${timeout}ms.\n\nLocator: ${locator}\nExpected string: "${expectedText}" \nReceived string: "${directText}"`,
+		};
+	},
 });

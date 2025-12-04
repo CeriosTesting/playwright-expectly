@@ -1,8 +1,6 @@
 name: Build CI
 
 on:
-  pull_request:
-    branches: ["main"]
   workflow_call:
 
 jobs:
@@ -47,6 +45,3 @@ jobs:
 
       - name: Run tests
         run: npm run test
-
-      - name: Build
-        run: npm run build

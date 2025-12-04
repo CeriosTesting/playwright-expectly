@@ -10,6 +10,7 @@ export {
 	expectlyLocatorPositioning,
 	expectlyLocatorState,
 	expectlyLocatorText,
+	expectlyLocatorVisibility,
 } from "./expectly-locator/index";
 export { expectlyNumberArray } from "./expectly-number-array";
 export { expectlyObjectArray } from "./expectly-object-array";
