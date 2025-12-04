@@ -904,6 +904,7 @@ export const expectlyLocatorText = baseExpect.extend({
 					.map(n => n.textContent)
 					.join("")
 					.trim()
+					.replace(/\s+/g, " ")
 			);
 			if (directText === expectedText) break;
 			await new Promise(res => setTimeout(res, pollInterval));
