@@ -19,13 +19,9 @@ export const expectlyLocatorVisibility = baseExpect.extend({
 	 * // Validate visible table rows with custom timeout
 	 * await expectLocator(page.locator('tbody tr')).toHaveCountVisible(5, { timeout: 5000 });
 	 */
-	async toHaveCountVisible(
-		locator: Locator,
-		count: number,
-		options: { timeout?: number } = { timeout: 3000 }
-	): Promise<{ pass: boolean; message: () => string }> {
+	async toHaveCountVisible(locator: Locator, count: number, options?: { timeout?: number }) {
 		const pollInterval = 100;
-		const timeout = options.timeout ?? 3000;
+		const timeout = options?.timeout ?? this.timeout;
 		const start = Date.now();
 		let visibleCount = 0;
 

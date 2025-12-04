@@ -888,13 +888,9 @@ export const expectlyLocatorText = baseExpect.extend({
 	 * // This will fail (nested elements are ignored):
 	 * await expectLocator(page.locator('div')).toHaveDirectText('new valueold value');
 	 */
-	async toHaveDirectText(
-		locator: Locator,
-		expectedText: string,
-		options: { timeout?: number } = { timeout: 3000 }
-	): Promise<{ pass: boolean; message: () => string }> {
+	async toHaveDirectText(locator: Locator, expectedText: string, options?: { timeout?: number }) {
 		const pollInterval = 100;
-		const timeout = options.timeout ?? 3000;
+		const timeout = options?.timeout ?? this.timeout;
 		const start = Date.now();
 		let directText = "";
 		while (Date.now() - start < timeout) {
