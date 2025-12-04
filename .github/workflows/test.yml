@@ -1,8 +1,6 @@
 name: Build CI
 
 on:
-  pull_request:
-    branches: ["main"]
   workflow_call:
 
 jobs:
