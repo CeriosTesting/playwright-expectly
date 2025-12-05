@@ -20,26 +20,67 @@ export const expectlyLocatorVisibility = baseExpect.extend({
 	 * await expectLocator(page.locator('tbody tr')).toHaveCountVisible(5, { timeout: 5000 });
 	 */
 	async toHaveCountVisible(locator: Locator, count: number, options?: { timeout?: number }) {
-		const pollInterval = 100;
-		const timeout = options?.timeout ?? this.timeout;
-		const start = Date.now();
-		let visibleCount = 0;
+		const assertionName = "toHaveCountVisible";
+		let pass: boolean = false;
+		let visibleCount: number = 0;
+		let locatorError: Error | undefined;
 
-		while (Date.now() - start < timeout) {
-			const handles = await locator.elementHandles();
-			const visArr = await Promise.all(handles.map(h => h.isVisible()));
-			visibleCount = visArr.filter(Boolean).length;
-			if (visibleCount === count) break;
-			await new Promise(res => setTimeout(res, pollInterval));
+		try {
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const handles = await locator.elementHandles();
+							const visArr = await Promise.all(handles.map(h => h.isVisible()));
+							visibleCount = visArr.filter(Boolean).length;
+							return visibleCount === count;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
-		const pass = visibleCount === count;
+		const message = () => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
+				isNot: this.isNot,
+			});
+
+			if (pass && this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected number of visible elements to not be: ${this.utils.printExpected(count)}\n` +
+					`Received: ${this.utils.printReceived(visibleCount)}`
+				);
+			}
+
+			if (!pass && !this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected number of visible elements: ${this.utils.printExpected(count)}\n` +
+					`Received: ${this.utils.printReceived(visibleCount)}`
+				);
+			}
+
+			return hint;
+		};
+
 		return {
+			message,
 			pass,
-			message: () =>
-				pass
-					? `Expected number of visible elements NOT to be ${count}, but it was.`
-					: `Timed out: ${timeout}ms.\n\nLocator: ${locator}\nExpected number of visible elements: "${count}" \nReceived number of visible elements: "${visibleCount}"`,
+			name: assertionName,
+			expected: count,
+			actual: visibleCount,
 		};
 	},
 });

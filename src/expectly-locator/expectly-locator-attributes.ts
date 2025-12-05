@@ -31,34 +31,39 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHavePlaceholder";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.getAttribute("placeholder", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("placeholder");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get placeholder attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -115,34 +120,39 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHaveHref";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.getAttribute("href", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("href");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get href attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -199,34 +209,39 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHaveSrc";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.getAttribute("src", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("src");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get src attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -283,34 +298,39 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHaveAlt";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.getAttribute("alt", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("alt");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get alt attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -373,28 +393,37 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHaveDataAttribute";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 		const attrName = name.startsWith("data-") ? name : `data-${name}`;
 
 		try {
-			actual = await locator.getAttribute(attrName, {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (expected === undefined) {
-				// Just check if attribute exists
-				pass = actual !== null;
-			} else if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute(attrName);
+							if (expected === undefined) {
+								return actual !== null;
+							}
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
@@ -406,10 +435,6 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 					isNot: this.isNot,
 				}
 			);
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get ${attrName} attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				if (expected === undefined) {
@@ -477,34 +502,39 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHaveAriaLabel";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.getAttribute("aria-label", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("aria-label");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get aria-label attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -561,34 +591,39 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toHaveTarget";
-		let pass: boolean;
-		let actual: string | null;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string | null = null;
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.getAttribute("target", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-
-			if (typeof expected === "string") {
-				pass = actual === expected;
-			} else {
-				pass = actual !== null && expected.test(actual);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("target");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			actual = null;
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get target attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -644,29 +679,37 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toBeRequired";
-		let pass: boolean;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
 		let hasAttribute: boolean = false;
+		let locatorError: Error | undefined;
 
 		try {
-			const requiredAttr = await locator.getAttribute("required", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-			hasAttribute = requiredAttr !== null;
-			pass = hasAttribute;
-		} catch (e: any) {
-			errorMessage = e.message;
-			pass = false;
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const requiredAttr = await locator.getAttribute("required");
+							hasAttribute = requiredAttr !== null;
+							return hasAttribute;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to check required attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return `${hint}\n\nExpected element to not be required\nBut it has the required attribute`;
@@ -710,29 +753,37 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toBeReadOnly";
-		let pass: boolean;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
 		let hasAttribute: boolean = false;
+		let locatorError: Error | undefined;
 
 		try {
-			const readonlyAttr = await locator.getAttribute("readonly", {
-				timeout: options?.timeout ?? this.timeout,
-			});
-			hasAttribute = readonlyAttr !== null;
-			pass = hasAttribute;
-		} catch (e: any) {
-			errorMessage = e.message;
-			pass = false;
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const readonlyAttr = await locator.getAttribute("readonly");
+							hasAttribute = readonlyAttr !== null;
+							return hasAttribute;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to check readonly attribute:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return `${hint}\n\nExpected element to not be readonly\nBut it has the readonly attribute`;

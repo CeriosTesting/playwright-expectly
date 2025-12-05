@@ -32,41 +32,44 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toBeAbove";
-		let pass: boolean;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
 		let actualBottom: number | undefined;
 		let otherTop: number | undefined;
+		let locatorError: Error | undefined;
 
 		try {
-			const [box, otherBox] = await Promise.all([
-				locator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-				otherLocator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-			]);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-			if (!box) {
-				errorMessage = "First element not found or not visible";
-				pass = false;
-			} else if (!otherBox) {
-				errorMessage = "Second element not found or not visible";
-				pass = false;
-			} else {
-				actualBottom = box.y + box.height;
-				otherTop = otherBox.y;
-				pass = actualBottom <= otherTop;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualBottom = box.y + box.height;
+							otherTop = otherBox.y;
+							return actualBottom <= otherTop;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\n${errorMessage}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -125,41 +128,44 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toBeBelow";
-		let pass: boolean;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
 		let actualTop: number | undefined;
 		let otherBottom: number | undefined;
+		let locatorError: Error | undefined;
 
 		try {
-			const [box, otherBox] = await Promise.all([
-				locator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-				otherLocator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-			]);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-			if (!box) {
-				errorMessage = "First element not found or not visible";
-				pass = false;
-			} else if (!otherBox) {
-				errorMessage = "Second element not found or not visible";
-				pass = false;
-			} else {
-				actualTop = box.y;
-				otherBottom = otherBox.y + otherBox.height;
-				pass = actualTop >= otherBottom;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualTop = box.y;
+							otherBottom = otherBox.y + otherBox.height;
+							return actualTop >= otherBottom;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\n${errorMessage}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -218,41 +224,44 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toBeLeftOf";
-		let pass: boolean;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
 		let actualRight: number | undefined;
 		let otherLeft: number | undefined;
+		let locatorError: Error | undefined;
 
 		try {
-			const [box, otherBox] = await Promise.all([
-				locator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-				otherLocator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-			]);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-			if (!box) {
-				errorMessage = "First element not found or not visible";
-				pass = false;
-			} else if (!otherBox) {
-				errorMessage = "Second element not found or not visible";
-				pass = false;
-			} else {
-				actualRight = box.x + box.width;
-				otherLeft = otherBox.x;
-				pass = actualRight <= otherLeft;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualRight = box.x + box.width;
+							otherLeft = otherBox.x;
+							return actualRight <= otherLeft;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\n${errorMessage}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -311,41 +320,44 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		}
 	) {
 		const assertionName = "toBeRightOf";
-		let pass: boolean;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
 		let actualLeft: number | undefined;
 		let otherRight: number | undefined;
+		let locatorError: Error | undefined;
 
 		try {
-			const [box, otherBox] = await Promise.all([
-				locator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-				otherLocator.boundingBox({ timeout: options?.timeout ?? this.timeout }),
-			]);
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-			if (!box) {
-				errorMessage = "First element not found or not visible";
-				pass = false;
-			} else if (!otherBox) {
-				errorMessage = "Second element not found or not visible";
-				pass = false;
-			} else {
-				actualLeft = box.x;
-				otherRight = otherBox.x + otherBox.width;
-				pass = actualLeft >= otherRight;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualLeft = box.x;
+							otherRight = otherBox.x + otherBox.width;
+							return actualLeft >= otherRight;
+						} catch (e: any) {
+							locatorError = e;
+							throw e;
+						}
+					},
+					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
 			}
-		} catch (e: any) {
-			errorMessage = e.message;
-			pass = false;
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\n${errorMessage}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
