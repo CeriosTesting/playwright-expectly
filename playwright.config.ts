@@ -35,11 +35,11 @@ export default defineConfig({
 		{
 			name: "locator",
 			use: { ...devices["Desktop Chrome"] },
-			testMatch: /.*-locator\.spec\.ts/,
+			testMatch: /.*locator.*\.spec\.ts$/,
 		},
 		{
 			name: "non-locator",
-			testMatch: /^(?!.*-locator\.spec\.ts$).*\.spec\.ts$/,
+			testMatch: /^(?!.*locator).*\.spec\.ts$/,
 		},
 	],
 });
