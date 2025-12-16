@@ -1,4 +1,5 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
+import { buildPollOptions } from "./poll-options-builder";
 
 /**
  * Element positioning matchers for Playwright locators.
@@ -42,12 +43,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -146,12 +142,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -250,12 +241,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -354,12 +340,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {

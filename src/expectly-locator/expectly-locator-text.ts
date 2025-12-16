@@ -11,6 +11,7 @@ import {
 	isValidUUID,
 	toTitleCase,
 } from "../matchers/text-validation-utils";
+import { buildPollOptions } from "./poll-options-builder";
 
 /**
  * Text content validation matchers for Playwright locators.
@@ -52,12 +53,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -149,12 +145,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -246,12 +237,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -338,12 +324,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -429,12 +410,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -515,12 +491,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -606,12 +577,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -697,12 +663,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -789,12 +750,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -881,12 +837,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -975,12 +926,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
@@ -1073,12 +1019,7 @@ export const expectlyLocatorText = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions: { timeout: number; intervals?: number[] } = {
-				timeout: options?.timeout ?? this.timeout,
-			};
-			if (options?.intervals) {
-				pollOptions.intervals = options.intervals;
-			}
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
 
 			await baseExpect
 				.poll(async () => {
