@@ -29,6 +29,10 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeAbove";
@@ -38,26 +42,30 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
+			const pollOptions: { timeout: number; intervals?: number[] } = {
+				timeout: options?.timeout ?? this.timeout,
+			};
+			if (options?.intervals) {
+				pollOptions.intervals = options.intervals;
+			}
+
 			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(async () => {
+					try {
+						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
-
-							actualBottom = box.y + box.height;
-							otherTop = otherBox.y;
-							return actualBottom <= otherTop;
-						} catch (e: any) {
-							locatorError = e;
-							throw e;
+						if (!box || !otherBox) {
+							return false;
 						}
-					},
-					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
-				)
+
+						actualBottom = box.y + box.height;
+						otherTop = otherBox.y;
+						return actualBottom <= otherTop;
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -125,6 +133,10 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeBelow";
@@ -134,26 +146,30 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
+			const pollOptions: { timeout: number; intervals?: number[] } = {
+				timeout: options?.timeout ?? this.timeout,
+			};
+			if (options?.intervals) {
+				pollOptions.intervals = options.intervals;
+			}
+
 			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(async () => {
+					try {
+						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
-
-							actualTop = box.y;
-							otherBottom = otherBox.y + otherBox.height;
-							return actualTop >= otherBottom;
-						} catch (e: any) {
-							locatorError = e;
-							throw e;
+						if (!box || !otherBox) {
+							return false;
 						}
-					},
-					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
-				)
+
+						actualTop = box.y;
+						otherBottom = otherBox.y + otherBox.height;
+						return actualTop >= otherBottom;
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -221,6 +237,10 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeLeftOf";
@@ -230,26 +250,30 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
+			const pollOptions: { timeout: number; intervals?: number[] } = {
+				timeout: options?.timeout ?? this.timeout,
+			};
+			if (options?.intervals) {
+				pollOptions.intervals = options.intervals;
+			}
+
 			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(async () => {
+					try {
+						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
-
-							actualRight = box.x + box.width;
-							otherLeft = otherBox.x;
-							return actualRight <= otherLeft;
-						} catch (e: any) {
-							locatorError = e;
-							throw e;
+						if (!box || !otherBox) {
+							return false;
 						}
-					},
-					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
-				)
+
+						actualRight = box.x + box.width;
+						otherLeft = otherBox.x;
+						return actualRight <= otherLeft;
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -317,6 +341,10 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeRightOf";
@@ -326,26 +354,30 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
+			const pollOptions: { timeout: number; intervals?: number[] } = {
+				timeout: options?.timeout ?? this.timeout,
+			};
+			if (options?.intervals) {
+				pollOptions.intervals = options.intervals;
+			}
+
 			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(async () => {
+					try {
+						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
-
-							actualLeft = box.x;
-							otherRight = otherBox.x + otherBox.width;
-							return actualLeft >= otherRight;
-						} catch (e: any) {
-							locatorError = e;
-							throw e;
+						if (!box || !otherBox) {
+							return false;
 						}
-					},
-					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
-				)
+
+						actualLeft = box.x;
+						otherRight = otherBox.x + otherBox.width;
+						return actualLeft >= otherRight;
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
 				.toBe(true);
 			pass = true;
 		} catch {

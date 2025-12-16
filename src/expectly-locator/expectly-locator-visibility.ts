@@ -19,28 +19,32 @@ export const expectlyLocatorVisibility = baseExpect.extend({
 	 * // Validate visible table rows with custom timeout
 	 * await expectLocator(page.locator('tbody tr')).toHaveCountVisible(5, { timeout: 5000 });
 	 */
-	async toHaveCountVisible(locator: Locator, count: number, options?: { timeout?: number }) {
+	async toHaveCountVisible(locator: Locator, count: number, options?: { timeout?: number; intervals?: number[] }) {
 		const assertionName = "toHaveCountVisible";
 		let pass: boolean = false;
 		let visibleCount: number = 0;
 		let locatorError: Error | undefined;
 
 		try {
+			const pollOptions: { timeout: number; intervals?: number[] } = {
+				timeout: options?.timeout ?? this.timeout,
+			};
+			if (options?.intervals) {
+				pollOptions.intervals = options.intervals;
+			}
+
 			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const handles = await locator.elementHandles();
-							const visArr = await Promise.all(handles.map(h => h.isVisible()));
-							visibleCount = visArr.filter(Boolean).length;
-							return visibleCount === count;
-						} catch (e: any) {
-							locatorError = e;
-							throw e;
-						}
-					},
-					{ timeout: options?.timeout ?? this.timeout, intervals: [0, 20, 50, 100, 100, 250, 250] }
-				)
+				.poll(async () => {
+					try {
+						const handles = await locator.elementHandles();
+						const visArr = await Promise.all(handles.map(h => h.isVisible()));
+						visibleCount = visArr.filter(Boolean).length;
+						return visibleCount === count;
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
 				.toBe(true);
 			pass = true;
 		} catch {
