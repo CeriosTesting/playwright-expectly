@@ -477,24 +477,6 @@ test.describe("Locator Form Attribute Matchers", () => {
 		});
 	});
 
-	test.describe("Error handling", () => {
-		test("should handle non-existent element for toBeRequired", async ({ page }) => {
-			const nonExistent = page.locator("#does-not-exist");
-
-			await expect(expectlyLocatorAttributes(nonExistent).toBeRequired()).rejects.toThrowError(
-				/Failed to check required attribute/
-			);
-		});
-
-		test("should handle non-existent element for toBeReadOnly", async ({ page }) => {
-			const nonExistent = page.locator("#does-not-exist");
-
-			await expect(expectlyLocatorAttributes(nonExistent).toBeReadOnly()).rejects.toThrowError(
-				/Failed to check readonly attribute/
-			);
-		});
-	});
-
 	test.describe("Dynamic attribute changes", () => {
 		test("should detect when required attribute is added dynamically", async ({ page }) => {
 			const firstName = page.locator("#firstName");

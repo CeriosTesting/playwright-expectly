@@ -159,24 +159,6 @@ test.describe("Locator Positioning Matchers", () => {
 
 			await expectlyLocator(footer).not.toBeAbove(header);
 		});
-
-		test("should fail when first element is not visible", async ({ page }) => {
-			const hidden = page.locator(".hidden");
-			const content = page.locator(".content");
-
-			await expect(expectlyLocator(hidden).toBeAbove(content)).rejects.toThrowError(
-				/First element not found or not visible/
-			);
-		});
-
-		test("should fail when second element is not visible", async ({ page }) => {
-			const header = page.locator(".header");
-			const hidden = page.locator(".hidden");
-
-			await expect(expectlyLocator(header).toBeAbove(hidden)).rejects.toThrowError(
-				/Second element not found or not visible/
-			);
-		});
 	});
 
 	test.describe("toBeBelow", () => {

@@ -11,6 +11,7 @@ import {
 	isValidUUID,
 	toTitleCase,
 } from "../matchers/text-validation-utils";
+import { buildPollOptions } from "./poll-options-builder";
 
 /**
  * Text content validation matchers for Playwright locators.
@@ -40,32 +41,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toStartWith";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = actual.startsWith(expected);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return actual.startsWith(expected);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -122,32 +133,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toEndWith";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = actual.endsWith(expected);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return actual.endsWith(expected);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -204,32 +225,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toMatchPattern";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = pattern.test(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return pattern.test(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -281,32 +312,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeValidEmail";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isValidEmail(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isValidEmail(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -357,32 +398,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeValidUrl";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isValidUrl(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isValidUrl(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -428,32 +479,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeAlphanumeric";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isAlphanumeric(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isAlphanumeric(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -504,32 +565,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeNumericString";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isNumericString(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isNumericString(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -580,32 +651,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeUpperCase";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isUpperCase(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isUpperCase(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -657,32 +738,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeLowerCase";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isLowerCase(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isLowerCase(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -734,32 +825,42 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeTitleCase";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isTitleCase(actual);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isTitleCase(actual);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -813,22 +914,36 @@ export const expectlyLocatorText = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeUUID";
-		let pass: boolean;
-		let actual: string;
-		let errorMessage: string | undefined;
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
 
 		try {
-			actual = await locator.innerText({
-				timeout: options?.timeout ?? this.timeout,
-			});
-			pass = isValidUUID(actual, version);
-		} catch (e: any) {
-			actual = "";
-			errorMessage = e.message;
-			pass = false;
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.innerText();
+						return isValidUUID(actual, version);
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
 		}
 
 		const message = () => {
@@ -837,10 +952,6 @@ export const expectlyLocatorText = baseExpect.extend({
 			});
 
 			const versionText = version ? ` v${version}` : "";
-
-			if (errorMessage) {
-				return `${hint}\n\nFailed to get text from locator:\n${this.utils.printReceived(errorMessage)}`;
-			}
 
 			if (pass && this.isNot) {
 				return (
@@ -888,30 +999,85 @@ export const expectlyLocatorText = baseExpect.extend({
 	 * // This will fail (nested elements are ignored):
 	 * await expectLocator(page.locator('div')).toHaveDirectText('new valueold value');
 	 */
-	async toHaveDirectText(locator: Locator, expectedText: string, options?: { timeout?: number }) {
-		const pollInterval = 100;
-		const timeout = options?.timeout ?? this.timeout;
-		const start = Date.now();
-		let directText = "";
-		while (Date.now() - start < timeout) {
-			directText = await locator.evaluate(el =>
-				Array.from(el.childNodes)
-					.filter(n => n.nodeType === Node.TEXT_NODE)
-					.map(n => n.textContent)
-					.join("")
-					.trim()
-					.replace(/\s+/g, " ")
-			);
-			if (directText === expectedText) break;
-			await new Promise(res => setTimeout(res, pollInterval));
+	async toHaveDirectText(
+		locator: Locator,
+		expectedText: string,
+		options?: {
+			/**
+			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+			 */
+			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
-		const pass = directText === expectedText;
+	) {
+		const assertionName = "toHaveDirectText";
+		let pass: boolean = false;
+		let actual: string = "";
+		let locatorError: Error | undefined;
+
+		try {
+			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
+
+			await baseExpect
+				.poll(async () => {
+					try {
+						actual = await locator.evaluate(el =>
+							Array.from(el.childNodes)
+								.filter(n => n.nodeType === Node.TEXT_NODE)
+								.map(n => n.textContent)
+								.join("")
+								.trim()
+								.replace(/\s+/g, " ")
+						);
+						return actual === expectedText;
+					} catch (e: any) {
+						locatorError = e;
+						throw e;
+					}
+				}, pollOptions)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
+		}
+
+		const message = () => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
+				isNot: this.isNot,
+			});
+
+			if (pass && this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected direct text to not be: ${this.utils.printExpected(expectedText)}\n` +
+					`Received: ${this.utils.printReceived(actual)}`
+				);
+			}
+
+			if (!pass && !this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected direct text to be: ${this.utils.printExpected(expectedText)}\n` +
+					`Received: ${this.utils.printReceived(actual)}`
+				);
+			}
+
+			return hint;
+		};
+
 		return {
+			message,
 			pass,
-			message: () =>
-				pass
-					? `Expected direct text NOT to be "${expectedText}", but it was.`
-					: `Timed out: ${timeout}ms.\n\nLocator: ${locator}\nExpected string: "${expectedText}" \nReceived string: "${directText}"`,
+			name: assertionName,
+			expected: expectedText,
+			actual,
 		};
 	},
 });

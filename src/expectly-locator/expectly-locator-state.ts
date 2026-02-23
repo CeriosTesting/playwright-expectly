@@ -42,6 +42,10 @@ export const expectlyLocatorState = baseExpect.extend({
 			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
 			 */
 			timeout?: number;
+			/**
+			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
+			 */
+			intervals?: number[];
 		}
 	) {
 		const assertionName = "toBeStable";
@@ -83,8 +87,9 @@ export const expectlyLocatorState = baseExpect.extend({
 		let errorMessage: string | undefined;
 		let lastSnapshot: string | null = null;
 		let stableStartTime: number | null = null;
-		let lastError: string | undefined;
+		let lastError: Error | undefined;
 		let successfulChecks = 0;
+		let locatorError: Error | undefined;
 		const startTime = Date.now();
 
 		try {
@@ -114,7 +119,7 @@ export const expectlyLocatorState = baseExpect.extend({
 					}
 				} catch (e: any) {
 					// Track the error for better diagnostics
-					lastError = e.message;
+					lastError = e;
 					// If locator not found or not ready yet, reset
 					lastSnapshot = null;
 					stableStartTime = null;
@@ -124,11 +129,14 @@ export const expectlyLocatorState = baseExpect.extend({
 			}
 
 			if (!pass) {
-				if (successfulChecks === 0) {
+				if (successfulChecks === 0 && lastError) {
+					// Never successfully retrieved content - rethrow locator error
+					locatorError = lastError;
+					throw lastError;
+				} else if (successfulChecks === 0) {
 					// Never successfully retrieved content
 					errorMessage =
 						`Locator was not found or never became available within ${timeout}ms.\n` +
-						(lastError ? `Last error: ${lastError}\n` : "") +
 						`Stability duration required: ${stabilityDuration}ms\n` +
 						`Check interval: ${checkInterval}ms`;
 				} else {
@@ -141,6 +149,9 @@ export const expectlyLocatorState = baseExpect.extend({
 				}
 			}
 		} catch (e: any) {
+			if (locatorError) {
+				throw locatorError;
+			}
 			pass = false;
 			errorMessage = e.message;
 		}
