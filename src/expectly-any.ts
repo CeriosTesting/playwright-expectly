@@ -637,7 +637,12 @@ function extractMatchingStructure(actual: any, expected: any): any {
 					return false;
 				}
 			});
-			result.push(matchingItem !== undefined ? extractMatchingStructure(matchingItem, expectedItem) : undefined);
+			if (matchingItem !== undefined) {
+				result.push(extractMatchingStructure(matchingItem, expectedItem));
+			} else {
+				const fallbackItem = actual[0];
+				result.push(fallbackItem !== undefined ? extractMatchingStructure(fallbackItem, expectedItem) : undefined);
+			}
 		}
 		return result;
 	}
