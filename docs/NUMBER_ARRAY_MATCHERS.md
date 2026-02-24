@@ -26,7 +26,7 @@ Statistical and sorting matchers for arrays of numbers.
 Asserts that an array of numbers is sorted from smallest to largest.
 
 ```typescript
-import { expectly } from '@cerios/playwright-expectly';
+import { expectly } from "@cerios/playwright-expectly";
 
 // Validate sorted prices
 const prices = [9.99, 19.99, 29.99, 49.99];
@@ -56,7 +56,7 @@ Asserts that an array of numbers sums to the expected value.
 
 ```typescript
 // Validate cart total
-const itemPrices = [10.99, 5.50, 15.00];
+const itemPrices = [10.99, 5.5, 15.0];
 expectly(itemPrices).toHaveSum(31.49);
 
 // Check vote count
@@ -95,7 +95,7 @@ Asserts that an array's minimum or maximum value equals the expected number.
 
 ```typescript
 // Validate lowest price
-const prices = [19.99, 9.99, 29.99, 15.00];
+const prices = [19.99, 9.99, 29.99, 15.0];
 expectly(prices).toHaveMin(9.99);
 
 // Check minimum temperature
@@ -138,14 +138,14 @@ Asserts that all numbers are positive (> 0) or negative (< 0).
 
 ```typescript
 // Validate positive values
-const prices = [10.99, 5.50, 15.00];
+const prices = [10.99, 5.5, 15.0];
 expectly(prices).toBeAllPositive();
 
 // Check counts
 expectly(userCounts).toBeAllPositive();
 
 // Validate negative adjustments
-const adjustments = [-5, -10, -3.50];
+const adjustments = [-5, -10, -3.5];
 expectly(adjustments).toBeAllNegative();
 ```
 
@@ -253,38 +253,38 @@ expectly([1, 2, 4, 5]).not.toHaveConsecutiveIntegers();
 ### Statistical Validation
 
 ```typescript
-test('validate dataset statistics', async () => {
-  const scores = [85, 90, 92, 95, 88];
+test("validate dataset statistics", async () => {
+	const scores = [85, 90, 92, 95, 88];
 
-  expectly(scores).toHaveAverage(90);
-  expectly(scores).toHaveMedian(90);
-  expectly(scores).toHaveMin(85);
-  expectly(scores).toHaveMax(95);
-  expectly(scores).toHaveRange(10);
+	expectly(scores).toHaveAverage(90);
+	expectly(scores).toHaveMedian(90);
+	expectly(scores).toHaveMin(85);
+	expectly(scores).toHaveMax(95);
+	expectly(scores).toHaveRange(10);
 });
 ```
 
 ### Data Quality Checks
 
 ```typescript
-test('validate data quality', async () => {
-  const measurements = [10.5, 12.3, 11.8, 13.2];
+test("validate data quality", async () => {
+	const measurements = [10.5, 12.3, 11.8, 13.2];
 
-  expectly(measurements).toBeAllPositive();
-  expectly(measurements).toBeAllBetween(10, 15);
-  expectly(measurements).toHaveUniqueValues();
+	expectly(measurements).toBeAllPositive();
+	expectly(measurements).toBeAllBetween(10, 15);
+	expectly(measurements).toHaveUniqueValues();
 });
 ```
 
 ### Sorting Verification
 
 ```typescript
-test('validate sorted results', async () => {
-  const sortedPrices = [9.99, 19.99, 29.99, 49.99];
+test("validate sorted results", async () => {
+	const sortedPrices = [9.99, 19.99, 29.99, 49.99];
 
-  expectly(sortedPrices).toHaveAscendingOrder();
-  expectly(sortedPrices).toBeMonotonic();
-  expectly(sortedPrices).toHaveStrictlyAscendingOrder();
+	expectly(sortedPrices).toHaveAscendingOrder();
+	expectly(sortedPrices).toBeMonotonic();
+	expectly(sortedPrices).toHaveStrictlyAscendingOrder();
 });
 ```
 

@@ -16,14 +16,14 @@ Matchers for validating arrays of strings, including sorting and uniqueness chec
 Asserts that an array of strings is in ascending order (alphabetically A-Z).
 
 ```typescript
-import { expectly } from '@cerios/playwright-expectly';
+import { expectly } from "@cerios/playwright-expectly";
 
 // Validate sorted names
 const names = ["Alice", "Bob", "Charlie", "David"];
 expectly(names).toHaveAscendingOrder();
 
 // Check sorted categories from API
-const categories = await page.locator('.category').allTextContents();
+const categories = await page.locator(".category").allTextContents();
 expectly(categories).toHaveAscendingOrder();
 
 // Case-sensitive sorting
@@ -44,7 +44,7 @@ expectly(items).toHaveDescendingOrder();
 expectly(sortedList).toHaveDescendingOrder();
 
 // From page content
-const menuItems = await page.locator('.menu-item').allTextContents();
+const menuItems = await page.locator(".menu-item").allTextContents();
 expectly(menuItems).toHaveDescendingOrder();
 ```
 
@@ -119,7 +119,7 @@ expectly(usernames).toHaveUniqueValues();
 expectly(["a", "b", "b", "c"]).not.toHaveUniqueValues();
 
 // From page elements
-const tags = await page.locator('.tag').allTextContents();
+const tags = await page.locator(".tag").allTextContents();
 expectly(tags).toHaveUniqueValues();
 ```
 
@@ -128,108 +128,108 @@ expectly(tags).toHaveUniqueValues();
 ### Navigation Menu Validation
 
 ```typescript
-test('validate menu items are sorted', async ({ page }) => {
-  await page.goto('/');
+test("validate menu items are sorted", async ({ page }) => {
+	await page.goto("/");
 
-  const menuItems = await page.locator('.nav-menu a').allTextContents();
+	const menuItems = await page.locator(".nav-menu a").allTextContents();
 
-  expectly(menuItems).toHaveAscendingOrder();
-  expectly(menuItems).toHaveUniqueValues();
+	expectly(menuItems).toHaveAscendingOrder();
+	expectly(menuItems).toHaveUniqueValues();
 });
 ```
 
 ### Category/Tag Validation
 
 ```typescript
-test('validate category sorting', async ({ page }) => {
-  await page.goto('/products');
+test("validate category sorting", async ({ page }) => {
+	await page.goto("/products");
 
-  const categories = await page.locator('.category').allTextContents();
+	const categories = await page.locator(".category").allTextContents();
 
-  // Categories should be alphabetically sorted
-  expectly(categories).toHaveAscendingOrder();
+	// Categories should be alphabetically sorted
+	expectly(categories).toHaveAscendingOrder();
 
-  // No duplicate categories
-  expectly(categories).toHaveUniqueValues();
+	// No duplicate categories
+	expectly(categories).toHaveUniqueValues();
 });
 ```
 
 ### Dropdown Options
 
 ```typescript
-test('validate dropdown options', async ({ page }) => {
-  await page.goto('/settings');
+test("validate dropdown options", async ({ page }) => {
+	await page.goto("/settings");
 
-  const options = await page.locator('select.language option').allTextContents();
+	const options = await page.locator("select.language option").allTextContents();
 
-  // Options should be sorted
-  expectly(options).toHaveAscendingOrder();
+	// Options should be sorted
+	expectly(options).toHaveAscendingOrder();
 
-  // All options should be unique
-  expectly(options).toHaveUniqueValues();
+	// All options should be unique
+	expectly(options).toHaveUniqueValues();
 });
 ```
 
 ### Search Results
 
 ```typescript
-test('validate search results alphabetically', async ({ page }) => {
-  await page.goto('/search?q=test&sort=alpha');
+test("validate search results alphabetically", async ({ page }) => {
+	await page.goto("/search?q=test&sort=alpha");
 
-  const results = await page.locator('.result-title').allTextContents();
+	const results = await page.locator(".result-title").allTextContents();
 
-  expectly(results).toHaveAscendingOrder();
+	expectly(results).toHaveAscendingOrder();
 });
 ```
 
 ### File Listing
 
 ```typescript
-test('validate file list sorting', async ({ page }) => {
-  await page.goto('/files');
-  await page.locator('th.filename').click(); // Sort by filename
+test("validate file list sorting", async ({ page }) => {
+	await page.goto("/files");
+	await page.locator("th.filename").click(); // Sort by filename
 
-  const filenames = await page.locator('.filename').allTextContents();
+	const filenames = await page.locator(".filename").allTextContents();
 
-  // Should be sorted alphabetically
-  expectly(filenames).toHaveAscendingOrder();
-  expectly(filenames).toBeMonotonic();
+	// Should be sorted alphabetically
+	expectly(filenames).toHaveAscendingOrder();
+	expectly(filenames).toBeMonotonic();
 });
 ```
 
 ### API Response Validation
 
 ```typescript
-test('validate API returns sorted data', async () => {
-  const response = await api.getUsers({ sort: 'name' });
-  const names = response.users.map(u => u.name);
+test("validate API returns sorted data", async () => {
+	const response = await api.getUsers({ sort: "name" });
+	const names = response.users.map(u => u.name);
 
-  expectly(names).toHaveAscendingOrder();
-  expectly(names).toHaveUniqueValues();
+	expectly(names).toHaveAscendingOrder();
+	expectly(names).toHaveUniqueValues();
 });
 ```
 
 ### Priority Queue
 
 ```typescript
-test('validate priority ordering', async () => {
-  const tasks = await api.getTasks();
-  const priorities = tasks.map(t => t.priority);
+test("validate priority ordering", async () => {
+	const tasks = await api.getTasks();
+	const priorities = tasks.map(t => t.priority);
 
-  // Priorities should be monotonic (all ascending or all descending)
-  expectly(priorities).toBeMonotonic();
+	// Priorities should be monotonic (all ascending or all descending)
+	expectly(priorities).toBeMonotonic();
 });
 ```
 
 ### Version Numbers
 
 ```typescript
-test('validate version progression', async () => {
-  const versions = await api.getReleases();
-  const versionNumbers = versions.map(v => v.version);
+test("validate version progression", async () => {
+	const versions = await api.getReleases();
+	const versionNumbers = versions.map(v => v.version);
 
-  // Versions should increase
-  expectly(versionNumbers).toHaveStrictlyAscendingOrder();
+	// Versions should increase
+	expectly(versionNumbers).toHaveStrictlyAscendingOrder();
 });
 ```
 
@@ -270,14 +270,14 @@ expectly(trimmed).toHaveAscendingOrder();
 For locale-specific sorting, sort the array with `localeCompare` before validating:
 
 ```typescript
-test('validate locale-specific sorting', async () => {
-  const names = ["Änne", "Zebra", "Österreich"];
+test("validate locale-specific sorting", async () => {
+	const names = ["Änne", "Zebra", "Österreich"];
 
-  // Sort with locale
-  const sorted = [...names].sort((a, b) => a.localeCompare(b, 'de'));
+	// Sort with locale
+	const sorted = [...names].sort((a, b) => a.localeCompare(b, "de"));
 
-  // Validate the sorted result
-  expectly(sorted).toHaveAscendingOrder();
+	// Validate the sorted result
+	expectly(sorted).toHaveAscendingOrder();
 });
 ```
 

@@ -29,7 +29,7 @@ Date comparison, validation, and temporal assertion matchers.
 Asserts that a date is close to another date within a specified deviation.
 
 ```typescript
-import { expectly } from '@cerios/playwright-expectly';
+import { expectly } from "@cerios/playwright-expectly";
 
 // Check if dates are within 30 seconds
 expectly(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
@@ -39,9 +39,9 @@ const now = new Date();
 expectly(createdAt).toBeCloseTo(now, { hours: 1 });
 
 // Multiple deviation units
-expectly(timestamp).toBeCloseTo(new Date('2024-01-01T12:00:00Z'), {
-  hours: 2,
-  minutes: 30
+expectly(timestamp).toBeCloseTo(new Date("2024-01-01T12:00:00Z"), {
+	hours: 2,
+	minutes: 30,
 });
 ```
 
@@ -56,7 +56,7 @@ const dates = events.map(e => e.createdAt);
 expectly(dates).toHaveDatesAscendingOrder();
 
 // Descending order (newest to oldest)
-const timeline = [new Date('2024-12-31'), new Date('2024-06-15'), new Date('2024-01-01')];
+const timeline = [new Date("2024-12-31"), new Date("2024-06-15"), new Date("2024-01-01")];
 expectly(timeline).toHaveDatesDescendingOrder();
 ```
 
@@ -81,15 +81,12 @@ Asserts that a date falls within a range (inclusive).
 
 ```typescript
 // Check date within a range
-const start = new Date('2024-01-01');
-const end = new Date('2024-12-31');
+const start = new Date("2024-01-01");
+const end = new Date("2024-12-31");
 expectly(eventDate).toBeBetween(start, end);
 
 // Validate appointment scheduling
-expectly(appointment).toBeBetween(
-  '2024-06-01T09:00:00Z',
-  '2024-06-01T17:00:00Z'
-);
+expectly(appointment).toBeBetween("2024-06-01T09:00:00Z", "2024-06-01T17:00:00Z");
 ```
 
 ## toBeSameDay() / toBeSameMonth() / toBeSameYear()
@@ -101,13 +98,13 @@ Compares dates at different granularities.
 expectly(eventDate).toBeSameDay(new Date());
 
 // Verify dates match regardless of time
-expectly('2024-01-01T08:00:00Z').toBeSameDay('2024-01-01T20:00:00Z');
+expectly("2024-01-01T08:00:00Z").toBeSameDay("2024-01-01T20:00:00Z");
 
 // Check if dates are in the same month
-expectly('2024-01-15').toBeSameMonth('2024-01-20');
+expectly("2024-01-15").toBeSameMonth("2024-01-20");
 
 // Validate same year
-expectly('2024-01-01').toBeSameYear('2024-12-31');
+expectly("2024-01-01").toBeSameYear("2024-12-31");
 ```
 
 ## toBeToday() / toBeYesterday() / toBeTomorrow()
@@ -164,8 +161,8 @@ Validates if a date's year is a leap year.
 
 ```typescript
 // Check if year is a leap year
-expectly(new Date('2024-06-15')).toBeLeapYear(); // 2024 is a leap year
-expectly(new Date('2023-06-15')).not.toBeLeapYear(); // 2023 is not
+expectly(new Date("2024-06-15")).toBeLeapYear(); // 2024 is a leap year
+expectly(new Date("2023-06-15")).not.toBeLeapYear(); // 2023 is not
 ```
 
 ## toHaveDateRange()
@@ -190,14 +187,14 @@ Asserts that an array contains consecutive dates by unit.
 
 ```typescript
 // Check consecutive days
-const dates = ['2024-01-01', '2024-01-02', '2024-01-03'];
-expectly(dates).toHaveConsecutiveDates('day');
+const dates = ["2024-01-01", "2024-01-02", "2024-01-03"];
+expectly(dates).toHaveConsecutiveDates("day");
 
 // Validate monthly sequence
-expectly(billingDates).toHaveConsecutiveDates('month');
+expectly(billingDates).toHaveConsecutiveDates("month");
 
 // Check yearly progression
-expectly(annualReports).toHaveConsecutiveDates('year');
+expectly(annualReports).toHaveConsecutiveDates("year");
 ```
 
 ## toHaveDatesWithinRange()
@@ -206,16 +203,10 @@ Asserts that all dates in an array fall within a range.
 
 ```typescript
 // Validate all dates are in Q1 2024
-expectly(transactions).toHaveDatesWithinRange(
-  '2024-01-01',
-  '2024-03-31'
-);
+expectly(transactions).toHaveDatesWithinRange("2024-01-01", "2024-03-31");
 
 // Check business hours entries
-expectly(logEntries).toHaveDatesWithinRange(
-  new Date('2024-06-01T09:00:00Z'),
-  new Date('2024-06-01T17:00:00Z')
-);
+expectly(logEntries).toHaveDatesWithinRange(new Date("2024-06-01T09:00:00Z"), new Date("2024-06-01T17:00:00Z"));
 ```
 
 ## toHaveUniqueDates()
@@ -230,7 +221,7 @@ expectly(eventTimestamps).toHaveUniqueDates();
 expectly(dailyRecords).toHaveUniqueDates(true);
 
 // Ensure no duplicate entries
-const dates = ['2024-01-01T10:00:00Z', '2024-01-02T10:00:00Z'];
+const dates = ["2024-01-01T10:00:00Z", "2024-01-02T10:00:00Z"];
 expectly(dates).toHaveUniqueDates();
 ```
 
@@ -240,12 +231,12 @@ Validates that a string is in ISO 8601 format.
 
 ```typescript
 // Validate API response format
-const timestamp = await page.locator('.timestamp').textContent();
+const timestamp = await page.locator(".timestamp").textContent();
 expectly(timestamp).toBeValidISODate();
 
 // Check ISO format compliance
-expectly('2024-01-01T12:00:00.000Z').toBeValidISODate();
-expectly('2024-01-01T12:00:00Z').toBeValidISODate();
+expectly("2024-01-01T12:00:00.000Z").toBeValidISODate();
+expectly("2024-01-01T12:00:00Z").toBeValidISODate();
 ```
 
 ## toMatchTimeZone()
@@ -255,15 +246,15 @@ Asserts that a date matches a specific timezone offset.
 ```typescript
 // Check if date is in UTC
 expectly(timestamp).toMatchTimeZone(0);
-expectly(timestamp).toMatchTimeZone('UTC');
+expectly(timestamp).toMatchTimeZone("UTC");
 
 // Check if date is in EST (UTC-5)
 expectly(date).toMatchTimeZone(-300);
-expectly(date).toMatchTimeZone('-05:00');
+expectly(date).toMatchTimeZone("-05:00");
 
 // Check if date is in IST (UTC+5:30)
 expectly(date).toMatchTimeZone(330);
-expectly(date).toMatchTimeZone('+05:30');
+expectly(date).toMatchTimeZone("+05:30");
 ```
 
 ## toBeStartOfMonth() / toBeEndOfMonth()
@@ -275,13 +266,13 @@ Checks if a date is the first or last day of the month.
 expectly(billingDate).toBeStartOfMonth();
 
 // Validate monthly report date
-expectly(new Date('2024-01-01')).toBeStartOfMonth();
+expectly(new Date("2024-01-01")).toBeStartOfMonth();
 
 // Check if date is end of month
 expectly(paymentDate).toBeEndOfMonth();
 
 // Validate month-end processing
-expectly(new Date('2024-01-31')).toBeEndOfMonth();
+expectly(new Date("2024-01-31")).toBeEndOfMonth();
 ```
 
 ## toHaveDateGapsLargerThan()
@@ -317,18 +308,18 @@ Checks if a date falls on a specific day or in a specific month.
 
 ```typescript
 // Check if date is a Monday
-expectly(meetingDate).toBeSpecificDayOfWeek('Monday');
+expectly(meetingDate).toBeSpecificDayOfWeek("Monday");
 expectly(meetingDate).toBeSpecificDayOfWeek(1);
 
 // Validate weekend day
-expectly(eventDate).toBeSpecificDayOfWeek('Saturday');
+expectly(eventDate).toBeSpecificDayOfWeek("Saturday");
 
 // Check if date is in January
-expectly(date).toBeInMonth('January');
+expectly(date).toBeInMonth("January");
 expectly(date).toBeInMonth(1);
 
 // Validate December date
-expectly(holidayDate).toBeInMonth('December');
+expectly(holidayDate).toBeInMonth("December");
 ```
 
 ## Common Use Cases
@@ -336,42 +327,39 @@ expectly(holidayDate).toBeInMonth('December');
 ### Event Scheduling
 
 ```typescript
-test('validate event timing', async () => {
-  const event = await api.getEvent(123);
+test("validate event timing", async () => {
+	const event = await api.getEvent(123);
 
-  expectly(event.startDate).toBeInTheFuture();
-  expectly(event.startDate).toBeBefore(event.endDate);
-  expectly(event.startDate).toBeWeekday();
-  expectly(event.startDate).toBeCloseTo(new Date('2024-06-01'), { days: 1 });
+	expectly(event.startDate).toBeInTheFuture();
+	expectly(event.startDate).toBeBefore(event.endDate);
+	expectly(event.startDate).toBeWeekday();
+	expectly(event.startDate).toBeCloseTo(new Date("2024-06-01"), { days: 1 });
 });
 ```
 
 ### Data Timeline Validation
 
 ```typescript
-test('validate data timeline', async () => {
-  const records = await api.getRecords();
-  const dates = records.map(r => r.createdAt);
+test("validate data timeline", async () => {
+	const records = await api.getRecords();
+	const dates = records.map(r => r.createdAt);
 
-  expectly(dates).toHaveDatesAscendingOrder();
-  expectly(dates).toHaveDatesWithinRange(
-    new Date('2024-01-01'),
-    new Date('2024-12-31')
-  );
-  expectly(dates).toHaveUniqueDates();
+	expectly(dates).toHaveDatesAscendingOrder();
+	expectly(dates).toHaveDatesWithinRange(new Date("2024-01-01"), new Date("2024-12-31"));
+	expectly(dates).toHaveUniqueDates();
 });
 ```
 
 ### Business Logic
 
 ```typescript
-test('validate business rules', async () => {
-  const order = await api.getOrder(456);
+test("validate business rules", async () => {
+	const order = await api.getOrder(456);
 
-  expectly(order.createdAt).toBeInThePast();
-  expectly(order.deliveryDate).toBeWeekday();
-  expectly(order.deliveryDate).not.toBeWeekend();
-  expectly(order.expiryDate).toBeAfter(order.deliveryDate);
+	expectly(order.createdAt).toBeInThePast();
+	expectly(order.deliveryDate).toBeWeekday();
+	expectly(order.deliveryDate).not.toBeWeekend();
+	expectly(order.expiryDate).toBeAfter(order.deliveryDate);
 });
 ```
 
