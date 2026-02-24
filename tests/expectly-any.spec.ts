@@ -1,74 +1,75 @@
 import { expect, test } from "@playwright/test";
+
 import { expectlyAny } from "../src/expectly-any";
 
 test.describe("toBeAnyOf", () => {
-	test("should pass when value matches first possibility", async () => {
+	test("should pass when value matches first possibility", () => {
 		expectlyAny(5).toBeAnyOf(5, 10, 15);
 	});
 
-	test("should pass when value matches middle possibility", async () => {
+	test("should pass when value matches middle possibility", () => {
 		expectlyAny(10).toBeAnyOf(5, 10, 15);
 	});
 
-	test("should pass when value matches last possibility", async () => {
+	test("should pass when value matches last possibility", () => {
 		expectlyAny(15).toBeAnyOf(5, 10, 15);
 	});
 
-	test("should pass with string values", async () => {
+	test("should pass with string values", () => {
 		expectlyAny("hello").toBeAnyOf("hello", "world", "test");
 	});
 
-	test("should pass with boolean values", async () => {
+	test("should pass with boolean values", () => {
 		expectlyAny(true).toBeAnyOf(true, false);
 	});
 
-	test("should pass with null value", async () => {
+	test("should pass with null value", () => {
 		expectlyAny(null).toBeAnyOf(null, undefined, 0);
 	});
 
-	test("should pass with undefined value", async () => {
+	test("should pass with undefined value", () => {
 		expectlyAny(undefined).toBeAnyOf(null, undefined, 0);
 	});
 
-	test("should pass with zero", async () => {
+	test("should pass with zero", () => {
 		expectlyAny(0).toBeAnyOf(0, 1, 2);
 	});
 
-	test("should pass with empty string", async () => {
+	test("should pass with empty string", () => {
 		expectlyAny("").toBeAnyOf("", "a", "b");
 	});
 
-	test("should pass with NaN", async () => {
+	test("should pass with NaN", () => {
 		expectlyAny(Number.NaN).toBeAnyOf(Number.NaN, 0, 1);
 	});
 
-	test("should pass with single possibility", async () => {
+	test("should pass with single possibility", () => {
 		expectlyAny(42).toBeAnyOf(42);
 	});
 
-	test("should pass with mixed types in possibilities", async () => {
+	test("should pass with mixed types in possibilities", () => {
 		expectlyAny("5").toBeAnyOf(5, "5", true);
 	});
 
-	test("should pass with negative numbers", async () => {
+	test("should pass with negative numbers", () => {
 		expectlyAny(-10).toBeAnyOf(-10, -5, 0, 5, 10);
 	});
 
-	test("should pass with floating point numbers", async () => {
+	test("should pass with floating point numbers", () => {
 		expectlyAny(3.14).toBeAnyOf(2.71, 3.14, 1.41);
 	});
 
-	test("should pass with object comparison", async () => {
+	test("should pass with object comparison", () => {
 		const obj = { id: 1, name: "test" };
 		expectlyAny(obj).toBeAnyOf({ id: 1, name: "test" }, { id: 2, name: "other" });
 	});
 
-	test("should pass with array comparison", async () => {
+	test("should pass with array comparison", () => {
 		const arr = [1, 2, 3];
 		expectlyAny(arr).toBeAnyOf([1, 2, 3], [4, 5, 6]);
 	});
 
-	test("should pass with nested objects", async () => {
+	test("should pass with nested objects", () => {
 		const obj = { user: { id: 1, name: "Alice" }, active: true };
 		expectlyAny(obj).toBeAnyOf(
 			{ user: { id: 1, name: "Alice" }, active: true },
@@ -76,12 +77,12 @@ test.describe("toBeAnyOf", () => {
 		);
 	});
 
-	test("should fail when value doesn't match any possibility", async () => {
+	test("should fail when value doesn't match any possibility", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(20).toBeAnyOf(5, 10, 15);
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("toBeAnyOf");
@@ -90,76 +91,92 @@ test.describe("toBeAnyOf", () => {
 		expect(error?.message).toContain("Possibilities");
 	});
 
-	test("should fail when string doesn't match any possibility", async () => {
-		expect(() => expectlyAny("foo").toBeAnyOf("bar", "baz", "qux")).toThrow(/toBeAnyOf/);
+	test("should fail when string doesn't match any possibility", () => {
+		expect(() => {
+			expectlyAny("foo").toBeAnyOf("bar", "baz", "qux");
+		}).toThrow(/toBeAnyOf/);
 	});
 
-	test("should fail with type mismatch", async () => {
-		expect(() => expectlyAny("5").toBeAnyOf(5, 10, 15)).toThrow();
+	test("should fail with type mismatch", () => {
+		expect(() => {
+			expectlyAny("5").toBeAnyOf(5, 10, 15);
+		}).toThrow();
 	});
 
-	test("should fail when object doesn't match", async () => {
-		expect(() => expectlyAny({ id: 3 }).toBeAnyOf({ id: 1 }, { id: 2 })).toThrow();
+	test("should fail when object doesn't match", () => {
+		expect(() => {
+			expectlyAny({ id: 3 }).toBeAnyOf({ id: 1 }, { id: 2 });
+		}).toThrow();
 	});
 
-	test("should fail when array doesn't match", async () => {
-		expect(() => expectlyAny([1, 2, 3]).toBeAnyOf([1, 2], [1, 2, 3, 4])).toThrow();
+	test("should fail when array doesn't match", () => {
+		expect(() => {
+			expectlyAny([1, 2, 3]).toBeAnyOf([1, 2], [1, 2, 3, 4]);
+		}).toThrow();
 	});
 
-	test("should work with .not when value matches a possibility", async () => {
+	test("should work with .not when value matches a possibility", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(10).not.toBeAnyOf(5, 10, 15);
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("not");
 		expect(error?.message).toContain("Expected value to not be any of the provided possibilities");
 	});
 
-	test("should work with .not when value doesn't match any possibility", async () => {
+	test("should work with .not when value doesn't match any possibility", () => {
 		expectlyAny(20).not.toBeAnyOf(5, 10, 15);
 	});
 
-	test("should handle empty possibilities array", async () => {
-		expect(() => expectlyAny(5).toBeAnyOf()).toThrow();
+	test("should handle empty possibilities array", () => {
+		expect(() => {
+			expectlyAny(5).toBeAnyOf();
+		}).toThrow();
 	});
 
-	test("should distinguish between null and undefined", async () => {
-		expect(() => expectlyAny(null).toBeAnyOf(undefined)).toThrow();
+	test("should distinguish between null and undefined", () => {
+		expect(() => {
+			expectlyAny(null).toBeAnyOf(undefined);
+		}).toThrow();
 	});
 
-	test("should distinguish between 0 and false", async () => {
-		expect(() => expectlyAny(0).toBeAnyOf(false)).toThrow();
+	test("should distinguish between 0 and false", () => {
+		expect(() => {
+			expectlyAny(0).toBeAnyOf(false);
+		}).toThrow();
 	});
 
-	test("should distinguish between empty string and false", async () => {
-		expect(() => expectlyAny("").toBeAnyOf(false)).toThrow();
+	test("should distinguish between empty string and false", () => {
+		expect(() => {
+			expectlyAny("").toBeAnyOf(false);
+		}).toThrow();
 	});
 
-	test("should handle symbols", async () => {
+	test("should handle symbols", () => {
 		const sym1 = Symbol("test");
 		const sym2 = Symbol("test");
 		expectlyAny(sym1).toBeAnyOf(sym1, sym2);
 	});
 
-	test("should handle BigInt values", async () => {
+	test("should handle BigInt values", () => {
 		const bigInt = BigInt(9007199254740991);
 		expectlyAny(bigInt).toBeAnyOf(BigInt(123), bigInt, BigInt(456));
 	});
 
-	test("should handle Date objects", async () => {
+	test("should handle Date objects", () => {
 		const date = new Date("2023-01-01");
 		expectlyAny(date).toBeAnyOf(date, new Date("2023-01-02"));
 	});
 
-	test("should handle RegExp objects", async () => {
+	test("should handle RegExp objects", () => {
 		const regex = /test/i;
 		expectlyAny(regex).toBeAnyOf(/other/, regex);
 	});
 
-	test("should handle class instances", async () => {
+	test("should handle class instances", () => {
 		class Person {
 			constructor(public name: string) {}
 		}
@@ -167,13 +184,13 @@ test.describe("toBeAnyOf", () => {
 		expectlyAny(person).toBeAnyOf(person, new Person("Bob"));
 	});
 
-	test("should handle functions", async () => {
+	test("should handle functions", () => {
 		const fn1 = () => "test";
 		const fn2 = () => "other";
 		expectlyAny(fn1).toBeAnyOf(fn1, fn2);
 	});
 
-	test("should handle complex nested structures", async () => {
+	test("should handle complex nested structures", () => {
 		const complex = {
 			users: [
 				{ id: 1, name: "Alice", tags: ["admin", "user"] },
@@ -185,7 +202,7 @@ test.describe("toBeAnyOf", () => {
 		expectlyAny(complex).toBeAnyOf(complex, { users: [], metadata: {} });
 	});
 
-	test("should handle multiple object possibilities", async () => {
+	test("should handle multiple object possibilities", () => {
 		const obj = { status: "active", count: 5 };
 		expectlyAny(obj).toBeAnyOf(
 			{ status: "inactive", count: 0 },
@@ -194,20 +211,20 @@ test.describe("toBeAnyOf", () => {
 		);
 	});
 
-	test("should work with large number of possibilities", async () => {
+	test("should work with large number of possibilities", () => {
 		const possibilities = Array.from({ length: 100 }, (_, i) => i);
 		expectlyAny(50).toBeAnyOf(...possibilities);
 	});
 
-	test("should handle Infinity values", async () => {
+	test("should handle Infinity values", () => {
 		expectlyAny(Number.POSITIVE_INFINITY).toBeAnyOf(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 0);
 	});
 
-	test("should handle negative Infinity values", async () => {
+	test("should handle negative Infinity values", () => {
 		expectlyAny(Number.NEGATIVE_INFINITY).toBeAnyOf(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 0);
 	});
 
-	test("should match objects with same structure and values", async () => {
+	test("should match objects with same structure and values", () => {
 		// JSON.stringify preserves insertion order, so these should be equal
 		const obj1 = { a: 1, b: 2 };
 		const obj2 = { a: 1, b: 2 };
@@ -215,225 +232,255 @@ test.describe("toBeAnyOf", () => {
 		expectlyAny(obj1).toBeAnyOf(obj3, obj2, obj3);
 	});
 
-	test("should handle parsed JSON objects", async () => {
+	test("should handle parsed JSON objects", () => {
 		// These have same serialization
-		const obj1 = JSON.parse('{"a":1,"b":2}');
-		const obj2 = JSON.parse('{"c":3}');
-		const obj3 = JSON.parse('{"a":1,"b":2}');
-		(expectlyAny(obj1) as any).toBeAnyOf(obj2, obj3);
+		const obj1: unknown = JSON.parse('{"a":1,"b":2}');
+		const obj2: unknown = JSON.parse('{"c":3}');
+		const obj3: unknown = JSON.parse('{"a":1,"b":2}');
+		expectlyAny(obj1).toBeAnyOf(obj2, obj3);
 	});
 
-	test("should provide clear error message with multiple types", async () => {
-		expect(() => expectlyAny(100).toBeAnyOf("one", true, null, { value: 1 }, [1, 2, 3])).toThrow(/100/);
+	test("should provide clear error message with multiple types", () => {
+		expect(() => {
+			expectlyAny(100).toBeAnyOf("one", true, null, { value: 1 }, [1, 2, 3]);
+		}).toThrow(/100/);
 	});
 
-	test("should handle circular references by reference equality", async () => {
-		const obj1: any = { name: "test" };
+	test("should handle circular references by reference equality", () => {
+		const obj1: { name: string; self?: unknown } = { name: "test" };
 		obj1.self = obj1;
 
 		const obj2 = { name: "different" };
 
 		// This will use === comparison due to JSON.stringify throwing
 		// Should pass because obj1 is the same reference
-		(expectlyAny(obj1) as any).toBeAnyOf(obj1, obj2);
+		expectlyAny(obj1).toBeAnyOf(obj1, obj2);
 	});
 });
 
 test.describe("toBeNullish", () => {
-	test("should pass for null", async () => {
+	test("should pass for null", () => {
 		expectlyAny(null).toBeNullish();
 	});
 
-	test("should pass for undefined", async () => {
+	test("should pass for undefined", () => {
 		expectlyAny(undefined).toBeNullish();
 	});
 
-	test("should pass for explicitly undefined variable", async () => {
-		let value: undefined;
+	test("should pass for explicitly undefined variable", () => {
+		const value: undefined = undefined;
 		expectlyAny(value).toBeNullish();
 	});
 
-	test("should fail for 0", async () => {
-		expect(() => expectlyAny(0).toBeNullish()).toThrow(/Expected value to be nullish/);
+	test("should fail for 0", () => {
+		expect(() => {
+			expectlyAny(0).toBeNullish();
+		}).toThrow(/Expected value to be nullish/);
 	});
 
-	test("should fail for false", async () => {
-		expect(() => expectlyAny(false).toBeNullish()).toThrow();
+	test("should fail for false", () => {
+		expect(() => {
+			expectlyAny(false).toBeNullish();
+		}).toThrow();
 	});
 
-	test("should fail for empty string", async () => {
-		expect(() => expectlyAny("").toBeNullish()).toThrow();
+	test("should fail for empty string", () => {
+		expect(() => {
+			expectlyAny("").toBeNullish();
+		}).toThrow();
 	});
 
-	test("should fail for NaN", async () => {
-		expect(() => expectlyAny(Number.NaN).toBeNullish()).toThrow();
+	test("should fail for NaN", () => {
+		expect(() => {
+			expectlyAny(Number.NaN).toBeNullish();
+		}).toThrow();
 	});
 
-	test("should fail for empty object", async () => {
-		expect(() => expectlyAny({}).toBeNullish()).toThrow();
+	test("should fail for empty object", () => {
+		expect(() => {
+			expectlyAny({}).toBeNullish();
+		}).toThrow();
 	});
 
-	test("should fail for empty array", async () => {
-		expect(() => expectlyAny([]).toBeNullish()).toThrow();
+	test("should fail for empty array", () => {
+		expect(() => {
+			expectlyAny([]).toBeNullish();
+		}).toThrow();
 	});
 
-	test("should work with .not for non-nullish values", async () => {
+	test("should work with .not for non-nullish values", () => {
 		expectlyAny(0).not.toBeNullish();
 		expectlyAny(false).not.toBeNullish();
 		expectlyAny("").not.toBeNullish();
 		expectlyAny({}).not.toBeNullish();
 	});
 
-	test("should fail with .not for null", async () => {
-		expect(() => expectlyAny(null).not.toBeNullish()).toThrow(/Expected value to not be nullish/);
+	test("should fail with .not for null", () => {
+		expect(() => {
+			expectlyAny(null).not.toBeNullish();
+		}).toThrow(/Expected value to not be nullish/);
 	});
 
-	test("should fail with .not for undefined", async () => {
-		expect(() => expectlyAny(undefined).not.toBeNullish()).toThrow();
+	test("should fail with .not for undefined", () => {
+		expect(() => {
+			expectlyAny(undefined).not.toBeNullish();
+		}).toThrow();
 	});
 });
 
 test.describe("toBeInteger", () => {
-	test("should pass for positive integer", async () => {
+	test("should pass for positive integer", () => {
 		expectlyAny(42).toBeInteger();
 	});
 
-	test("should pass for negative integer", async () => {
+	test("should pass for negative integer", () => {
 		expectlyAny(-42).toBeInteger();
 	});
 
-	test("should pass for zero", async () => {
+	test("should pass for zero", () => {
 		expectlyAny(0).toBeInteger();
 	});
 
-	test("should pass for large integer", async () => {
+	test("should pass for large integer", () => {
 		expectlyAny(9007199254740991).toBeInteger();
 	});
 
-	test("should fail for float", async () => {
+	test("should fail for float", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(3.14).toBeInteger();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("Expected value to be an integer");
 	});
 
-	test("should fail for negative float", async () => {
-		expect(() => expectlyAny(-3.14).toBeInteger()).toThrow();
+	test("should fail for negative float", () => {
+		expect(() => {
+			expectlyAny(-3.14).toBeInteger();
+		}).toThrow();
 	});
 
-	test("should fail for string number", async () => {
+	test("should fail for string number", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny("42").toBeInteger();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("string");
 	});
 
-	test("should fail for NaN", async () => {
-		expect(() => expectlyAny(Number.NaN).toBeInteger()).toThrow();
+	test("should fail for NaN", () => {
+		expect(() => {
+			expectlyAny(Number.NaN).toBeInteger();
+		}).toThrow();
 	});
 
-	test("should fail for Infinity", async () => {
-		expect(() => expectlyAny(Number.POSITIVE_INFINITY).toBeInteger()).toThrow();
+	test("should fail for Infinity", () => {
+		expect(() => {
+			expectlyAny(Number.POSITIVE_INFINITY).toBeInteger();
+		}).toThrow();
 	});
 
-	test("should fail for null", async () => {
-		expect(() => expectlyAny(null).toBeInteger()).toThrow();
+	test("should fail for null", () => {
+		expect(() => {
+			expectlyAny(null).toBeInteger();
+		}).toThrow();
 	});
 
-	test("should work with .not for floats", async () => {
+	test("should work with .not for floats", () => {
 		expectlyAny(3.14).not.toBeInteger();
 		expectlyAny(0.1).not.toBeInteger();
 	});
 
-	test("should fail with .not for integers", async () => {
-		expect(() => expectlyAny(42).not.toBeInteger()).toThrow(/Expected value to not be an integer/);
+	test("should fail with .not for integers", () => {
+		expect(() => {
+			expectlyAny(42).not.toBeInteger();
+		}).toThrow(/Expected value to not be an integer/);
 	});
 });
 
 test.describe("toBeFloat", () => {
-	test("should pass for positive float", async () => {
+	test("should pass for positive float", () => {
 		expectlyAny(3.14).toBeFloat();
 	});
 
-	test("should pass for negative float", async () => {
+	test("should pass for negative float", () => {
 		expectlyAny(-3.14).toBeFloat();
 	});
 
-	test("should pass for small decimal", async () => {
+	test("should pass for small decimal", () => {
 		expectlyAny(0.1).toBeFloat();
 	});
 
-	test("should pass for result of division", async () => {
+	test("should pass for result of division", () => {
 		expectlyAny(1 / 3).toBeFloat();
 	});
 
-	test("should fail for integer", async () => {
+	test("should fail for integer", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(42).toBeFloat();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("Expected value to be a float");
 		expect(error?.message).toContain("value is an integer");
 	});
 
-	test("should fail for zero", async () => {
-		expect(() => expectlyAny(0).toBeFloat()).toThrow();
+	test("should fail for zero", () => {
+		expect(() => {
+			expectlyAny(0).toBeFloat();
+		}).toThrow();
 	});
 
-	test("should fail for NaN", async () => {
+	test("should fail for NaN", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(Number.NaN).toBeFloat();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("value is NaN");
 	});
 
-	test("should fail for string number", async () => {
+	test("should fail for string number", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny("3.14").toBeFloat();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("type is string");
 	});
 
-	test("should fail for Infinity", async () => {
+	test("should fail for Infinity", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(Number.POSITIVE_INFINITY).toBeFloat();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 	});
 
-	test("should work with .not for integers", async () => {
+	test("should work with .not for integers", () => {
 		expectlyAny(42).not.toBeFloat();
 		expectlyAny(0).not.toBeFloat();
 	});
 
-	test("should fail with .not for floats", async () => {
+	test("should fail with .not for floats", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(3.14).not.toBeFloat();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("Expected value to not be a float");
@@ -441,162 +488,186 @@ test.describe("toBeFloat", () => {
 });
 
 test.describe("toBePrimitive", () => {
-	test("should pass for string", async () => {
+	test("should pass for string", () => {
 		expectlyAny("hello").toBePrimitive();
 	});
 
-	test("should pass for number", async () => {
+	test("should pass for number", () => {
 		expectlyAny(42).toBePrimitive();
 	});
 
-	test("should pass for boolean", async () => {
+	test("should pass for boolean", () => {
 		expectlyAny(true).toBePrimitive();
 	});
 
-	test("should pass for null", async () => {
+	test("should pass for null", () => {
 		expectlyAny(null).toBePrimitive();
 	});
 
-	test("should pass for undefined", async () => {
+	test("should pass for undefined", () => {
 		expectlyAny(undefined).toBePrimitive();
 	});
 
-	test("should pass for bigint", async () => {
+	test("should pass for bigint", () => {
 		expectlyAny(BigInt(123)).toBePrimitive();
 	});
 
-	test("should pass for symbol", async () => {
+	test("should pass for symbol", () => {
 		expectlyAny(Symbol("test")).toBePrimitive();
 	});
 
-	test("should fail for object", async () => {
-		expect(() => expectlyAny({}).toBePrimitive()).toThrow(/Expected value to be a primitive type/);
+	test("should fail for object", () => {
+		expect(() => {
+			expectlyAny({}).toBePrimitive();
+		}).toThrow(/Expected value to be a primitive type/);
 	});
 
-	test("should fail for array", async () => {
-		expect(() => expectlyAny([]).toBePrimitive()).toThrow();
+	test("should fail for array", () => {
+		expect(() => {
+			expectlyAny([]).toBePrimitive();
+		}).toThrow();
 	});
 
-	test("should fail for function", async () => {
-		expect(() => expectlyAny(() => {}).toBePrimitive()).toThrow();
+	test("should fail for function", () => {
+		expect(() => {
+			expectlyAny(() => {}).toBePrimitive();
+		}).toThrow();
 	});
 
-	test("should fail for Date", async () => {
-		expect(() => expectlyAny(new Date()).toBePrimitive()).toThrow();
+	test("should fail for Date", () => {
+		expect(() => {
+			expectlyAny(new Date()).toBePrimitive();
+		}).toThrow();
 	});
 
-	test("should work with .not for objects", async () => {
+	test("should work with .not for objects", () => {
 		expectlyAny({}).not.toBePrimitive();
 		expectlyAny([]).not.toBePrimitive();
 		expectlyAny(() => {}).not.toBePrimitive();
 	});
 
-	test("should fail with .not for primitives", async () => {
-		expect(() => expectlyAny("string").not.toBePrimitive()).toThrow(/Expected value to not be a primitive type/);
+	test("should fail with .not for primitives", () => {
+		expect(() => {
+			expectlyAny("string").not.toBePrimitive();
+		}).toThrow(/Expected value to not be a primitive type/);
 	});
 });
 
 test.describe("toBeArray", () => {
-	test("should pass for empty array", async () => {
+	test("should pass for empty array", () => {
 		expectlyAny([]).toBeArray();
 	});
 
-	test("should pass for array with elements", async () => {
+	test("should pass for array with elements", () => {
 		expectlyAny([1, 2, 3]).toBeArray();
 	});
 
-	test("should pass for array of objects", async () => {
+	test("should pass for array of objects", () => {
 		expectlyAny([{ id: 1 }, { id: 2 }]).toBeArray();
 	});
 
-	test("should pass for nested arrays", async () => {
+	test("should pass for nested arrays", () => {
 		expectlyAny([
 			[1, 2],
 			[3, 4],
 		]).toBeArray();
 	});
 
-	test("should fail for object", async () => {
-		expect(() => expectlyAny({}).toBeArray()).toThrow(/Expected value to be an array/);
+	test("should fail for object", () => {
+		expect(() => {
+			expectlyAny({}).toBeArray();
+		}).toThrow(/Expected value to be an array/);
 	});
 
-	test("should fail for string", async () => {
-		expect(() => expectlyAny("array").toBeArray()).toThrow();
+	test("should fail for string", () => {
+		expect(() => {
+			expectlyAny("array").toBeArray();
+		}).toThrow();
 	});
 
-	test("should fail for null", async () => {
-		expect(() => expectlyAny(null).toBeArray()).toThrow();
+	test("should fail for null", () => {
+		expect(() => {
+			expectlyAny(null).toBeArray();
+		}).toThrow();
 	});
 
-	test("should work with .not for non-arrays", async () => {
+	test("should work with .not for non-arrays", () => {
 		expectlyAny({}).not.toBeArray();
 		expectlyAny("string").not.toBeArray();
 		expectlyAny(123).not.toBeArray();
 	});
 
-	test("should fail with .not for arrays", async () => {
-		expect(() => expectlyAny([1, 2, 3]).not.toBeArray()).toThrow(/Expected value to not be an array/);
+	test("should fail with .not for arrays", () => {
+		expect(() => {
+			expectlyAny([1, 2, 3]).not.toBeArray();
+		}).toThrow(/Expected value to not be an array/);
 	});
 });
 
 test.describe("toBeObject", () => {
-	test("should pass for plain object", async () => {
+	test("should pass for plain object", () => {
 		expectlyAny({}).toBeObject();
 	});
 
-	test("should pass for object with properties", async () => {
+	test("should pass for object with properties", () => {
 		expectlyAny({ id: 1, name: "test" }).toBeObject();
 	});
 
-	test("should pass for nested objects", async () => {
+	test("should pass for nested objects", () => {
 		expectlyAny({ user: { id: 1 } }).toBeObject();
 	});
 
-	test("should pass for class instance", async () => {
+	test("should pass for class instance", () => {
 		class Person {
 			constructor(public name: string) {}
 		}
 		expectlyAny(new Person("Alice")).toBeObject();
 	});
 
-	test("should fail for array", async () => {
+	test("should fail for array", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny([]).toBeObject();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("Expected value to be an object");
 		expect(error?.message).toContain("array");
 	});
 
-	test("should fail for null", async () => {
+	test("should fail for null", () => {
 		let error: Error | undefined;
 		try {
 			expectlyAny(null).toBeObject();
-		} catch (e) {
-			error = e as Error;
+		} catch (e: unknown) {
+			error = e instanceof Error ? e : new Error(String(e));
 		}
 		expect(error).toBeDefined();
 		expect(error?.message).toContain("null");
 	});
 
-	test("should fail for string", async () => {
-		expect(() => expectlyAny("object").toBeObject()).toThrow();
+	test("should fail for string", () => {
+		expect(() => {
+			expectlyAny("object").toBeObject();
+		}).toThrow();
 	});
 
-	test("should fail for number", async () => {
-		expect(() => expectlyAny(123).toBeObject()).toThrow();
+	test("should fail for number", () => {
+		expect(() => {
+			expectlyAny(123).toBeObject();
+		}).toThrow();
 	});
 
-	test("should work with .not for non-objects", async () => {
+	test("should work with .not for non-objects", () => {
 		expectlyAny([]).not.toBeObject();
 		expectlyAny(null).not.toBeObject();
 		expectlyAny("string").not.toBeObject();
 	});
 
-	test("should fail with .not for objects", async () => {
-		expect(() => expectlyAny({ id: 1 }).not.toBeObject()).toThrow(/Expected value to not be an object/);
+	test("should fail with .not for objects", () => {
+		expect(() => {
+			expectlyAny({ id: 1 }).not.toBeObject();
+		}).toThrow(/Expected value to not be an object/);
 	});
 });

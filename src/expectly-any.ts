@@ -569,9 +569,10 @@ export const expectlyAny = baseExpect.extend({
 					hint +
 					"\n\n" +
 					"Expected value to not partially match:\n" +
-					`${this.utils.printExpected(expected)}\n\n` +
+					this.utils.printExpected(expected) +
+					"\n\n" +
 					"Received:\n" +
-					`${this.utils.printReceived(actual)}`
+					this.utils.printReceived(actual)
 				);
 			}
 
@@ -605,7 +606,11 @@ export const expectlyAny = baseExpect.extend({
  * For primitives: returns as-is
  * For asymmetric matchers: returns actual as-is (let Playwright's toEqual handle the matching)
  */
-function extractMatchingStructure(actual: any, expected: any): any {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value) && value.constructor === Object;
+}
+
+function extractMatchingStructure(actual: unknown, expected: unknown): unknown {
 	// Handle null/undefined
 	if (actual === null || actual === undefined) {
 		return actual;
@@ -648,12 +653,12 @@ function extractMatchingStructure(actual: any, expected: any): any {
 	}
 
 	// For expected object, extract only matching properties
-	if (typeof expected === "object" && expected !== null && expected.constructor === Object) {
-		if (typeof actual !== "object" || actual === null || Array.isArray(actual)) {
+	if (isPlainObject(expected)) {
+		if (!isPlainObject(actual)) {
 			return actual; // Type mismatch will be caught by comparison
 		}
 
-		const result: any = {};
+		const result: Record<string, unknown> = {};
 		for (const key of Object.keys(expected)) {
 			if (key in actual) {
 				result[key] = extractMatchingStructure(actual[key], expected[key]);

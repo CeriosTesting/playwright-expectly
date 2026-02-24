@@ -9,15 +9,23 @@
  * @returns Sorted copy of the array
  */
 export function sortedExpected<T extends number | string>(actual: T[], order: "ascending" | "descending"): T[] {
-	const copy = [...actual];
+	return [...actual].sort((left, right) => {
+		if (typeof left === "number" && typeof right === "number") {
+			return order === "ascending" ? left - right : right - left;
+		}
 
-	if (actual.every(item => typeof item === "number")) {
-		const nums = copy as number[];
-		return (order === "ascending" ? nums.sort((n1, n2) => n1 - n2) : nums.sort((n1, n2) => n2 - n1)) as T[];
-	} else {
-		const strings = copy as string[];
-		return (order === "ascending" ? strings.sort() : strings.sort().reverse()) as T[];
-	}
+		const leftString = String(left);
+		const rightString = String(right);
+		if (leftString === rightString) {
+			return 0;
+		}
+
+		if (order === "ascending") {
+			return leftString < rightString ? -1 : 1;
+		}
+
+		return leftString > rightString ? -1 : 1;
+	});
 }
 
 /**
@@ -37,7 +45,7 @@ export function isValidDate(date: Date): boolean {
  */
 export function validateDate(date: Date, paramName: string): void {
 	if (!isValidDate(date)) {
-		throw new Error(`Invalid ${paramName}: ${date}`);
+		throw new Error(`Invalid ${paramName}: ${String(date)}`);
 	}
 }
 
@@ -61,7 +69,7 @@ export function sortedDates(actual: Date[], order: "ascending" | "descending"): 
 	// Validate all dates
 	for (const date of copy) {
 		if (!isValidDate(date)) {
-			throw new Error(`Invalid date in array: ${date}`);
+			throw new Error(`Invalid date in array: ${String(date)}`);
 		}
 	}
 	return order === "ascending"

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { expectlyLocator } from "../../src/expectly-locator";
 
 test.describe("expectLocator - toHaveCountVisible", () => {

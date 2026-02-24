@@ -1,5 +1,6 @@
 import type { Expect } from "@playwright/test";
 import { mergeExpects } from "@playwright/test";
+
 import { expectlyLocatorAttributes } from "./expectly-locator-attributes";
 import { expectlyLocatorPositioning } from "./expectly-locator-positioning";
 import { expectlyLocatorState } from "./expectly-locator-state";
@@ -28,7 +29,7 @@ export const expectlyLocator: Expect<ExpectlyLocatorMatchers> = mergeExpects(
 	expectlyLocatorPositioning,
 	expectlyLocatorState,
 	expectlyLocatorVisibility
-) as any;
+);
 
 export { expectlyLocatorAttributes } from "./expectly-locator-attributes";
 export { expectlyLocatorPositioning } from "./expectly-locator-positioning";

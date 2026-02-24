@@ -1,4 +1,5 @@
 import { expect as baseExpect } from "@playwright/test";
+
 import { formatDatesForDisplay, isValidDate, sortedDates, validateDate } from "./matchers/common-utils";
 
 const MONTH_NAMES = {
@@ -140,15 +141,12 @@ export const expectlyDate = baseExpect.extend({
 	toHaveDatesAscendingOrder(actual: Date[]) {
 		const assertionName = "toHaveDatesAscendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
 
 		const expected: Date[] = sortedDates(actual, "ascending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = actual;
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch {
 			pass = false;
 		}
 
@@ -159,14 +157,14 @@ export const expectlyDate = baseExpect.extend({
 			"\n\n" +
 			`Expected date array to ${this.isNot ? "not " : ""}be in ascending order\n\n` +
 			`Expected: ${this.utils.printExpected(formatDatesForDisplay(expected))}\n` +
-			`Received: ${this.utils.printReceived(formatDatesForDisplay(matcherResult?.actual || actual))}`;
+			`Received: ${this.utils.printReceived(formatDatesForDisplay(actual))}`;
 
 		return {
 			message,
 			pass,
 			name: assertionName,
 			expected,
-			actual: matcherResult?.actual,
+			actual,
 		};
 	},
 	/**
@@ -187,15 +185,12 @@ export const expectlyDate = baseExpect.extend({
 	toHaveDatesDescendingOrder(actual: Date[]) {
 		const assertionName = "toHaveDatesDescendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
 
 		const expected: Date[] = sortedDates(actual, "descending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch {
 			pass = false;
 		}
 
@@ -206,14 +201,14 @@ export const expectlyDate = baseExpect.extend({
 			"\n\n" +
 			`Expected date array to ${this.isNot ? "not " : ""}be in descending order\n\n` +
 			`Expected: ${this.utils.printExpected(formatDatesForDisplay(expected))}\n` +
-			`Received: ${this.utils.printReceived(formatDatesForDisplay(matcherResult?.actual || actual))}`;
+			`Received: ${this.utils.printReceived(formatDatesForDisplay(actual))}`;
 
 		return {
 			message,
 			pass,
 			name: assertionName,
 			expected,
-			actual: matcherResult?.actual,
+			actual,
 		};
 	},
 	/**
@@ -1075,7 +1070,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1161,7 +1156,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1349,7 +1344,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1710,7 +1705,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1816,17 +1811,23 @@ export const expectlyDate = baseExpect.extend({
 		validateDate(actualDate, "actual date");
 
 		const month = actualDate.getMonth(); // 0-11
-		const actualQuarter = Math.floor(month / 3) + 1;
+		const getQuarterFromMonth = (value: number): 1 | 2 | 3 | 4 => {
+			if (value < 3) return 1;
+			if (value < 6) return 2;
+			if (value < 9) return 3;
+			return 4;
+		};
+		const actualQuarter = getQuarterFromMonth(month);
 		const pass = actualQuarter === expectedQuarter;
 
-		const getQuarterMonths = (q: number): string => {
-			const quarters = {
+		const getQuarterMonths = (q: 1 | 2 | 3 | 4): string => {
+			const quarters: Record<1 | 2 | 3 | 4, string> = {
 				1: "Jan-Mar",
 				2: "Apr-Jun",
 				3: "Jul-Sep",
 				4: "Oct-Dec",
 			};
-			return quarters[q as keyof typeof quarters];
+			return quarters[q];
 		};
 
 		const message = () => {

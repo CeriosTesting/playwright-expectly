@@ -75,7 +75,7 @@ export function isLowerCase(text: string): boolean {
  * Converts a string to title case (first letter of each word capitalized)
  */
 export function toTitleCase(text: string): string {
-	return text.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+	return text.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 }
 
 /**

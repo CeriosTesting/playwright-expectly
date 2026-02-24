@@ -1,5 +1,5 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
-import { PollOptions } from "src/types/poll-options";
+
 import {
 	getUUIDFormatDescription,
 	isAlphanumeric,
@@ -12,6 +12,7 @@ import {
 	isValidUUID,
 	toTitleCase,
 } from "../matchers/text-validation-utils";
+import { PollOptions } from "../types/poll-options";
 
 /**
  * Text content validation matchers for Playwright locators.

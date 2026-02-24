@@ -185,12 +185,16 @@ export const expectlyObjectArray = baseExpect.extend({
 // Cache for memoizing safeStringify results
 const stringifyCache = new WeakMap<object, string>();
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 /**
  * Safely serializes an object to a string for comparison.
  * Handles circular references by tracking them during traversal.
  * Uses memoization to cache results for better performance.
  */
-function safeStringify(obj: any): string {
+function safeStringify(obj: unknown): string {
 	// Check cache first for non-primitive values
 	if (obj !== null && typeof obj === "object") {
 		const cached = stringifyCache.get(obj);
@@ -203,7 +207,7 @@ function safeStringify(obj: any): string {
 		const seen = new WeakMap<object, number>();
 		let counter = 0;
 
-		const normalize = (value: any): any => {
+		const normalize = (value: unknown): unknown => {
 			if (value === null || value === undefined) {
 				return value;
 			}
@@ -225,16 +229,19 @@ function safeStringify(obj: any): string {
 				return value.map(item => normalize(item));
 			}
 
-			// Handle regular objects
-			const sortedKeys = Object.keys(value).sort();
-			const normalized: any = {};
-			for (const key of sortedKeys) {
-				normalized[key] = normalize(value[key]);
+			if (isRecord(value)) {
+				const sortedKeys = Object.keys(value).sort();
+				const normalized: Record<string, unknown> = {};
+				for (const key of sortedKeys) {
+					normalized[key] = normalize(value[key]);
+				}
+				return normalized;
 			}
-			return normalized;
+
+			return value;
 		};
 
-		const result = JSON.stringify(normalize(obj));
+		const result = JSON.stringify(normalize(obj)) ?? "undefined";
 
 		// Cache the result for objects
 		if (obj !== null && typeof obj === "object") {
@@ -296,26 +303,26 @@ function validateSortOrder(
 	}
 
 	for (let i = 0; i < arr.length - 1; i++) {
-		const currentObj = arr[i] as any;
-		const nextObj = arr[i + 1] as any;
+		const currentObj = arr[i];
+		const nextObj = arr[i + 1];
 
 		// Check if property exists on both objects
-		if (!(propertyName in currentObj)) {
+		if (!Object.prototype.hasOwnProperty.call(currentObj, propertyName)) {
 			return {
 				isValid: false,
 				errorMessage: `Property "${propertyName}" not found on object at index ${i}`,
 			};
 		}
 
-		if (!(propertyName in nextObj)) {
+		if (!Object.prototype.hasOwnProperty.call(nextObj, propertyName)) {
 			return {
 				isValid: false,
 				errorMessage: `Property "${propertyName}" not found on object at index ${i + 1}`,
 			};
 		}
 
-		const currentValue = currentObj[propertyName];
-		const nextValue = nextObj[propertyName];
+		const currentValue: unknown = Reflect.get(currentObj, propertyName);
+		const nextValue: unknown = Reflect.get(nextObj, propertyName);
 
 		// Check if values are comparable
 		const currentType = typeof currentValue;

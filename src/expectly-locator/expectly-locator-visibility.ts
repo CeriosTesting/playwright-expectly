@@ -1,5 +1,6 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
-import { PollOptions } from "src/types/poll-options";
+
+import { PollOptions } from "../types/poll-options";
 
 /**
  * Visibility validation matchers for Playwright locators.
@@ -32,7 +33,7 @@ export const expectlyLocatorVisibility = baseExpect.extend({
 					async () => {
 						try {
 							const handles = await locator.elementHandles();
-							const visArr = await Promise.all(handles.map(h => h.isVisible()));
+							const visArr = await Promise.all(handles.map(async h => h.isVisible()));
 							visibleCount = visArr.filter(Boolean).length;
 							return visibleCount === count;
 						} catch (e: any) {

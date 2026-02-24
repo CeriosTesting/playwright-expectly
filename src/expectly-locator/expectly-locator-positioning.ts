@@ -1,5 +1,6 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
-import { PollOptions } from "src/types/poll-options";
+
+import { PollOptions } from "../types/poll-options";
 
 /**
  * Element positioning matchers for Playwright locators.

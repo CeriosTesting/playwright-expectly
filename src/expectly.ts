@@ -1,23 +1,18 @@
 import type { Expect } from "@playwright/test";
 import { mergeExpects } from "@playwright/test";
-import { expectlyAny } from "src/expectly-any";
-import { expectlyDate } from "src/expectly-date";
-import { expectlyLocator } from "src/expectly-locator/index";
-import { expectlyNumberArray } from "src/expectly-number-array";
-import { expectlyObjectArray } from "src/expectly-object-array";
-import { expectlyString } from "src/expectly-string";
-import { expectlyStringArray } from "src/expectly-string-array";
+
+import { expectlyAny } from "./expectly-any";
+import { expectlyDate } from "./expectly-date";
+import { expectlyLocator } from "./expectly-locator";
+import { expectlyNumberArray } from "./expectly-number-array";
+import { expectlyObjectArray } from "./expectly-object-array";
+import { expectlyString } from "./expectly-string";
+import { expectlyStringArray } from "./expectly-string-array";
 
 // Extract matcher types from each expectly module
 type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
 
-type ExpectlyMatchers = ExtractMatchers<typeof expectlyAny> &
-	ExtractMatchers<typeof expectlyDate> &
-	ExtractMatchers<typeof expectlyLocator> &
-	ExtractMatchers<typeof expectlyNumberArray> &
-	ExtractMatchers<typeof expectlyObjectArray> &
-	ExtractMatchers<typeof expectlyString> &
-	ExtractMatchers<typeof expectlyStringArray>;
+type ExpectlyMatchers = ExtractMatchers<typeof expectlyAny>;
 
 /**
  * Expectly - Enhanced Playwright Test Assertions
@@ -45,4 +40,4 @@ export const expectly: Expect<ExpectlyMatchers> = mergeExpects(
 	expectlyObjectArray,
 	expectlyString,
 	expectlyStringArray
-) as any;
+);
