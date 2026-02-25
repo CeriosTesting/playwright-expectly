@@ -42,7 +42,32 @@ expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
-### Option 2: Extend Playwright `expect`
+### Option 2: Extend Playwright `expect` with `setupExpectly`
+
+The simplest way to add all matchers to Playwright's native `expect`. Call `setupExpectly()` once and every test file gets full type support automatically.
+
+```typescript
+// playwright.config.ts
+import { setupExpectly } from "@cerios/playwright-expectly";
+
+setupExpectly();
+```
+
+Then use `expect` as usual in your tests — no extra imports needed:
+
+```typescript
+import { expect, test } from "@playwright/test";
+
+test("extended expect example", async ({ page }) => {
+	expect("john@example.com").toBeValidEmail();
+	expect([1, 2, 3, 4]).toHaveAscendingOrder();
+	await expect(page.locator(".username")).toBeAlphanumeric();
+});
+```
+
+### Option 3: Extend Playwright `expect` manually
+
+If you prefer more control, extend `expect` yourself in a shared fixtures file:
 
 ```typescript
 // tests/fixtures.ts
@@ -55,7 +80,7 @@ export { expect };
 export const test = base;
 ```
 
-Then use extended `expect` in tests:
+Then use the re-exported `expect` in tests:
 
 ```typescript
 import { expect, test } from "./fixtures";
