@@ -1,9 +1,11 @@
 import { expect as baseExpect } from "@playwright/test";
 
+import { withMatcherState } from "./matchers/matcher-state-utils";
+
 /**
  * Expextly Custom matchers for object array validations.
  */
-export const expectlyObjectArray = baseExpect.extend({
+export const expectlyObjectArrayMatchers = withMatcherState({
 	/**
 	 * Asserts that an array contains only unique objects (no duplicates).
 	 *
@@ -181,6 +183,8 @@ export const expectlyObjectArray = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyObjectArray = baseExpect.extend(expectlyObjectArrayMatchers);
 
 // Cache for memoizing safeStringify results
 const stringifyCache = new WeakMap<object, string>();

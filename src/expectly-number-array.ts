@@ -9,11 +9,12 @@ import {
 	getMinMax,
 	sortedExpected,
 } from "./matchers/common-utils";
+import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
  * Expextly Custom matchers for number array validations.
  */
-export const expectlyNumberArray = baseExpect.extend({
+export const expectlyNumberArrayMatchers = withMatcherState({
 	/**
 	 * Asserts that an array of numbers is in ascending order (smallest to largest).
 	 *
@@ -1095,3 +1096,5 @@ export const expectlyNumberArray = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyNumberArray = baseExpect.extend(expectlyNumberArrayMatchers);

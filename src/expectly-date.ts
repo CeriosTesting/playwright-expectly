@@ -1,6 +1,7 @@
 import { expect as baseExpect } from "@playwright/test";
 
 import { formatDatesForDisplay, isValidDate, sortedDates, validateDate } from "./matchers/common-utils";
+import { withMatcherState } from "./matchers/matcher-state-utils";
 
 const MONTH_NAMES = {
 	January: 0,
@@ -30,7 +31,7 @@ const DAY_NAMES = {
 /**
  * Expextly Custom matchers for date validations.
  */
-export const expectlyDate = baseExpect.extend({
+export const expectlyDateMatchers = withMatcherState({
 	/**
 	 * Asserts that a date is close to another date within a specified deviation.
 	 *
@@ -2009,3 +2010,5 @@ export const expectlyDate = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyDate = baseExpect.extend(expectlyDateMatchers);

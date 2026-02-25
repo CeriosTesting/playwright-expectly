@@ -1,12 +1,13 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { withMatcherState } from "../matchers/matcher-state-utils";
 import { PollOptions } from "../types/poll-options";
 
 /**
  * Element positioning matchers for Playwright locators.
  * These matchers validate spatial relationships between elements.
  */
-export const expectlyLocatorPositioning = baseExpect.extend({
+export const expectlyLocatorPositioningMatchers = withMatcherState({
 	/**
 	 * Asserts that the locator's element is positioned above another element.
 	 * Compares the bottom edge of the current element with the top edge of the other element.
@@ -368,3 +369,5 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorPositioning = baseExpect.extend(expectlyLocatorPositioningMatchers);

@@ -1,5 +1,6 @@
 import { expect as baseExpect } from "@playwright/test";
 
+import { withMatcherState } from "./matchers/matcher-state-utils";
 import {
 	getUUIDFormatDescription,
 	isAlphanumeric,
@@ -12,7 +13,7 @@ import {
 /**
  * Expextly Custom matchers for string validations.
  */
-export const expectlyString = baseExpect.extend({
+export const expectlyStringMatchers = withMatcherState({
 	/**
 	 * Asserts that a string starts with the expected substring.
 	 *
@@ -449,3 +450,5 @@ export const expectlyString = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyString = baseExpect.extend(expectlyStringMatchers);

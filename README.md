@@ -24,6 +24,8 @@ npm install @cerios/playwright-expectly --save-dev
 
 ## Quick Start
 
+### Option 1: Use `expectly` directly
+
 ```typescript
 import { expectly } from "@cerios/playwright-expectly";
 
@@ -38,6 +40,31 @@ expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
 
 // Locator validation
 await expectly(page.locator(".username")).toBeAlphanumeric();
+```
+
+### Option 2: Extend Playwright `expect`
+
+```typescript
+// tests/fixtures.ts
+import { expect, test as base } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+
+expect.extend(expectlyMatchers);
+
+export { expect };
+export const test = base;
+```
+
+Then use extended `expect` in tests:
+
+```typescript
+import { expect, test } from "./fixtures";
+
+test("extended expect example", async ({ page }) => {
+	expect("john@example.com").toBeValidEmail();
+	expect([1, 2, 3, 4]).toHaveAscendingOrder();
+	await expect(page.locator(".username")).toBeAlphanumeric();
+});
 ```
 
 ## Available Matchers
@@ -163,6 +190,48 @@ test("validate form elements", async ({ page }) => {
 ```
 
 ## Advanced Usage
+
+### Extend in one place (global)
+
+Use this when you want all tests to use the extra matchers without importing `expectly` everywhere.
+
+```typescript
+// e.g. tests/fixtures.ts or a shared setup module imported by your tests
+import { expect } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+
+expect.extend(expectlyMatchers);
+```
+
+### Exported matcher objects
+
+All matcher objects are exported, so you can extend `expect` with everything or only specific families.
+
+```typescript
+import { expectlyDateMatchers, expectlyMatchers, expectlyStringMatchers } from "@cerios/playwright-expectly";
+
+// All matchers
+expect.extend(expectlyMatchers);
+
+// Or only selected matcher families
+expect.extend({
+	...expectlyStringMatchers,
+	...expectlyDateMatchers,
+});
+```
+
+### Use expectly families directly
+
+Use this when you want a smaller, explicit API per matcher family.
+
+```typescript
+import { expectlyDate, expectlyLocator, expectlyNumberArray, expectlyString } from "@cerios/playwright-expectly";
+
+expectlyString("ABC123").toBeAlphanumeric();
+expectlyNumberArray([10, 20, 30]).toHaveAscendingOrder();
+expectlyDate(new Date()).toBeSameYear(new Date("2026-01-01"));
+await expectlyLocator(page.locator(".email")).toBeValidEmail();
+```
 
 ### Individual Matcher Imports
 

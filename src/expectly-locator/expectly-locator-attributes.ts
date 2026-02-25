@@ -1,12 +1,13 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { withMatcherState } from "../matchers/matcher-state-utils";
 import { PollOptions } from "../types/poll-options";
 
 /**
  * Element attribute matchers for Playwright locators.
  * These matchers validate HTML attributes on elements.
  */
-export const expectlyLocatorAttributes = baseExpect.extend({
+export const expectlyLocatorAttributesMatchers = withMatcherState({
 	/**
 	 * Asserts that the locator's element has the specified placeholder attribute.
 	 *
@@ -752,3 +753,5 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorAttributes = baseExpect.extend(expectlyLocatorAttributesMatchers);

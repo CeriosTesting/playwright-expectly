@@ -1,5 +1,6 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { withMatcherState } from "../matchers/matcher-state-utils";
 import {
 	getUUIDFormatDescription,
 	isAlphanumeric,
@@ -18,7 +19,7 @@ import { PollOptions } from "../types/poll-options";
  * Text content validation matchers for Playwright locators.
  * These matchers validate the text content of elements.
  */
-export const expectlyLocatorText = baseExpect.extend({
+export const expectlyLocatorTextMatchers = withMatcherState({
 	/**
 	 * Asserts that the locator's text content starts with the expected string.
 	 *
@@ -981,3 +982,5 @@ export const expectlyLocatorText = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorText = baseExpect.extend(expectlyLocatorTextMatchers);

@@ -1,13 +1,13 @@
 import type { Expect } from "@playwright/test";
 import { mergeExpects } from "@playwright/test";
 
-import { expectlyAny } from "./expectly-any";
-import { expectlyDate } from "./expectly-date";
-import { expectlyLocator } from "./expectly-locator";
-import { expectlyNumberArray } from "./expectly-number-array";
-import { expectlyObjectArray } from "./expectly-object-array";
-import { expectlyString } from "./expectly-string";
-import { expectlyStringArray } from "./expectly-string-array";
+import { expectlyAny, expectlyAnyMatchers } from "./expectly-any";
+import { expectlyDate, expectlyDateMatchers } from "./expectly-date";
+import { expectlyLocator, expectlyLocatorMatchers } from "./expectly-locator";
+import { expectlyNumberArray, expectlyNumberArrayMatchers } from "./expectly-number-array";
+import { expectlyObjectArray, expectlyObjectArrayMatchers } from "./expectly-object-array";
+import { expectlyString, expectlyStringMatchers } from "./expectly-string";
+import { expectlyStringArray, expectlyStringArrayMatchers } from "./expectly-string-array";
 
 // Extract matcher types from each expectly module
 type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
@@ -47,3 +47,23 @@ export const expectly: Expect<ExpectlyMatchers> = mergeExpects(
 	expectlyString,
 	expectlyStringArray
 );
+
+/**
+ * Combined raw matchers object containing all expectly matchers.
+ * Can be used with expect.extend() to add all matchers to the global expect.
+ *
+ * @example
+ * import { expect } from '@playwright/test';
+ * import { expectlyMatchers } from 'playwright-expectly';
+ *
+ * expect.extend(expectlyMatchers);
+ */
+export const expectlyMatchers = {
+	...expectlyAnyMatchers,
+	...expectlyDateMatchers,
+	...expectlyLocatorMatchers,
+	...expectlyNumberArrayMatchers,
+	...expectlyObjectArrayMatchers,
+	...expectlyStringMatchers,
+	...expectlyStringArrayMatchers,
+};

@@ -1,5 +1,6 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { withMatcherState } from "../matchers/matcher-state-utils";
 import { PollOptions } from "../types/poll-options";
 
 type StabilityOptions = Pick<PollOptions, "timeout"> & {
@@ -17,7 +18,7 @@ type StabilityOptions = Pick<PollOptions, "timeout"> & {
  * Element state and behavior matchers for Playwright locators.
  * These matchers validate dynamic behavior and element states.
  */
-export const expectlyLocatorState = baseExpect.extend({
+export const expectlyLocatorStateMatchers = withMatcherState({
 	/**
 	 * Asserts that the locator's content remains stable (unchanged) for a specified duration.
 	 * This is useful for waiting until dynamic content has finished updating.
@@ -186,3 +187,5 @@ export const expectlyLocatorState = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorState = baseExpect.extend(expectlyLocatorStateMatchers);

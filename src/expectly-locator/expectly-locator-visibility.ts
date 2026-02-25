@@ -1,11 +1,12 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { withMatcherState } from "../matchers/matcher-state-utils";
 import { PollOptions } from "../types/poll-options";
 
 /**
  * Visibility validation matchers for Playwright locators.
  */
-export const expectlyLocatorVisibility = baseExpect.extend({
+export const expectlyLocatorVisibilityMatchers = withMatcherState({
 	/**
 	 * Asserts that the locator has the expected number of visible elements.
 	 *
@@ -89,3 +90,5 @@ export const expectlyLocatorVisibility = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorVisibility = baseExpect.extend(expectlyLocatorVisibilityMatchers);

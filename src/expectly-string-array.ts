@@ -7,11 +7,12 @@ import {
 	findStrictDescendingViolation,
 	sortedExpected,
 } from "./matchers/common-utils";
+import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
  * Expextly Custom matchers for string array validations.
  */
-export const expectlyStringArray = baseExpect.extend({
+export const expectlyStringArrayMatchers = withMatcherState({
 	/**
 	 * Asserts that an array of strings is in ascending order (alphabetically A-Z).
 	 *
@@ -333,3 +334,5 @@ export const expectlyStringArray = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyStringArray = baseExpect.extend(expectlyStringArrayMatchers);

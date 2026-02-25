@@ -1,9 +1,10 @@
+import type { ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 /**
  * Expextly Custom matchers for any type validations.
  */
-export const expectlyAny = baseExpect.extend({
+export const expectlyAnyMatchers = {
 	/**
 	 * Asserts that the received value matches at least one of the provided possibilities.
 	 *
@@ -31,7 +32,7 @@ export const expectlyAny = baseExpect.extend({
 	 * // Mixed types
 	 * expectAny(value).toBeAnyOf(null, undefined, 0, '');
 	 */
-	toBeAnyOf(received: any, ...possibilities: any[]) {
+	toBeAnyOf(this: ExpectMatcherState, received: any, ...possibilities: any[]) {
 		const assertionName = "toBeAnyOf";
 		const pass = possibilities.some(possibility => {
 			try {
@@ -108,7 +109,7 @@ export const expectlyAny = baseExpect.extend({
 	 * const config = await api.getConfig();
 	 * expectAny(config.optionalField).toBeNullish();
 	 */
-	toBeNullish(received: any) {
+	toBeNullish(this: ExpectMatcherState, received: any) {
 		const assertionName = "toBeNullish";
 		const pass = received === null || received === undefined;
 
@@ -170,7 +171,7 @@ export const expectlyAny = baseExpect.extend({
 	 * expectAny(3.14).not.toBeInteger();
 	 * expectAny('42').not.toBeInteger();
 	 */
-	toBeInteger(received: any) {
+	toBeInteger(this: ExpectMatcherState, received: any) {
 		const assertionName = "toBeInteger";
 		const pass = Number.isInteger(received);
 
@@ -232,7 +233,7 @@ export const expectlyAny = baseExpect.extend({
 	 * expectAny(NaN).not.toBeFloat(); // NaN
 	 * expectAny(Infinity).not.toBeFloat(); // Infinity
 	 */
-	toBeFloat(received: any) {
+	toBeFloat(this: ExpectMatcherState, received: any) {
 		const assertionName = "toBeFloat";
 		const pass =
 			typeof received === "number" &&
@@ -319,7 +320,7 @@ export const expectlyAny = baseExpect.extend({
 	 * const apiValue = response.data.value;
 	 * expectAny(apiValue).toBePrimitive();
 	 */
-	toBePrimitive(received: any) {
+	toBePrimitive(this: ExpectMatcherState, received: any) {
 		const assertionName = "toBePrimitive";
 		const receivedType = typeof received;
 		const pass =
@@ -393,7 +394,7 @@ export const expectlyAny = baseExpect.extend({
 	 * expectAny('not array').not.toBeArray();
 	 * expectAny({ length: 3 }).not.toBeArray();
 	 */
-	toBeArray(received: any) {
+	toBeArray(this: ExpectMatcherState, received: any) {
 		const assertionName = "toBeArray";
 		const pass = Array.isArray(received);
 
@@ -462,7 +463,7 @@ export const expectlyAny = baseExpect.extend({
 	 * expectAny(null).not.toBeObject(); // Null is excluded
 	 * expectAny('string').not.toBeObject();
 	 */
-	toBeObject(received: any) {
+	toBeObject(this: ExpectMatcherState, received: any) {
 		const assertionName = "toBeObject";
 		const pass = typeof received === "object" && received !== null && !Array.isArray(received);
 
@@ -541,7 +542,7 @@ export const expectlyAny = baseExpect.extend({
 	 *   items: [{ id: 2 }]
 	 * });
 	 */
-	toEqualPartially(actual: any, expected: any) {
+	toEqualPartially(this: ExpectMatcherState, actual: any, expected: any) {
 		const assertionName = "toEqualPartially";
 		let pass = false;
 		let comparisonError = "";
@@ -595,7 +596,9 @@ export const expectlyAny = baseExpect.extend({
 			actual: actualSubset,
 		};
 	},
-});
+};
+
+export const expectlyAny = baseExpect.extend(expectlyAnyMatchers);
 
 /**
  * Extracts a subset of the actual value that matches the structure of expected.
