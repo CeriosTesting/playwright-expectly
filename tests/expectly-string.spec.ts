@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyString } from "../src/expectly-string";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toStartWith", () => {
 	test.describe("with string values", () => {
 		test("should pass when string starts with expected value", () => {
@@ -46,28 +48,20 @@ test.describe("toStartWith", () => {
 		});
 
 		test("should fail when string doesn't start with expected value", () => {
-			let error: Error | undefined;
-			try {
+			const error = getRejectedErrorSync(() => {
 				expectlyString("Hello World").toStartWith("World");
-			} catch (e: unknown) {
-				error = e instanceof Error ? e : new Error(String(e));
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("toStartWith");
-			expect(error?.message).toContain("Expected string to start with");
-			expect(error?.message).toContain("World");
+			});
+			expect(error.message).toContain("toStartWith");
+			expect(error.message).toContain("Expected string to start with");
+			expect(error.message).toContain("World");
 		});
 
 		test("should fail when case doesn't match", () => {
-			let error: Error | undefined;
-			try {
+			const error = getRejectedErrorSync(() => {
 				expectlyString("hello world").toStartWith("Hello");
-			} catch (e: unknown) {
-				error = e instanceof Error ? e : new Error(String(e));
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Expected string to start with");
-			expect(error?.message).toContain("Hello");
+			});
+			expect(error.message).toContain("Expected string to start with");
+			expect(error.message).toContain("Hello");
 		});
 
 		test("should fail when expected is longer than actual", () => {
@@ -101,15 +95,11 @@ test.describe("toStartWith", () => {
 		});
 
 		test("should fail with .not when string starts with expected", () => {
-			let error: Error | undefined;
-			try {
+			const error = getRejectedErrorSync(() => {
 				expectlyString("Hello World").not.toStartWith("Hello");
-			} catch (e: unknown) {
-				error = e instanceof Error ? e : new Error(String(e));
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("not");
-			expect(error?.message).toContain("Expected string to not start with");
+			});
+			expect(error.message).toContain("not");
+			expect(error.message).toContain("Expected string to not start with");
 		});
 
 		test("should fail with .not when entire string matches", () => {
@@ -136,15 +126,11 @@ test.describe("toStartWith", () => {
 		});
 
 		test("should provide clear error with actual start", () => {
-			let error: Error | undefined;
-			try {
+			const error = getRejectedErrorSync(() => {
 				expectlyString("The quick brown fox").toStartWith("A quick");
-			} catch (e: unknown) {
-				error = e instanceof Error ? e : new Error(String(e));
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("Start of string");
-			expect(error?.message).toContain("The quick");
+			});
+			expect(error.message).toContain("Start of string");
+			expect(error.message).toContain("The quick");
 		});
 	});
 });
@@ -189,15 +175,11 @@ test.describe("toEndWith", () => {
 		});
 
 		test("should fail when string doesn't end with expected value", () => {
-			let error: Error | undefined;
-			try {
+			const error = getRejectedErrorSync(() => {
 				expectlyString("Hello World").toEndWith("Hello");
-			} catch (e: unknown) {
-				error = e instanceof Error ? e : new Error(String(e));
-			}
-			expect(error).toBeDefined();
-			expect(error?.message).toContain("toEndWith");
-			expect(error?.message).toContain("Expected string to end with");
+			});
+			expect(error.message).toContain("toEndWith");
+			expect(error.message).toContain("Expected string to end with");
 		});
 
 		test("should fail when case doesn't match", () => {

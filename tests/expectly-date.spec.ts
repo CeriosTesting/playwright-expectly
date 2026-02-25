@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyDate } from "../src/expectly-date";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toBeCloseTo", () => {
 	test("should pass when dates are exactly the same", () => {
 		const date = new Date("2023-01-01T12:00:00Z");
@@ -59,16 +61,12 @@ test.describe("toBeCloseTo", () => {
 		const actual = new Date("2023-01-01T12:00:15Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(actual).toBeCloseTo(expected, { seconds: 10 });
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toBeCloseTo");
-		expect(error?.message).toContain("Difference");
-		expect(error?.message).toContain("Allowed deviation");
+		});
+		expect(error.message).toContain("toBeCloseTo");
+		expect(error.message).toContain("Difference");
+		expect(error.message).toContain("Allowed deviation");
 	});
 
 	test("should fail when dates are outside minutes deviation", () => {
@@ -143,16 +141,12 @@ test.describe("toBeCloseTo", () => {
 		const actual = new Date("2023-01-01T12:05:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(actual).toBeCloseTo(expected, { minutes: 2 });
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("300.000 seconds");
-		expect(error?.message).toContain("later");
-		expect(error?.message).toContain("120.000 seconds");
+		});
+		expect(error.message).toContain("300.000 seconds");
+		expect(error.message).toContain("later");
+		expect(error.message).toContain("120.000 seconds");
 	});
 });
 
@@ -187,16 +181,12 @@ test.describe("toHaveDatesAscendingOrder", () => {
 	test("should fail when Date array is not in ascending order", () => {
 		const dates = [new Date("2023-01-03"), new Date("2023-01-01"), new Date("2023-01-02")];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveDatesAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toHaveDatesAscendingOrder");
-		expect(error?.message).toContain("Expected");
-		expect(error?.message).toContain("Received");
+		});
+		expect(error.message).toContain("toHaveDatesAscendingOrder");
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received");
 	});
 
 	test("should fail when Date array is in descending order", () => {
@@ -262,16 +252,12 @@ test.describe("toHaveDatesDescendingOrder", () => {
 	test("should fail when Date array is not in descending order", () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-03"), new Date("2023-01-02")];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveDatesDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toHaveDatesDescendingOrder");
-		expect(error?.message).toContain("Expected");
-		expect(error?.message).toContain("Received");
+		});
+		expect(error.message).toContain("toHaveDatesDescendingOrder");
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received");
 	});
 
 	test("should fail when Date array is in ascending order", () => {
@@ -637,27 +623,19 @@ test.describe("toBeWeekday", () => {
 
 	test("should fail for Saturday", () => {
 		const saturday = new Date("2023-01-07");
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(saturday).toBeWeekday();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be a weekday (Monday-Friday)");
-		expect(error?.message).toContain("Saturday");
+		});
+		expect(error.message).toContain("Expected date to be a weekday (Monday-Friday)");
+		expect(error.message).toContain("Saturday");
 	});
 
 	test("should fail for Sunday", () => {
 		const sunday = new Date("2023-01-01");
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(sunday).toBeWeekday();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Sunday");
+		});
+		expect(error.message).toContain("Sunday");
 	});
 
 	test("should work with .not for weekend", () => {
@@ -678,27 +656,19 @@ test.describe("toBeWeekend", () => {
 
 	test("should fail for Monday", () => {
 		const monday = new Date("2023-01-02");
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(monday).toBeWeekend();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected date to be a weekend (Saturday-Sunday)");
-		expect(error?.message).toContain("Monday");
+		});
+		expect(error.message).toContain("Expected date to be a weekend (Saturday-Sunday)");
+		expect(error.message).toContain("Monday");
 	});
 
 	test("should fail for Friday", () => {
 		const friday = new Date("2023-01-06");
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(friday).toBeWeekend();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Friday");
+		});
+		expect(error.message).toContain("Friday");
 	});
 
 	test("should work with .not for weekday", () => {
@@ -844,15 +814,11 @@ test.describe("toHaveConsecutiveDates", () => {
 
 	test("should fail for non-consecutive days", () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-03")];
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveConsecutiveDates("day");
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected dates to be consecutive by day");
-		expect(error?.message).toContain("Gap found at index");
+		});
+		expect(error.message).toContain("Expected dates to be consecutive by day");
+		expect(error.message).toContain("Gap found at index");
 	});
 
 	test("should fail for non-consecutive months", () => {
@@ -882,15 +848,11 @@ test.describe("toHaveDatesWithinRange", () => {
 
 	test("should fail when some dates are out of range", () => {
 		const dates = [new Date("2022-12-31"), new Date("2023-01-15"), new Date("2023-02-01")];
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"));
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected all dates to be within range");
-		expect(error?.message).toContain("Out of range dates");
+		});
+		expect(error.message).toContain("Expected all dates to be within range");
+		expect(error.message).toContain("Out of range dates");
 	});
 
 	test("should throw for empty array", () => {
@@ -918,15 +880,11 @@ test.describe("toHaveUniqueDates", () => {
 	test("should fail when dates have duplicates", () => {
 		const date = new Date("2023-01-01T12:00:00Z");
 		const dates = [date, new Date("2023-01-02"), date];
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveUniqueDates();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected all dates to be unique");
-		expect(error?.message).toContain("duplicate");
+		});
+		expect(error.message).toContain("Expected all dates to be unique");
+		expect(error.message).toContain("duplicate");
 	});
 
 	test("should fail when same day but different times with ignoreTime", () => {

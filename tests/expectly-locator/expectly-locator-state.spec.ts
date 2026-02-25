@@ -1,21 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import { expectlyLocator } from "../../src/expectly-locator";
+import { getRejectedError } from "../helpers/assertion-utils";
 
 // For granular imports, you can also use:
 // import { expectlyLocatorState } from "../../src/expectly-locator/state";
-
-async function getRejectedError(assertion: Promise<void>): Promise<Error> {
-	try {
-		await assertion;
-		return new Error("Expected assertion to reject");
-	} catch (error: unknown) {
-		if (error instanceof Error) {
-			return error;
-		}
-		return new Error(String(error));
-	}
-}
 
 test.describe("expectLocator - toBeStable", () => {
 	test("should pass when content is stable from the start", async ({ page }) => {

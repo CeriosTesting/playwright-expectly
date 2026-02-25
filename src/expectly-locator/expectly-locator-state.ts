@@ -1,5 +1,18 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { PollOptions } from "../types/poll-options";
+
+type StabilityOptions = Pick<PollOptions, "timeout"> & {
+	/**
+	 * Duration in ms that content must remain unchanged (default: 500)
+	 */
+	stabilityDuration?: number;
+	/**
+	 * Interval in ms between stability checks (default: 100)
+	 */
+	checkInterval?: number;
+};
+
 /**
  * Element state and behavior matchers for Playwright locators.
  * These matchers validate dynamic behavior and element states.
@@ -27,23 +40,7 @@ export const expectlyLocatorState = baseExpect.extend({
 	 *   timeout: 10000
 	 * });
 	 */
-	async toBeStable(
-		locator: Locator,
-		options?: {
-			/**
-			 * Duration in ms that content must remain unchanged (default: 500)
-			 */
-			stabilityDuration?: number;
-			/**
-			 * Interval in ms between stability checks (default: 100)
-			 */
-			checkInterval?: number;
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-		}
-	) {
+	async toBeStable(locator: Locator, options?: StabilityOptions) {
 		const assertionName = "toBeStable";
 		const stabilityDuration = options?.stabilityDuration ?? 500;
 		const checkInterval = options?.checkInterval ?? 100;

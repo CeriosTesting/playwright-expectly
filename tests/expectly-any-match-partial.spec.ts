@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyAny } from "../src/expectly-any";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toEqualPartially", () => {
 	test("should match object with extra properties", () => {
 		const actual = {
@@ -329,29 +331,25 @@ test.describe("toEqualPartially", () => {
 			},
 		};
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(actual).toEqualPartially({
 				name: "Bob", // This WILL mismatch
 				addresses: {
 					work: { street: "456 Office Rd", city: "Metropolis" }, // This matches
 				},
 			});
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
+		});
 
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toEqualPartially");
-		expect(error?.message).toContain("partial match");
+		expect(error.message).toContain("toEqualPartially");
+		expect(error.message).toContain("partial match");
 		// The error should show the mismatch
-		expect(error?.message).toContain('"name"');
-		expect(error?.message).toContain("Alice");
-		expect(error?.message).toContain("Bob");
+		expect(error.message).toContain('"name"');
+		expect(error.message).toContain("Alice");
+		expect(error.message).toContain("Bob");
 		// The error should NOT show 'id' as a problem since it's not in expected
-		expect(error?.message).not.toContain('"id"');
+		expect(error.message).not.toContain('"id"');
 		// The error should NOT show 'home' address since it's not in expected
-		expect(error?.message).not.toContain('"home"');
+		expect(error.message).not.toContain('"home"');
 	});
 
 	test("should support asymmetric matchers (expect.any, expect.objectContaining, etc.)", () => {

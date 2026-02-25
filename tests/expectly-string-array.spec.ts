@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyStringArray } from "../src/expectly-string-array";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toHaveAscendingOrder", () => {
 	test("should pass when string array is in ascending order", () => {
 		const ascendingStrings = ["apple", "banana", "cherry", "date"];
@@ -29,28 +31,20 @@ test.describe("toHaveAscendingOrder", () => {
 	test("should fail when string array is not in ascending order", () => {
 		const unorderedStrings = ["cherry", "apple", "date", "banana"];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(unorderedStrings).toHaveAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toHaveAscendingOrder");
+		});
+		expect(error.message).toContain("toHaveAscendingOrder");
 	});
 
 	test("should fail when string array is in descending order", () => {
 		const descending = ["date", "cherry", "banana", "apple"];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(descending).toHaveAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected");
-		expect(error?.message).toContain("Received");
+		});
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received");
 	});
 
 	test("should work with .not for descending arrays", () => {
@@ -103,28 +97,20 @@ test.describe("toHaveDescendingOrder", () => {
 	test("should fail when string array is not in descending order", () => {
 		const unorderedStrings = ["cherry", "apple", "date", "banana"];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(unorderedStrings).toHaveDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toHaveDescendingOrder");
+		});
+		expect(error.message).toContain("toHaveDescendingOrder");
 	});
 
 	test("should fail when string array is in ascending order", () => {
 		const ascending = ["apple", "banana", "cherry", "date"];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(ascending).toHaveDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected");
-		expect(error?.message).toContain("Received");
+		});
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received");
 	});
 
 	test("should work with .not for ascending arrays", () => {
@@ -169,14 +155,10 @@ test.describe("toHaveStrictlyAscendingOrder", () => {
 	});
 
 	test("should fail for equal consecutive values", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(["a", "b", "b", "c"]).toHaveStrictlyAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("violation");
+		});
+		expect(error.message).toContain("violation");
 	});
 
 	test("should fail for descending order", () => {
@@ -201,14 +183,10 @@ test.describe("toHaveStrictlyDescendingOrder", () => {
 	});
 
 	test("should fail for equal consecutive values", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(["z", "y", "y", "x"]).toHaveStrictlyDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("violation");
+		});
+		expect(error.message).toContain("violation");
 	});
 
 	test("should fail for ascending order", () => {
@@ -252,14 +230,10 @@ test.describe("toBeMonotonic", () => {
 	});
 
 	test("should fail for mixed ordering", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(["a", "c", "b", "d"]).toBeMonotonic();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("mixed ordering");
+		});
+		expect(error.message).toContain("mixed ordering");
 	});
 
 	test("should work with .not", () => {
@@ -281,14 +255,10 @@ test.describe("toHaveUniqueValues", () => {
 	});
 
 	test("should fail for array with duplicates", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyStringArray(["a", "b", "b", "c"]).toHaveUniqueValues();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Duplicate values");
+		});
+		expect(error.message).toContain("Duplicate values");
 	});
 
 	test("should fail for multiple duplicates", () => {

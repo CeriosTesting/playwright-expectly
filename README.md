@@ -197,11 +197,10 @@ await expectly(page.locator(".text")).not.toBeNumericString();
 - [📖 Object Array Matchers](./docs/OBJECT_ARRAY_MATCHERS.md) - Sorting and uniqueness by property
 - [📖 String Array Matchers](./docs/STRING_ARRAY_MATCHERS.md) - Alphabetical sorting and uniqueness
 - [📖 Generic Matchers](./docs/GENERIC_MATCHERS.md) - Type checking and partial matching
-- [📖 API Reference](./docs/API.md) - Complete API documentation
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](./CONTRIBUTING.md) for details.
+Contributions are welcome! Feel free to open an issue or submit a pull request.
 
 ## License
 

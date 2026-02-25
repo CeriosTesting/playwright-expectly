@@ -4,12 +4,13 @@ DOM element text and attribute validation matchers for Playwright locators.
 
 ## Module Organization
 
-The locator matchers are organized into four categories for better maintainability and granular imports:
+The locator matchers are organized into five categories for better maintainability and granular imports:
 
 - **Text Matchers** (`expectlyLocatorText`) - Text content validation
 - **Attribute Matchers** (`expectlyLocatorAttributes`) - HTML attribute validation
 - **Positioning Matchers** (`expectlyLocatorPositioning`) - Spatial relationship validation
 - **State Matchers** (`expectlyLocatorState`) - Dynamic behavior and element state
+- **Visibility Matchers** (`expectlyLocatorVisibility`) - Visible element count validation
 
 ### Import Options
 
@@ -25,8 +26,10 @@ await expectlyLocator(locator).toStartWith("Hello");
 // Option 3: Use granular imports for specific categories
 import { expectlyLocatorText } from "@cerios/playwright-expectly";
 import { expectlyLocatorAttributes } from "@cerios/playwright-expectly";
+import { expectlyLocatorVisibility } from "@cerios/playwright-expectly";
 await expectlyLocatorText(locator).toStartWith("Hello");
 await expectlyLocatorAttributes(locator).toHavePlaceholder("Search");
+await expectlyLocatorVisibility(page.locator(".item")).toHaveCountVisible(3);
 ```
 
 ## Available Matchers
@@ -58,6 +61,10 @@ await expectlyLocatorAttributes(locator).toHavePlaceholder("Search");
 ### State Matchers (`expectlyLocatorState`)
 
 - [toBeStable()](#tobestable)
+
+### Visibility Matchers (`expectlyLocatorVisibility`)
+
+- [toHaveCountVisible()](#tohavecountvisible)
 
 ## toStartWith() / toEndWith()
 
@@ -343,6 +350,21 @@ await expectly(page.locator(".animated-widget")).toBeStable({
 });
 ```
 
+## toHaveCountVisible()
+
+Validates that a locator resolves to the expected number of visible elements.
+
+```typescript
+// Validate visible list items
+await expectly(page.locator(".list-item")).toHaveCountVisible(3);
+
+// Validate visible table rows with custom timeout
+await expectly(page.locator("tbody tr")).toHaveCountVisible(5, { timeout: 5000 });
+
+// Works with dynamic content
+await expectly(page.locator(".notification")).toHaveCountVisible(1, { timeout: 3000 });
+```
+
 ## Common Use Cases
 
 ### Using Granular Imports
@@ -353,6 +375,7 @@ import {
 	expectlyLocatorAttributes,
 	expectlyLocatorPositioning,
 	expectlyLocatorState,
+	expectlyLocatorVisibility,
 } from "@cerios/playwright-expectly";
 
 test("validate with granular imports", async ({ page }) => {
@@ -377,6 +400,9 @@ test("validate with granular imports", async ({ page }) => {
 	// State validation
 	const loadingSpinner = page.locator(".spinner");
 	await expectlyLocatorState(loadingSpinner).toBeStable();
+
+	// Visibility validation
+	await expectlyLocatorVisibility(page.locator(".item")).toHaveCountVisible(2);
 });
 ```
 

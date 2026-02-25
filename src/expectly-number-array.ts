@@ -6,6 +6,7 @@ import {
 	findNonMatching,
 	findStrictAscendingViolation,
 	findStrictDescendingViolation,
+	getMinMax,
 	sortedExpected,
 } from "./matchers/common-utils";
 
@@ -301,15 +302,7 @@ export const expectlyNumberArray = baseExpect.extend({
 	 */
 	toHaveMin(actual: number[], expected: number) {
 		const assertionName = "toHaveMin";
-		let min = Number.NaN;
-		if (actual.length > 0) {
-			min = actual[0];
-			for (let i = 1; i < actual.length; i++) {
-				if (actual[i] < min) {
-					min = actual[i];
-				}
-			}
-		}
+		const { min } = getMinMax(actual);
 		const pass = min === expected;
 
 		const message = () => {
@@ -364,15 +357,7 @@ export const expectlyNumberArray = baseExpect.extend({
 	 */
 	toHaveMax(actual: number[], expected: number) {
 		const assertionName = "toHaveMax";
-		let max = Number.NaN;
-		if (actual.length > 0) {
-			max = actual[0];
-			for (let i = 1; i < actual.length; i++) {
-				if (actual[i] > max) {
-					max = actual[i];
-				}
-			}
-		}
+		const { max } = getMinMax(actual);
 		const pass = max === expected;
 
 		const message = () => {
@@ -427,16 +412,7 @@ export const expectlyNumberArray = baseExpect.extend({
 	 */
 	toHaveRange(actual: number[], expected: number) {
 		const assertionName = "toHaveRange";
-		let min = Number.NaN;
-		let max = Number.NaN;
-		if (actual.length > 0) {
-			min = actual[0];
-			max = actual[0];
-			for (let i = 1; i < actual.length; i++) {
-				if (actual[i] < min) min = actual[i];
-				if (actual[i] > max) max = actual[i];
-			}
-		}
+		const { min, max } = getMinMax(actual);
 		const range = max - min;
 		const pass = range === expected;
 

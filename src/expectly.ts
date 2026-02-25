@@ -12,7 +12,13 @@ import { expectlyStringArray } from "./expectly-string-array";
 // Extract matcher types from each expectly module
 type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
 
-type ExpectlyMatchers = ExtractMatchers<typeof expectlyAny>;
+type ExpectlyMatchers = ExtractMatchers<typeof expectlyAny> &
+	ExtractMatchers<typeof expectlyDate> &
+	ExtractMatchers<typeof expectlyLocator> &
+	ExtractMatchers<typeof expectlyNumberArray> &
+	ExtractMatchers<typeof expectlyObjectArray> &
+	ExtractMatchers<typeof expectlyString> &
+	ExtractMatchers<typeof expectlyStringArray>;
 
 /**
  * Expectly - Enhanced Playwright Test Assertions

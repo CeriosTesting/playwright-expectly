@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyAny } from "../src/expectly-any";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toBeAnyOf", () => {
 	test("should pass when value matches first possibility", () => {
 		expectlyAny(5).toBeAnyOf(5, 10, 15);
@@ -78,17 +80,13 @@ test.describe("toBeAnyOf", () => {
 	});
 
 	test("should fail when value doesn't match any possibility", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(20).toBeAnyOf(5, 10, 15);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toBeAnyOf");
-		expect(error?.message).toContain("Expected value to be one of the provided possibilities");
-		expect(error?.message).toContain("Received");
-		expect(error?.message).toContain("Possibilities");
+		});
+		expect(error.message).toContain("toBeAnyOf");
+		expect(error.message).toContain("Expected value to be one of the provided possibilities");
+		expect(error.message).toContain("Received");
+		expect(error.message).toContain("Possibilities");
 	});
 
 	test("should fail when string doesn't match any possibility", () => {
@@ -116,15 +114,11 @@ test.describe("toBeAnyOf", () => {
 	});
 
 	test("should work with .not when value matches a possibility", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(10).not.toBeAnyOf(5, 10, 15);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not");
-		expect(error?.message).toContain("Expected value to not be any of the provided possibilities");
+		});
+		expect(error.message).toContain("not");
+		expect(error.message).toContain("Expected value to not be any of the provided possibilities");
 	});
 
 	test("should work with .not when value doesn't match any possibility", () => {
@@ -346,14 +340,10 @@ test.describe("toBeInteger", () => {
 	});
 
 	test("should fail for float", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(3.14).toBeInteger();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected value to be an integer");
+		});
+		expect(error.message).toContain("Expected value to be an integer");
 	});
 
 	test("should fail for negative float", () => {
@@ -363,14 +353,10 @@ test.describe("toBeInteger", () => {
 	});
 
 	test("should fail for string number", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny("42").toBeInteger();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("string");
+		});
+		expect(error.message).toContain("string");
 	});
 
 	test("should fail for NaN", () => {
@@ -421,15 +407,11 @@ test.describe("toBeFloat", () => {
 	});
 
 	test("should fail for integer", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(42).toBeFloat();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected value to be a float");
-		expect(error?.message).toContain("value is an integer");
+		});
+		expect(error.message).toContain("Expected value to be a float");
+		expect(error.message).toContain("value is an integer");
 	});
 
 	test("should fail for zero", () => {
@@ -439,35 +421,24 @@ test.describe("toBeFloat", () => {
 	});
 
 	test("should fail for NaN", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(Number.NaN).toBeFloat();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("value is NaN");
+		});
+		expect(error.message).toContain("value is NaN");
 	});
 
 	test("should fail for string number", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny("3.14").toBeFloat();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("type is string");
+		});
+		expect(error.message).toContain("type is string");
 	});
 
 	test("should fail for Infinity", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(Number.POSITIVE_INFINITY).toBeFloat();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
+		});
+		expect(error.message).toContain("Expected value to be a float");
 	});
 
 	test("should work with .not for integers", () => {
@@ -476,14 +447,10 @@ test.describe("toBeFloat", () => {
 	});
 
 	test("should fail with .not for floats", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(3.14).not.toBeFloat();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected value to not be a float");
+		});
+		expect(error.message).toContain("Expected value to not be a float");
 	});
 });
 
@@ -625,26 +592,18 @@ test.describe("toBeObject", () => {
 	});
 
 	test("should fail for array", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny([]).toBeObject();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected value to be an object");
-		expect(error?.message).toContain("array");
+		});
+		expect(error.message).toContain("Expected value to be an object");
+		expect(error.message).toContain("array");
 	});
 
 	test("should fail for null", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(null).toBeObject();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("null");
+		});
+		expect(error.message).toContain("null");
 	});
 
 	test("should fail for string", () => {

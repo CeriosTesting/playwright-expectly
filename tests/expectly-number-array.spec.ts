@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyNumberArray } from "../src/expectly-number-array";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toHaveAscendingOrder", () => {
 	test("should pass when number array is in ascending order", () => {
 		const ascendingNumbers = [1, 2, 3, 4, 5];
@@ -34,28 +36,20 @@ test.describe("toHaveAscendingOrder", () => {
 	test("should fail when number array is not in ascending order", () => {
 		const unordered = [3, 1, 4, 2, 5];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray(unordered).toHaveAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toHaveAscendingOrder");
+		});
+		expect(error.message).toContain("toHaveAscendingOrder");
 	});
 
 	test("should fail when number array is in descending order", () => {
 		const descending = [5, 4, 3, 2, 1];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray(descending).toHaveAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected");
-		expect(error?.message).toContain("Received");
+		});
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received");
 	});
 
 	test("should work with .not for descending arrays", () => {
@@ -113,28 +107,20 @@ test.describe("toHaveDescendingOrder", () => {
 	test("should fail when number array is not in descending order", () => {
 		const unordered = [3, 5, 1, 4, 2];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray(unordered).toHaveDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toHaveDescendingOrder");
+		});
+		expect(error.message).toContain("toHaveDescendingOrder");
 	});
 
 	test("should fail when number array is in ascending order", () => {
 		const ascending = [1, 2, 3, 4, 5];
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray(ascending).toHaveDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected");
-		expect(error?.message).toContain("Received");
+		});
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received");
 	});
 
 	test("should work with .not for ascending arrays", () => {
@@ -191,14 +177,10 @@ test.describe("toHaveSum", () => {
 	});
 
 	test("should fail when sum does not match", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2, 3]).toHaveSum(10);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected sum");
+		});
+		expect(error.message).toContain("Expected sum");
 	});
 
 	test("should work with .not", () => {
@@ -224,14 +206,10 @@ test.describe("toHaveAverage", () => {
 	});
 
 	test("should fail when average does not match", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2, 3]).toHaveAverage(10);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected average");
+		});
+		expect(error.message).toContain("Expected average");
 	});
 
 	test("should work with .not", () => {
@@ -261,14 +239,10 @@ test.describe("toHaveMedian", () => {
 	});
 
 	test("should fail when median does not match", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2, 3]).toHaveMedian(10);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected median");
+		});
+		expect(error.message).toContain("Expected median");
 	});
 
 	test("should work with .not", () => {
@@ -290,14 +264,10 @@ test.describe("toHaveMin", () => {
 	});
 
 	test("should fail when minimum does not match", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([5, 2, 8]).toHaveMin(1);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected minimum");
+		});
+		expect(error.message).toContain("Expected minimum");
 	});
 
 	test("should work with .not", () => {
@@ -319,14 +289,10 @@ test.describe("toHaveMax", () => {
 	});
 
 	test("should fail when maximum does not match", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([5, 2, 8]).toHaveMax(20);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected maximum");
+		});
+		expect(error.message).toContain("Expected maximum");
 	});
 
 	test("should work with .not", () => {
@@ -352,14 +318,10 @@ test.describe("toHaveRange", () => {
 	});
 
 	test("should fail when range does not match", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 5, 9]).toHaveRange(10);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Expected range");
+		});
+		expect(error.message).toContain("Expected range");
 	});
 
 	test("should work with .not", () => {
@@ -381,25 +343,17 @@ test.describe("toBeAllBetween", () => {
 	});
 
 	test("should fail when value is below minimum", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([0, 2, 3]).toBeAllBetween(1, 5);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Out of range");
+		});
+		expect(error.message).toContain("Out of range");
 	});
 
 	test("should fail when value is above maximum", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([2, 3, 6]).toBeAllBetween(1, 5);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Out of range");
+		});
+		expect(error.message).toContain("Out of range");
 	});
 
 	test("should work with .not", () => {
@@ -417,14 +371,10 @@ test.describe("toBeAllPositive", () => {
 	});
 
 	test("should fail for zero", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 0, 2]).toBeAllPositive();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Non-positive");
+		});
+		expect(error.message).toContain("Non-positive");
 	});
 
 	test("should fail for negative values", () => {
@@ -448,14 +398,10 @@ test.describe("toBeAllNegative", () => {
 	});
 
 	test("should fail for zero", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([-1, 0, -2]).toBeAllNegative();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Non-negative");
+		});
+		expect(error.message).toContain("Non-negative");
 	});
 
 	test("should fail for positive values", () => {
@@ -483,14 +429,10 @@ test.describe("toBeAllIntegers", () => {
 	});
 
 	test("should fail for decimals", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2.5, 3]).toBeAllIntegers();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Non-integer");
+		});
+		expect(error.message).toContain("Non-integer");
 	});
 
 	test("should work with .not", () => {
@@ -504,14 +446,10 @@ test.describe("toBeAllGreaterThan", () => {
 	});
 
 	test("should fail when value equals threshold", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([5, 6, 7]).toBeAllGreaterThan(5);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not greater than");
+		});
+		expect(error.message).toContain("not greater than");
 	});
 
 	test("should fail when value is less than threshold", () => {
@@ -531,14 +469,10 @@ test.describe("toBeAllLessThan", () => {
 	});
 
 	test("should fail when value equals threshold", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([3, 4, 5]).toBeAllLessThan(5);
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("not less than");
+		});
+		expect(error.message).toContain("not less than");
 	});
 
 	test("should fail when value is greater than threshold", () => {
@@ -566,14 +500,10 @@ test.describe("toHaveStrictlyAscendingOrder", () => {
 	});
 
 	test("should fail for equal consecutive values", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2, 2, 3]).toHaveStrictlyAscendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("violation");
+		});
+		expect(error.message).toContain("violation");
 	});
 
 	test("should fail for descending order", () => {
@@ -601,14 +531,10 @@ test.describe("toHaveStrictlyDescendingOrder", () => {
 	});
 
 	test("should fail for equal consecutive values", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([3, 2, 2, 1]).toHaveStrictlyDescendingOrder();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("violation");
+		});
+		expect(error.message).toContain("violation");
 	});
 
 	test("should fail for ascending order", () => {
@@ -652,14 +578,10 @@ test.describe("toBeMonotonic", () => {
 	});
 
 	test("should fail for mixed ordering", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 3, 2, 4]).toBeMonotonic();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("mixed ordering");
+		});
+		expect(error.message).toContain("mixed ordering");
 	});
 
 	test("should work with .not", () => {
@@ -681,14 +603,10 @@ test.describe("toHaveUniqueValues", () => {
 	});
 
 	test("should fail for array with duplicates", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2, 2, 3]).toHaveUniqueValues();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Duplicate values");
+		});
+		expect(error.message).toContain("Duplicate values");
 	});
 
 	test("should fail for multiple duplicates", () => {
@@ -720,25 +638,17 @@ test.describe("toHaveConsecutiveIntegers", () => {
 	});
 
 	test("should fail for gap in sequence", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1, 2, 4, 5]).toHaveConsecutiveIntegers();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("Found gap");
+		});
+		expect(error.message).toContain("Found gap");
 	});
 
 	test("should fail for non-integers", () => {
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyNumberArray([1.5, 2.5, 3.5]).toHaveConsecutiveIntegers();
-		} catch (e: unknown) {
-			error = e instanceof Error ? e : new Error(String(e));
-		}
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("only integers");
+		});
+		expect(error.message).toContain("only integers");
 	});
 
 	test("should fail for duplicates", () => {
