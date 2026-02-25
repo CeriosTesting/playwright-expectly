@@ -4,13 +4,7 @@ import { withMatcherState } from "../matchers/matcher-state-utils";
 import { PollOptions } from "../types/poll-options";
 
 type StabilityOptions = Pick<PollOptions, "timeout"> & {
-	/**
-	 * Duration in ms that content must remain unchanged (default: 500)
-	 */
 	stabilityDuration?: number;
-	/**
-	 * Interval in ms between stability checks (default: 100)
-	 */
 	checkInterval?: number;
 };
 
@@ -19,28 +13,6 @@ type StabilityOptions = Pick<PollOptions, "timeout"> & {
  * These matchers validate dynamic behavior and element states.
  */
 export const expectlyLocatorStateMatchers = withMatcherState({
-	/**
-	 * Asserts that the locator's content remains stable (unchanged) for a specified duration.
-	 * This is useful for waiting until dynamic content has finished updating.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param options - Optional configuration
-	 * @param options.stabilityDuration - Duration in ms that content must remain unchanged (default: 500)
-	 * @param options.checkInterval - Interval in ms between stability checks (default: 100)
-	 * @param options.timeout - Maximum time in ms to wait for stability (default: playwright timeout)
-	 *
-	 * @example
-	 * // Wait for element to stop changing
-	 * await expectLocator(page.locator('.live-updates')).toBeStable();
-	 *
-	 * @example
-	 * // Custom stability requirements
-	 * await expectLocator(page.locator('.loading-content')).toBeStable({
-	 *   stabilityDuration: 1000,
-	 *   checkInterval: 200,
-	 *   timeout: 10000
-	 * });
-	 */
 	async toBeStable(locator: Locator, options?: StabilityOptions) {
 		const assertionName = "toBeStable";
 		const stabilityDuration = options?.stabilityDuration ?? 500;

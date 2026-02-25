@@ -6,28 +6,6 @@ import { withMatcherState } from "./matchers/matcher-state-utils";
  * Expextly Custom matchers for object array validations.
  */
 export const expectlyObjectArrayMatchers = withMatcherState({
-	/**
-	 * Asserts that an array contains only unique objects (no duplicates).
-	 *
-	 * Uses deep equality comparison via JSON serialization to detect duplicates.
-	 * Handles circular references gracefully.
-	 *
-	 * @param actual - Array of objects to check
-	 *
-	 * @example
-	 * // Validate unique records
-	 * const users = [
-	 *   { id: 1, name: 'Alice' },
-	 *   { id: 2, name: 'Bob' },
-	 *   { id: 3, name: 'Charlie' }
-	 * ];
-	 * await expectObjectArray(users).toHaveOnlyUniqueObjects();
-	 *
-	 * @example
-	 * // This would fail (duplicate objects)
-	 * const items = [{ id: 1 }, { id: 1 }];
-	 * await expectObjectArray(items).not.toHaveOnlyUniqueObjects();
-	 */
 	toHaveOnlyUniqueObjects(actual: object[]) {
 		const assertionName = "toHaveOnlyUniqueObjects";
 		const duplicateObjects = getDuplicateObjects(actual);
@@ -56,30 +34,6 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that an array of objects is sorted in ascending order by a specific property.
-	 *
-	 * @param actual - Array of objects to check
-	 * @param propertyName - The property name to sort by
-	 *
-	 * @example
-	 * // Validate sorted by age
-	 * const users = [
-	 *   { name: 'Alice', age: 25 },
-	 *   { name: 'Bob', age: 30 },
-	 *   { name: 'Charlie', age: 35 }
-	 * ];
-	 * await expectObjectArray(users).toHaveObjectsInAscendingOrderBy('age');
-	 *
-	 * @example
-	 * // Check alphabetical sorting
-	 * const products = [
-	 *   { id: 1, name: 'Apple' },
-	 *   { id: 2, name: 'Banana' },
-	 *   { id: 3, name: 'Cherry' }
-	 * ];
-	 * await expectObjectArray(products).toHaveObjectsInAscendingOrderBy('name');
-	 */
 	toHaveObjectsInAscendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInAscendingOrderBy";
 		const validation = validateSortOrder(actual, propertyName, "ascending");
@@ -119,30 +73,6 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 			expected: propertyName,
 		};
 	},
-	/**
-	 * Asserts that an array of objects is sorted in descending order by a specific property.
-	 *
-	 * @param actual - Array of objects to check
-	 * @param propertyName - The property name to sort by
-	 *
-	 * @example
-	 * // Validate sorted by score (high to low)
-	 * const players = [
-	 *   { name: 'Alice', score: 950 },
-	 *   { name: 'Bob', score: 850 },
-	 *   { name: 'Charlie', score: 750 }
-	 * ];
-	 * await expectObjectArray(players).toHaveObjectsInDescendingOrderBy('score');
-	 *
-	 * @example
-	 * // Check reverse chronological order
-	 * const posts = [
-	 *   { title: 'Latest', date: '2024-12-31' },
-	 *   { title: 'Earlier', date: '2024-11-15' },
-	 *   { title: 'Oldest', date: '2024-01-01' }
-	 * ];
-	 * await expectObjectArray(posts).toHaveObjectsInDescendingOrderBy('date');
-	 */
 	toHaveObjectsInDescendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInDescendingOrderBy";
 		const validation = validateSortOrder(actual, propertyName, "descending");

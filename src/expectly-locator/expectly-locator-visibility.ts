@@ -7,21 +7,6 @@ import { PollOptions } from "../types/poll-options";
  * Visibility validation matchers for Playwright locators.
  */
 export const expectlyLocatorVisibilityMatchers = withMatcherState({
-	/**
-	 * Asserts that the locator has the expected number of visible elements.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param count - The expected number of visible elements
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check visible items in a list
-	 * await expectLocator(page.locator('.list-item')).toHaveCountVisible(3);
-	 *
-	 * @example
-	 * // Validate visible table rows with custom timeout
-	 * await expectLocator(page.locator('tbody tr')).toHaveCountVisible(5, { timeout: 5000 });
-	 */
 	async toHaveCountVisible(locator: Locator, count: number, options?: PollOptions) {
 		const assertionName = "toHaveCountVisible";
 		let pass: boolean = false;
