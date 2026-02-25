@@ -5,7 +5,7 @@ import { expect as baseExpect } from "@playwright/test";
  * Expextly Custom matchers for any type validations.
  */
 export const expectlyAnyMatchers = {
-	toBeAnyOf(this: ExpectMatcherState, received: any, ...possibilities: any[]) {
+	toBeAnyOf(this: ExpectMatcherState, received: unknown, ...possibilities: unknown[]) {
 		const assertionName = "toBeAnyOf";
 		const pass = possibilities.some(possibility => {
 			try {
@@ -64,7 +64,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeNullish(this: ExpectMatcherState, received: any) {
+	toBeNullish(this: ExpectMatcherState, received: unknown) {
 		const assertionName = "toBeNullish";
 		const pass = received === null || received === undefined;
 
@@ -101,7 +101,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeInteger(this: ExpectMatcherState, received: any) {
+	toBeInteger(this: ExpectMatcherState, received: unknown) {
 		const assertionName = "toBeInteger";
 		const pass = Number.isInteger(received);
 
@@ -134,7 +134,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeFloat(this: ExpectMatcherState, received: any) {
+	toBeFloat(this: ExpectMatcherState, received: unknown) {
 		const assertionName = "toBeFloat";
 		const pass =
 			typeof received === "number" &&
@@ -186,7 +186,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBePrimitive(this: ExpectMatcherState, received: any) {
+	toBePrimitive(this: ExpectMatcherState, received: unknown) {
 		const assertionName = "toBePrimitive";
 		const receivedType = typeof received;
 		const pass =
@@ -231,7 +231,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeArray(this: ExpectMatcherState, received: any) {
+	toBeArray(this: ExpectMatcherState, received: unknown) {
 		const assertionName = "toBeArray";
 		const pass = Array.isArray(received);
 
@@ -264,7 +264,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeObject(this: ExpectMatcherState, received: any) {
+	toBeObject(this: ExpectMatcherState, received: unknown) {
 		const assertionName = "toBeObject";
 		const pass = typeof received === "object" && received !== null && !Array.isArray(received);
 
@@ -303,7 +303,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toEqualPartially(this: ExpectMatcherState, actual: any, expected: any) {
+	toEqualPartially(this: ExpectMatcherState, actual: unknown, expected: unknown) {
 		const assertionName = "toEqualPartially";
 		let pass = false;
 		let comparisonError = "";
@@ -315,10 +315,10 @@ export const expectlyAnyMatchers = {
 			// Compare the subset directly - this gives us a clean diff
 			baseExpect(actualSubset).toEqual(expected);
 			pass = true;
-		} catch (e: any) {
+		} catch (e: unknown) {
 			pass = false;
 			// Extract just the diff part from Playwright's error message
-			comparisonError = e.message;
+			comparisonError = e instanceof Error ? e.message : String(e);
 		}
 
 		const message = () => {
@@ -394,7 +394,7 @@ function extractMatchingStructure(actual: unknown, expected: unknown): unknown {
 		}
 
 		// For array partial matching, we find matching items
-		const result: any[] = [];
+		const result: unknown[] = [];
 		for (const expectedItem of expected) {
 			// Find a matching item in actual
 			const matchingItem = actual.find(actualItem => {

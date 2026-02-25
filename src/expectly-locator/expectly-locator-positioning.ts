@@ -29,8 +29,8 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 							actualBottom = box.y + box.height;
 							otherTop = otherBox.y;
 							return actualBottom <= otherTop;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -103,8 +103,8 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 							actualTop = box.y;
 							otherBottom = otherBox.y + otherBox.height;
 							return actualTop >= otherBottom;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -177,8 +177,8 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 							actualRight = box.x + box.width;
 							otherLeft = otherBox.x;
 							return actualRight <= otherLeft;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -251,8 +251,8 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 							actualLeft = box.x;
 							otherRight = otherBox.x + otherBox.width;
 							return actualLeft >= otherRight;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},

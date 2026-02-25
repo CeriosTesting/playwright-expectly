@@ -18,15 +18,25 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: number[]) {
 		const assertionName = "toHaveAscendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
+		let matcherResult: { actual?: unknown } | undefined;
 
 		const expected: number[] = sortedExpected(actual, "ascending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = actual;
+			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch (e: unknown) {
+			matcherResult = undefined;
+			if (
+				e != null &&
+				typeof e === "object" &&
+				"matcherResult" in e &&
+				e.matcherResult != null &&
+				typeof e.matcherResult === "object" &&
+				"actual" in e.matcherResult
+			) {
+				matcherResult = { actual: e.matcherResult.actual };
+			}
 			pass = false;
 		}
 
@@ -50,15 +60,25 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	toHaveDescendingOrder(actual: number[]) {
 		const assertionName = "toHaveDescendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
+		let matcherResult: { actual?: unknown } | undefined;
 
 		const expected: number[] = sortedExpected(actual, "descending");
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch (e: unknown) {
+			matcherResult = undefined;
+			if (
+				e != null &&
+				typeof e === "object" &&
+				"matcherResult" in e &&
+				e.matcherResult != null &&
+				typeof e.matcherResult === "object" &&
+				"actual" in e.matcherResult
+			) {
+				matcherResult = { actual: e.matcherResult.actual };
+			}
 			pass = false;
 		}
 

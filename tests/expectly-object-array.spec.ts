@@ -181,10 +181,10 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 	});
 
 	test("should handle circular references without throwing", () => {
-		const obj1: any = { id: 1, name: "Alice" };
+		const obj1: Record<string, unknown> = { id: 1, name: "Alice" };
 		obj1.self = obj1;
 
-		const obj2: any = { id: 2, name: "Bob" };
+		const obj2: Record<string, unknown> = { id: 2, name: "Bob" };
 		obj2.self = obj2;
 
 		const arrayWithCircular = [obj1, obj2];
@@ -194,7 +194,7 @@ test.describe("toHaveOnlyUniqueObjects", () => {
 	});
 
 	test("should detect duplicate circular references", () => {
-		const obj1: any = { id: 1, name: "Alice" };
+		const obj1: Record<string, unknown> = { id: 1, name: "Alice" };
 		obj1.self = obj1;
 
 		const arrayWithDuplicateCircular = [obj1, obj1];

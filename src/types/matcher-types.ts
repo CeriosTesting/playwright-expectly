@@ -1,3 +1,5 @@
+import type { Locator } from "@playwright/test";
+
 import type { PollOptions } from "./poll-options";
 
 export type StabilityOptions = Pick<PollOptions, "timeout"> & {
@@ -158,7 +160,7 @@ declare global {
 			 * @example
 			 * expect('https://example.com').toStartWith('https://');
 			 */
-			toStartWith(expected: string, options?: PollOptions): R;
+			toStartWith(expected: string, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string ends with the expected substring.
@@ -169,7 +171,7 @@ declare global {
 			 * @example
 			 * expect('document.pdf').toEndWith('.pdf');
 			 */
-			toEndWith(expected: string, options?: PollOptions): R;
+			toEndWith(expected: string, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string matches a regular expression pattern.
@@ -180,7 +182,7 @@ declare global {
 			 * @example
 			 * expect('555-123-4567').toMatchPattern(/^\d{3}-\d{3}-\d{4}$/);
 			 */
-			toMatchPattern(pattern: RegExp, options?: PollOptions): R;
+			toMatchPattern(pattern: RegExp, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string is a valid email address format.
@@ -191,7 +193,7 @@ declare global {
 			 * expect('user@example.com').toBeValidEmail();
 			 * expect('not-an-email').not.toBeValidEmail();
 			 */
-			toBeValidEmail(options?: PollOptions): R;
+			toBeValidEmail(options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string is a valid URL format.
@@ -202,7 +204,7 @@ declare global {
 			 * expect('https://example.com').toBeValidUrl();
 			 * expect('not a url').not.toBeValidUrl();
 			 */
-			toBeValidUrl(options?: PollOptions): R;
+			toBeValidUrl(options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string contains only letters and numbers (no spaces or special characters).
@@ -213,7 +215,7 @@ declare global {
 			 * expect('user123').toBeAlphanumeric();
 			 * expect('user 123').not.toBeAlphanumeric();
 			 */
-			toBeAlphanumeric(options?: PollOptions): R;
+			toBeAlphanumeric(options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string contains only numeric digits (0-9).
@@ -224,7 +226,7 @@ declare global {
 			 * expect('1234').toBeNumericString();
 			 * expect('12a34').not.toBeNumericString();
 			 */
-			toBeNumericString(options?: PollOptions): R;
+			toBeNumericString(options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string is a valid UUID.
@@ -236,7 +238,7 @@ declare global {
 			 * expect('550e8400-e29b-41d4-a716-446655440000').toBeUUID();
 			 * expect('f47ac10b-58cc-4372-a567-0e02b2c3d479').toBeUUID(4);
 			 */
-			toBeUUID(version?: 1 | 3 | 4 | 5, options?: PollOptions): R;
+			toBeUUID(version?: 1 | 3 | 4 | 5, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a date is close to another date within a specified deviation.
@@ -738,7 +740,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('.heading')).toBeUpperCase();
 			 */
-			toBeUpperCase(options?: PollOptions): R;
+			toBeUpperCase(options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's text is all lowercase letters.
@@ -748,7 +750,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('.username')).toBeLowerCase();
 			 */
-			toBeLowerCase(options?: PollOptions): R;
+			toBeLowerCase(options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's text is in title case (first letter of each word capitalized).
@@ -758,7 +760,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('.book-title')).toBeTitleCase();
 			 */
-			toBeTitleCase(options?: PollOptions): R;
+			toBeTitleCase(options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator has the expected text, ignoring text from any child elements.
@@ -770,7 +772,7 @@ declare global {
 			 * // HTML: <div>new value<span>old value</span></div>
 			 * await expect(page.locator('div')).toHaveDirectText('new value');
 			 */
-			toHaveDirectText(expectedText: string, options?: PollOptions): R;
+			toHaveDirectText(expectedText: string, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has the specified placeholder attribute.
@@ -781,7 +783,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('input[name="email"]')).toHavePlaceholder('Enter your email');
 			 */
-			toHavePlaceholder(expected: string | RegExp, options?: PollOptions): R;
+			toHavePlaceholder(expected: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has the specified href attribute.
@@ -792,7 +794,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('a.home-link')).toHaveHref('/');
 			 */
-			toHaveHref(expected: string | RegExp, options?: PollOptions): R;
+			toHaveHref(expected: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has the specified src attribute.
@@ -803,7 +805,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('img.logo')).toHaveSrc('/images/logo.png');
 			 */
-			toHaveSrc(expected: string | RegExp, options?: PollOptions): R;
+			toHaveSrc(expected: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has the specified alt attribute.
@@ -814,7 +816,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('img.avatar')).toHaveAlt('User profile picture');
 			 */
-			toHaveAlt(expected: string | RegExp, options?: PollOptions): R;
+			toHaveAlt(expected: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has a data attribute with an optional expected value.
@@ -827,7 +829,7 @@ declare global {
 			 * await expect(page.locator('.item')).toHaveDataAttribute('id');
 			 * await expect(page.locator('.item')).toHaveDataAttribute('status', 'active');
 			 */
-			toHaveDataAttribute(name: string, expected?: string | RegExp, options?: PollOptions): R;
+			toHaveDataAttribute(name: string, expected?: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has the specified aria-label attribute.
@@ -838,7 +840,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('button.close')).toHaveAriaLabel('Close dialog');
 			 */
-			toHaveAriaLabel(expected: string | RegExp, options?: PollOptions): R;
+			toHaveAriaLabel(expected: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element has the specified target attribute.
@@ -849,7 +851,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('a.external')).toHaveTarget('_blank');
 			 */
-			toHaveTarget(expected: string | RegExp, options?: PollOptions): R;
+			toHaveTarget(expected: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element is required (has the required attribute).
@@ -860,7 +862,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('input[name="email"]')).toBeRequired();
 			 */
-			toBeRequired(options?: PollOptions): R;
+			toBeRequired(options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element is readonly (has the readonly attribute).
@@ -871,7 +873,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('input[name="username"]')).toBeReadOnly();
 			 */
-			toBeReadOnly(options?: PollOptions): R;
+			toBeReadOnly(options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element is positioned above another element.
@@ -883,7 +885,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('header')).toBeAbove(page.locator('main'));
 			 */
-			toBeAbove(otherLocator: import("@playwright/test").Locator, options?: PollOptions): R;
+			toBeAbove(otherLocator: Locator, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element is positioned below another element.
@@ -895,7 +897,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('footer')).toBeBelow(page.locator('main'));
 			 */
-			toBeBelow(otherLocator: import("@playwright/test").Locator, options?: PollOptions): R;
+			toBeBelow(otherLocator: Locator, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element is positioned to the left of another element.
@@ -907,7 +909,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('.sidebar')).toBeLeftOf(page.locator('.content'));
 			 */
-			toBeLeftOf(otherLocator: import("@playwright/test").Locator, options?: PollOptions): R;
+			toBeLeftOf(otherLocator: Locator, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's element is positioned to the right of another element.
@@ -919,7 +921,7 @@ declare global {
 			 * @example
 			 * await expect(page.locator('.content')).toBeRightOf(page.locator('.sidebar'));
 			 */
-			toBeRightOf(otherLocator: import("@playwright/test").Locator, options?: PollOptions): R;
+			toBeRightOf(otherLocator: Locator, options?: PollOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator's content remains stable (unchanged) for a specified duration.
@@ -934,7 +936,7 @@ declare global {
 			 * await expect(page.locator('.live-updates')).toBeStable();
 			 * await expect(page.locator('.loading-content')).toBeStable({ stabilityDuration: 1000, timeout: 10000 });
 			 */
-			toBeStable(options?: StabilityOptions): R;
+			toBeStable(options?: StabilityOptions): Promise<R>;
 
 			/**
 			 * Asserts that the locator has the expected number of visible elements.
@@ -946,7 +948,7 @@ declare global {
 			 * await expect(page.locator('.list-item')).toHaveCountVisible(3);
 			 * await expect(page.locator('tbody tr')).toHaveCountVisible(5, { timeout: 5000 });
 			 */
-			toHaveCountVisible(count: number, options?: PollOptions): R;
+			toHaveCountVisible(count: number, options?: PollOptions): Promise<R>;
 		}
 	}
 }

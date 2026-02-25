@@ -22,8 +22,8 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 							const visArr = await Promise.all(handles.map(async h => h.isVisible()));
 							visibleCount = visArr.filter(Boolean).length;
 							return visibleCount === count;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},

@@ -33,8 +33,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return actual.startsWith(expected);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -101,8 +101,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return actual.endsWith(expected);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -169,8 +169,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return pattern.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -234,8 +234,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isValidEmail(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -298,8 +298,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isValidUrl(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -357,8 +357,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isAlphanumeric(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -421,8 +421,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isNumericString(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -485,8 +485,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isUpperCase(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -550,8 +550,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isLowerCase(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -615,8 +615,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isTitleCase(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -680,8 +680,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							return isValidUUID(actual, version);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -755,8 +755,8 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 									.replace(/\s+/g, " ")
 							);
 							return actual === expectedText;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},

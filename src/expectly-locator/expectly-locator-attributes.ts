@@ -24,8 +24,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -92,8 +92,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -160,8 +160,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -228,8 +228,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -300,8 +300,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -384,8 +384,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -452,8 +452,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 								return actual === expected;
 							}
 							return actual !== null && expected.test(actual);
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -518,8 +518,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 							const requiredAttr = await locator.getAttribute("required");
 							hasAttribute = requiredAttr !== null;
 							return hasAttribute;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},
@@ -572,8 +572,8 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 							const readonlyAttr = await locator.getAttribute("readonly");
 							hasAttribute = readonlyAttr !== null;
 							return hasAttribute;
-						} catch (e: any) {
-							locatorError = e;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
 						}
 					},

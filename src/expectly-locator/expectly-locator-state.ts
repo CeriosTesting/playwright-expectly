@@ -83,9 +83,9 @@ export const expectlyLocatorStateMatchers = withMatcherState({
 						lastSnapshot = currentSnapshot;
 						stableStartTime = Date.now();
 					}
-				} catch (e: any) {
+				} catch (e: unknown) {
 					// Track the error for better diagnostics
-					lastError = e;
+					lastError = e instanceof Error ? e : new Error(String(e));
 					// If locator not found or not ready yet, reset
 					lastSnapshot = null;
 					stableStartTime = null;
@@ -114,12 +114,12 @@ export const expectlyLocatorStateMatchers = withMatcherState({
 						`Check interval: ${checkInterval}ms`;
 				}
 			}
-		} catch (e: any) {
+		} catch (e: unknown) {
 			if (locatorError) {
 				throw locatorError;
 			}
 			pass = false;
-			errorMessage = e.message;
+			errorMessage = e instanceof Error ? e.message : String(e);
 		}
 
 		const message = () => {
