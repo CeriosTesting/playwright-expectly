@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
+
 import { expectlyLocator } from "../../src/expectly-locator";
+import { getRejectedError } from "../helpers/assertion-utils";
 
 test.describe("expectLocator - toHaveCountVisible", () => {
 	test("should pass when the expected number of elements are visible", async ({ page }) => {
@@ -86,14 +88,11 @@ test.describe("expectLocator - toHaveCountVisible", () => {
 		`);
 		const items = page.locator(".item");
 
-		try {
-			await expectlyLocator(items).toHaveCountVisible(3, { timeout: 1000 });
-		} catch (error: any) {
-			expect(error.message).toContain("Expected number of visible elements");
-			expect(error.message).toContain("3");
-			expect(error.message).toContain("Received");
-			expect(error.message).toContain("1");
-		}
+		const error = await getRejectedError(expectlyLocator(items).toHaveCountVisible(3, { timeout: 1000 }));
+		expect(error.message).toContain("Expected number of visible elements");
+		expect(error.message).toContain("3");
+		expect(error.message).toContain("Received");
+		expect(error.message).toContain("1");
 	});
 
 	test("should fail when more elements are visible than expected", async ({ page }) => {
@@ -104,14 +103,11 @@ test.describe("expectLocator - toHaveCountVisible", () => {
 		`);
 		const items = page.locator(".item");
 
-		try {
-			await expectlyLocator(items).toHaveCountVisible(2, { timeout: 1000 });
-		} catch (error: any) {
-			expect(error.message).toContain("Expected number of visible elements");
-			expect(error.message).toContain("2");
-			expect(error.message).toContain("Received");
-			expect(error.message).toContain("3");
-		}
+		const error = await getRejectedError(expectlyLocator(items).toHaveCountVisible(2, { timeout: 1000 }));
+		expect(error.message).toContain("Expected number of visible elements");
+		expect(error.message).toContain("2");
+		expect(error.message).toContain("Received");
+		expect(error.message).toContain("3");
 	});
 
 	test("should fail when no elements match the locator", async ({ page }) => {
@@ -120,14 +116,11 @@ test.describe("expectLocator - toHaveCountVisible", () => {
 		`);
 		const items = page.locator(".item");
 
-		try {
-			await expectlyLocator(items).toHaveCountVisible(1, { timeout: 1000 });
-		} catch (error: any) {
-			expect(error.message).toContain("Expected number of visible elements");
-			expect(error.message).toContain("1");
-			expect(error.message).toContain("Received");
-			expect(error.message).toContain("0");
-		}
+		const error = await getRejectedError(expectlyLocator(items).toHaveCountVisible(1, { timeout: 1000 }));
+		expect(error.message).toContain("Expected number of visible elements");
+		expect(error.message).toContain("1");
+		expect(error.message).toContain("Received");
+		expect(error.message).toContain("0");
 	});
 
 	test("should work with visibility:hidden elements", async ({ page }) => {

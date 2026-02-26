@@ -1,41 +1,14 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
-import { buildPollOptions } from "./poll-options-builder";
+
+import { withMatcherState } from "../matchers/matcher-state-utils";
+import { PollOptions } from "../types/poll-options";
 
 /**
  * Element positioning matchers for Playwright locators.
  * These matchers validate spatial relationships between elements.
  */
-export const expectlyLocatorPositioning = baseExpect.extend({
-	/**
-	 * Asserts that the locator's element is positioned above another element.
-	 * Compares the bottom edge of the current element with the top edge of the other element.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param otherLocator - The locator to compare against
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if header is above content
-	 * await expectLocator(page.locator('header')).toBeAbove(page.locator('main'));
-	 *
-	 * @example
-	 * // Validate navigation is above footer
-	 * await expectLocator(page.locator('nav')).toBeAbove(page.locator('footer'));
-	 */
-	async toBeAbove(
-		locator: Locator,
-		otherLocator: Locator,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+export const expectlyLocatorPositioningMatchers = withMatcherState({
+	async toBeAbove(locator: Locator, otherLocator: Locator, options?: PollOptions) {
 		const assertionName = "toBeAbove";
 		let pass: boolean = false;
 		let actualBottom: number | undefined;
@@ -43,25 +16,29 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-						if (!box || !otherBox) {
-							return false;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualBottom = box.y + box.height;
+							otherTop = otherBox.y;
+							return actualBottom <= otherTop;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-
-						actualBottom = box.y + box.height;
-						otherTop = otherBox.y;
-						return actualBottom <= otherTop;
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -105,36 +82,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that the locator's element is positioned below another element.
-	 * Compares the top edge of the current element with the bottom edge of the other element.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param otherLocator - The locator to compare against
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if footer is below content
-	 * await expectLocator(page.locator('footer')).toBeBelow(page.locator('main'));
-	 *
-	 * @example
-	 * // Validate content is below header
-	 * await expectLocator(page.locator('main')).toBeBelow(page.locator('header'));
-	 */
-	async toBeBelow(
-		locator: Locator,
-		otherLocator: Locator,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toBeBelow(locator: Locator, otherLocator: Locator, options?: PollOptions) {
 		const assertionName = "toBeBelow";
 		let pass: boolean = false;
 		let actualTop: number | undefined;
@@ -142,25 +90,29 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-						if (!box || !otherBox) {
-							return false;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualTop = box.y;
+							otherBottom = otherBox.y + otherBox.height;
+							return actualTop >= otherBottom;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-
-						actualTop = box.y;
-						otherBottom = otherBox.y + otherBox.height;
-						return actualTop >= otherBottom;
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -204,36 +156,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that the locator's element is positioned to the left of another element.
-	 * Compares the right edge of the current element with the left edge of the other element.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param otherLocator - The locator to compare against
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if sidebar is left of content
-	 * await expectLocator(page.locator('.sidebar')).toBeLeftOf(page.locator('.content'));
-	 *
-	 * @example
-	 * // Validate icon is left of text
-	 * await expectLocator(page.locator('.icon')).toBeLeftOf(page.locator('.label'));
-	 */
-	async toBeLeftOf(
-		locator: Locator,
-		otherLocator: Locator,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toBeLeftOf(locator: Locator, otherLocator: Locator, options?: PollOptions) {
 		const assertionName = "toBeLeftOf";
 		let pass: boolean = false;
 		let actualRight: number | undefined;
@@ -241,25 +164,29 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-						if (!box || !otherBox) {
-							return false;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualRight = box.x + box.width;
+							otherLeft = otherBox.x;
+							return actualRight <= otherLeft;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-
-						actualRight = box.x + box.width;
-						otherLeft = otherBox.x;
-						return actualRight <= otherLeft;
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -303,36 +230,7 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that the locator's element is positioned to the right of another element.
-	 * Compares the left edge of the current element with the right edge of the other element.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param otherLocator - The locator to compare against
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if content is right of sidebar
-	 * await expectLocator(page.locator('.content')).toBeRightOf(page.locator('.sidebar'));
-	 *
-	 * @example
-	 * // Validate text is right of icon
-	 * await expectLocator(page.locator('.label')).toBeRightOf(page.locator('.icon'));
-	 */
-	async toBeRightOf(
-		locator: Locator,
-		otherLocator: Locator,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toBeRightOf(locator: Locator, otherLocator: Locator, options?: PollOptions) {
 		const assertionName = "toBeRightOf";
 		let pass: boolean = false;
 		let actualLeft: number | undefined;
@@ -340,25 +238,29 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+				.poll(
+					async () => {
+						try {
+							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-						if (!box || !otherBox) {
-							return false;
+							if (!box || !otherBox) {
+								return false;
+							}
+
+							actualLeft = box.x;
+							otherRight = otherBox.x + otherBox.width;
+							return actualLeft >= otherRight;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-
-						actualLeft = box.x;
-						otherRight = otherBox.x + otherBox.width;
-						return actualLeft >= otherRight;
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -403,3 +305,5 @@ export const expectlyLocatorPositioning = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorPositioning = baseExpect.extend(expectlyLocatorPositioningMatchers);

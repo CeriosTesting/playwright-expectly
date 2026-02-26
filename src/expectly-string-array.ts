@@ -1,4 +1,5 @@
 import { expect as baseExpect } from "@playwright/test";
+
 import {
 	checkMonotonic,
 	findDuplicates,
@@ -6,38 +7,34 @@ import {
 	findStrictDescendingViolation,
 	sortedExpected,
 } from "./matchers/common-utils";
+import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
  * Expextly Custom matchers for string array validations.
  */
-export const expectlyStringArray = baseExpect.extend({
-	/**
-	 * Asserts that an array of strings is in ascending order (alphabetically A-Z).
-	 *
-	 * @param actual - Array of strings
-	 *
-	 * @example
-	 * // Validate sorted names
-	 * const names = ["Alice", "Bob", "Charlie", "David"];
-	 * await expectStringArray(names).toHaveAscendingOrder();
-	 *
-	 * @example
-	 * // Check sorted categories from API
-	 * const categories = await page.locator('.category').allTextContents();
-	 * await expectStringArray(categories).toHaveAscendingOrder();
-	 */
+export const expectlyStringArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: string[]) {
 		const assertionName = "toHaveAscendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
+		let matcherResult: { actual?: unknown } | undefined;
 
 		const expected: string[] = sortedExpected(actual, "ascending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = actual;
+			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch (e: unknown) {
+			matcherResult = undefined;
+			if (
+				e != null &&
+				typeof e === "object" &&
+				"matcherResult" in e &&
+				e.matcherResult != null &&
+				typeof e.matcherResult === "object" &&
+				"actual" in e.matcherResult
+			) {
+				matcherResult = { actual: e.matcherResult.actual };
+			}
 			pass = false;
 		}
 
@@ -58,32 +55,28 @@ export const expectlyStringArray = baseExpect.extend({
 			actual: matcherResult?.actual,
 		};
 	},
-	/**
-	 * Asserts that an array of strings is in descending order (alphabetically Z-A).
-	 *
-	 * @param actual - Array of strings
-	 *
-	 * @example
-	 * // Validate reverse sorted list
-	 * const items = ["Zebra", "Yak", "Xylophone", "Watermelon"];
-	 * await expectStringArray(items).toHaveDescendingOrder();
-	 *
-	 * @example
-	 * // Check descending sort
-	 * expectStringArray(sortedList).toHaveDescendingOrder();
-	 */
 	toHaveDescendingOrder(actual: string[]) {
 		const assertionName = "toHaveDescendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
+		let matcherResult: { actual?: unknown } | undefined;
 
 		const expected: string[] = sortedExpected(actual, "descending");
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch (e: unknown) {
+			matcherResult = undefined;
+			if (
+				e != null &&
+				typeof e === "object" &&
+				"matcherResult" in e &&
+				e.matcherResult != null &&
+				typeof e.matcherResult === "object" &&
+				"actual" in e.matcherResult
+			) {
+				matcherResult = { actual: e.matcherResult.actual };
+			}
 			pass = false;
 		}
 
@@ -104,22 +97,6 @@ export const expectlyStringArray = baseExpect.extend({
 			actual: matcherResult?.actual,
 		};
 	},
-	/**
-	 * Asserts that strings are in strictly ascending order (each element > previous).
-	 *
-	 * Unlike toHaveAscendingOrder, this rejects equal consecutive values.
-	 *
-	 * @param actual - Array of strings
-	 *
-	 * @example
-	 * // Validate increasing values
-	 * const versions = ["v1.0", "v1.1", "v2.0", "v3.0"];
-	 * await expectStringArray(versions).toHaveStrictlyAscendingOrder();
-	 *
-	 * @example
-	 * // This would fail (has equal consecutive values)
-	 * expectStringArray(["a", "b", "b", "c"]).not.toHaveStrictlyAscendingOrder();
-	 */
 	toHaveStrictlyAscendingOrder(actual: string[]) {
 		const assertionName = "toHaveStrictlyAscendingOrder";
 		const firstViolationIndex = findStrictAscendingViolation(actual);
@@ -158,22 +135,6 @@ export const expectlyStringArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that strings are in strictly descending order (each element < previous).
-	 *
-	 * Unlike toHaveDescendingOrder, this rejects equal consecutive values.
-	 *
-	 * @param actual - Array of strings
-	 *
-	 * @example
-	 * // Validate decreasing values
-	 * const priorities = ["urgent", "high", "medium", "low"];
-	 * await expectStringArray(priorities).toHaveStrictlyDescendingOrder();
-	 *
-	 * @example
-	 * // This would fail (has equal consecutive values)
-	 * expectStringArray(["z", "y", "y", "x"]).not.toHaveStrictlyDescendingOrder();
-	 */
 	toHaveStrictlyDescendingOrder(actual: string[]) {
 		const assertionName = "toHaveStrictlyDescendingOrder";
 		const firstViolationIndex = findStrictDescendingViolation(actual);
@@ -212,24 +173,6 @@ export const expectlyStringArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that an array is monotonic (consistently ascending or descending).
-	 *
-	 * A monotonic array never changes direction - it only goes up, only goes down,
-	 * or stays flat (equal consecutive values allowed).
-	 *
-	 * @param actual - Array of strings
-	 *
-	 * @example
-	 * // Valid monotonic arrays
-	 * expectStringArray(["a", "b", "b", "c", "d"]).toBeMonotonic(); // Ascending
-	 * await expectStringArray(["z", "y", "x", "x", "w"]).toBeMonotonic(); // Descending
-	 * await expectStringArray(["same", "same", "same"]).toBeMonotonic(); // Flat
-	 *
-	 * @example
-	 * // Not monotonic (changes direction)
-	 * expectStringArray(["a", "c", "b", "d"]).not.toBeMonotonic();
-	 */
 	toBeMonotonic(actual: string[]) {
 		const assertionName = "toBeMonotonic";
 
@@ -279,20 +222,6 @@ export const expectlyStringArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that all strings in an array are unique (no duplicates).
-	 *
-	 * @param actual - Array of strings
-	 *
-	 * @example
-	 * // Validate unique usernames
-	 * const usernames = ["alice", "bob", "charlie", "david"];
-	 * await expectStringArray(usernames).toHaveUniqueValues();
-	 *
-	 * @example
-	 * // Check for duplicates
-	 * expectStringArray(["a", "b", "b", "c"]).not.toHaveUniqueValues();
-	 */
 	toHaveUniqueValues(actual: string[]) {
 		const assertionName = "toHaveUniqueValues";
 		const duplicates = findDuplicates(actual);
@@ -332,3 +261,5 @@ export const expectlyStringArray = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyStringArray = baseExpect.extend(expectlyStringArrayMatchers);

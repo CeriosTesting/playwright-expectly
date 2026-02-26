@@ -1,5 +1,7 @@
 import { expect as baseExpect } from "@playwright/test";
+
 import { formatDatesForDisplay, isValidDate, sortedDates, validateDate } from "./matchers/common-utils";
+import { withMatcherState } from "./matchers/matcher-state-utils";
 
 const MONTH_NAMES = {
 	January: 0,
@@ -29,32 +31,7 @@ const DAY_NAMES = {
 /**
  * Expextly Custom matchers for date validations.
  */
-export const expectlyDate = baseExpect.extend({
-	/**
-	 * Asserts that a date is close to another date within a specified deviation.
-	 *
-	 * The deviation can be specified in days, hours, minutes, and/or seconds.
-	 *
-	 * @param actualDate - The date to check (Date object)
-	 * @param expectedDate - The expected date to compare against
-	 * @param deviation - Object specifying allowed time difference
-	 *
-	 * @example
-	 * // Check if dates are within 30 seconds
-	 * expectDate(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
-	 *
-	 * @example
-	 * // Check if dates are within 1 hour
-	 * const now = new Date();
-	 * await expectDate(createdAt).toBeCloseTo(now, { hours: 1 });
-	 *
-	 * @example
-	 * // Multiple deviation units
-	 * expectDate(timestamp).toBeCloseTo(new Date('2024-01-01T12:00:00Z'), {
-	 *   hours: 2,
-	 *   minutes: 30
-	 * });
-	 */
+export const expectlyDateMatchers = withMatcherState({
 	toBeCloseTo(
 		actualDate: Date,
 		expectedDate: Date,
@@ -121,34 +98,15 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualDate,
 		};
 	},
-	/**
-	 * Asserts that an array of dates is in ascending (earliest to latest) order.
-	 *
-	 * @param actual - Array of Date objects
-	 *
-	 * @example
-	 * // Testing API response dates
-	 * const events = await api.getEvents();
-	 * const dates = events.map(e => e.createdAt);
-	 * await expectDate(dates).toHaveDatesAscendingOrder();
-	 *
-	 * @example
-	 * // With Date objects
-	 * const dates = [new Date('2024-01-01'), new Date('2024-01-02'), new Date('2024-01-03')];
-	 * await expectDate(dates).toHaveDatesAscendingOrder();
-	 */
 	toHaveDatesAscendingOrder(actual: Date[]) {
 		const assertionName = "toHaveDatesAscendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
 
 		const expected: Date[] = sortedDates(actual, "ascending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = actual;
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch {
 			pass = false;
 		}
 
@@ -159,43 +117,25 @@ export const expectlyDate = baseExpect.extend({
 			"\n\n" +
 			`Expected date array to ${this.isNot ? "not " : ""}be in ascending order\n\n` +
 			`Expected: ${this.utils.printExpected(formatDatesForDisplay(expected))}\n` +
-			`Received: ${this.utils.printReceived(formatDatesForDisplay(matcherResult?.actual || actual))}`;
+			`Received: ${this.utils.printReceived(formatDatesForDisplay(actual))}`;
 
 		return {
 			message,
 			pass,
 			name: assertionName,
 			expected,
-			actual: matcherResult?.actual,
+			actual,
 		};
 	},
-	/**
-	 * Asserts that an array of dates is in descending (latest to earliest) order.
-	 *
-	 * @param actual - Array of Date objects
-	 *
-	 * @example
-	 * // Testing sorted data from newest to oldest
-	 * const dates = data.map(item => item.createdAt);
-	 * await expectDate(dates).toHaveDatesDescendingOrder();
-	 *
-	 * @example
-	 * // Validate descending timeline
-	 * const timeline = [new Date('2024-12-31'), new Date('2024-06-15'), new Date('2024-01-01')];
-	 * await expectDate(timeline).toHaveDatesDescendingOrder();
-	 */
 	toHaveDatesDescendingOrder(actual: Date[]) {
 		const assertionName = "toHaveDatesDescendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
 
 		const expected: Date[] = sortedDates(actual, "descending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch {
 			pass = false;
 		}
 
@@ -206,30 +146,16 @@ export const expectlyDate = baseExpect.extend({
 			"\n\n" +
 			`Expected date array to ${this.isNot ? "not " : ""}be in descending order\n\n` +
 			`Expected: ${this.utils.printExpected(formatDatesForDisplay(expected))}\n` +
-			`Received: ${this.utils.printReceived(formatDatesForDisplay(matcherResult?.actual || actual))}`;
+			`Received: ${this.utils.printReceived(formatDatesForDisplay(actual))}`;
 
 		return {
 			message,
 			pass,
 			name: assertionName,
 			expected,
-			actual: matcherResult?.actual,
+			actual,
 		};
 	},
-	/**
-	 * Asserts that a date is before another date.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedDate - The date that should come after
-	 *
-	 * @example
-	 * // Check event ordering
-	 * expectDate(startDate).toBeBefore(endDate);
-	 *
-	 * @example
-	 * // Verify creation happened before update
-	 * expectDate(user.createdAt).toBeBefore(user.updatedAt);
-	 */
 	toBeBefore(actualDate: Date, expectedDate: Date) {
 		const assertionName = "toBeBefore";
 
@@ -274,20 +200,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualDate,
 		};
 	},
-	/**
-	 * Asserts that a date is after another date.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedDate - The date that should come before
-	 *
-	 * @example
-	 * // Check expiration is in the future
-	 * expectDate(expiryDate).toBeAfter(new Date());
-	 *
-	 * @example
-	 * // Verify update happened after creation
-	 * expectDate(record.updatedAt).toBeAfter(record.createdAt);
-	 */
 	toBeAfter(actualDate: Date, expectedDate: Date) {
 		const assertionName = "toBeAfter";
 		const parsedActual = actualDate;
@@ -334,26 +246,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date falls between two dates (inclusive).
-	 *
-	 * @param actualDate - The date to check
-	 * @param startDate - The start of the range
-	 * @param endDate - The end of the range
-	 *
-	 * @example
-	 * // Check date within a range
-	 * const start = new Date('2024-01-01');
-	 * const end = new Date('2024-12-31');
-	 * await expectDate(eventDate).toBeBetween(start, end);
-	 *
-	 * @example
-	 * // Validate appointment scheduling
-	 * expectDate(appointment).toBeBetween(
-	 *   '2024-06-01T09:00:00Z',
-	 *   '2024-06-01T17:00:00Z'
-	 * );
-	 */
 	toBeBetween(actualDate: Date, startDate: Date, endDate: Date) {
 		const assertionName = "toBeBetween";
 		const parsedActual = actualDate;
@@ -405,20 +297,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that two dates are on the same calendar day (ignoring time).
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedDate - The expected date to compare
-	 *
-	 * @example
-	 * // Check if event is today
-	 * expectDate(eventDate).toBeSameDay(new Date());
-	 *
-	 * @example
-	 * // Verify dates match regardless of time
-	 * expectDate('2024-01-01T08:00:00Z').toBeSameDay('2024-01-01T20:00:00Z');
-	 */
 	toBeSameDay(actualDate: Date, expectedDate: Date) {
 		const assertionName = "toBeSameDay";
 		const parsedActual = actualDate;
@@ -468,20 +346,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that two dates are in the same month and year.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedDate - The expected date to compare
-	 *
-	 * @example
-	 * // Check if dates are in the same month
-	 * expectDate('2024-01-15').toBeSameMonth('2024-01-20');
-	 *
-	 * @example
-	 * // Validate monthly report period
-	 * expectDate(report.generatedAt).toBeSameMonth(report.periodStart);
-	 */
 	toBeSameMonth(actualDate: Date, expectedDate: Date) {
 		const assertionName = "toBeSameMonth";
 		const parsedActual = actualDate;
@@ -530,20 +394,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that two dates are in the same year.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedDate - The expected date to compare
-	 *
-	 * @example
-	 * // Check if dates are in the same year
-	 * expectDate('2024-01-01').toBeSameYear('2024-12-31');
-	 *
-	 * @example
-	 * // Validate annual report year
-	 * expectDate(report.year).toBeSameYear(new Date());
-	 */
 	toBeSameYear(actualDate: Date, expectedDate: Date) {
 		const assertionName = "toBeSameYear";
 		const parsedActual = actualDate;
@@ -590,20 +440,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date is today (current calendar day).
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Check if timestamp is from today
-	 * const createdDate = await page.locator('.created-date').textContent();
-	 * await expectDate(createdDate).toBeToday();
-	 *
-	 * @example
-	 * // Validate real-time data
-	 * expectDate(new Date(order.timestamp)).toBeToday();
-	 */
 	toBeToday(actualDate: Date) {
 		const assertionName = "toBeToday";
 		const parsedActual = actualDate;
@@ -650,19 +486,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date is yesterday.
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Check if date is from yesterday
-	 * expectDate(lastLogin).toBeYesterday();
-	 *
-	 * @example
-	 * // Validate historical data
-	 * expectDate('2024-11-29').toBeYesterday(); // If today is Nov 30, 2024
-	 */
 	toBeYesterday(actualDate: Date) {
 		const assertionName = "toBeYesterday";
 		const parsedActual = actualDate;
@@ -710,19 +533,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date is tomorrow.
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Check scheduled date
-	 * expectDate(scheduledDate).toBeTomorrow();
-	 *
-	 * @example
-	 * // Validate future appointment
-	 * expectDate(appointment.date).toBeTomorrow();
-	 */
 	toBeTomorrow(actualDate: Date) {
 		const assertionName = "toBeTomorrow";
 		const parsedActual = actualDate;
@@ -770,19 +580,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date falls on a weekday (Monday through Friday).
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Validate business day
-	 * expectDate(deliveryDate).toBeWeekday();
-	 *
-	 * @example
-	 * // Check office hours scheduling
-	 * expectDate(meeting.scheduledFor).toBeWeekday();
-	 */
 	toBeWeekday(actualDate: Date) {
 		const assertionName = "toBeWeekday";
 		const parsedActual = actualDate;
@@ -827,19 +624,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date falls on a weekend (Saturday or Sunday).
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Validate weekend event
-	 * expectDate(event.date).toBeWeekend();
-	 *
-	 * @example
-	 * // Check maintenance schedule
-	 * expectDate(maintenanceWindow).toBeWeekend();
-	 */
 	toBeWeekend(actualDate: Date) {
 		const assertionName = "toBeWeekend";
 		const parsedActual = actualDate;
@@ -884,19 +668,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date is in the past (before the current moment).
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Validate historical record
-	 * expectDate(user.createdAt).toBeInThePast();
-	 *
-	 * @example
-	 * // Check completed event
-	 * expectDate(order.completedAt).toBeInThePast();
-	 */
 	toBeInThePast(actualDate: Date) {
 		const assertionName = "toBeInThePast";
 		const parsedActual = actualDate;
@@ -941,19 +712,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date is in the future (after the current moment).
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Validate expiration date
-	 * expectDate(subscription.expiresAt).toBeInTheFuture();
-	 *
-	 * @example
-	 * // Check scheduled event
-	 * expectDate(upcomingMeeting.startsAt).toBeInTheFuture();
-	 */
 	toBeInTheFuture(actualDate: Date) {
 		const assertionName = "toBeInTheFuture";
 		const parsedActual = actualDate;
@@ -998,23 +756,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that a date's year is a leap year.
-	 *
-	 * A leap year occurs every 4 years, except for years divisible by 100,
-	 * unless also divisible by 400.
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Check if year is a leap year
-	 * expectDate(new Date('2024-06-15')).toBeLeapYear(); // 2024 is a leap year
-	 * await expectDate(new Date('2023-06-15')).not.toBeLeapYear(); // 2023 is not
-	 *
-	 * @example
-	 * // Validate February 29th exists
-	 * expectDate(birthdayDate).toBeLeapYear();
-	 */
 	toBeLeapYear(actualDate: Date) {
 		const assertionName = "toBeLeapYear";
 		const parsedActual = actualDate;
@@ -1047,25 +788,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: parsedActual,
 		};
 	},
-	/**
-	 * Asserts that an array of dates spans approximately the expected range.
-	 *
-	 * @param actual - Array of Date objects or ISO date strings
-	 * @param expectedRange - Object specifying expected time span
-	 *
-	 * @example
-	 * // Check if data covers 30 days
-	 * const reportDates = await api.getReportDates();
-	 * await expectDate(reportDates).toHaveDateRange({ days: 30 });
-	 *
-	 * @example
-	 * // Validate year-long dataset
-	 * expectDate(timestamps).toHaveDateRange({ years: 1 });
-	 *
-	 * @example
-	 * // Mixed units
-	 * expectDate(dates).toHaveDateRange({ months: 3, days: 15 });
-	 */
 	toHaveDateRange(actual: Date[], expectedRange: { days?: number; months?: number; years?: number }) {
 		const assertionName = "toHaveDateRange";
 
@@ -1075,7 +797,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1133,25 +855,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: { days: diffDays, firstDate, lastDate },
 		};
 	},
-	/**
-	 * Asserts that an array of dates are consecutive by the specified unit.
-	 *
-	 * @param actual - Array of Date objects or ISO date strings
-	 * @param unit - The unit of time to check ('day', 'month', or 'year')
-	 *
-	 * @example
-	 * // Check consecutive days
-	 * const dates = ['2024-01-01', '2024-01-02', '2024-01-03'];
-	 * await expectDate(dates).toHaveConsecutiveDates('day');
-	 *
-	 * @example
-	 * // Validate monthly sequence
-	 * expectDate(billingDates).toHaveConsecutiveDates('month');
-	 *
-	 * @example
-	 * // Check yearly progression
-	 * expectDate(annualReports).toHaveConsecutiveDates('year');
-	 */
 	toHaveConsecutiveDates(actual: Date[], unit: "day" | "month" | "year") {
 		const assertionName = "toHaveConsecutiveDates";
 
@@ -1161,7 +864,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1239,27 +942,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: sortedDates,
 		};
 	},
-	/**
-	 * Asserts that all dates in an array fall within a specified range.
-	 *
-	 * @param actual - Array of Date objects or ISO date strings
-	 * @param startDate - The start of the acceptable range
-	 * @param endDate - The end of the acceptable range
-	 *
-	 * @example
-	 * // Validate all dates are in Q1 2024
-	 * expectDate(transactions).toHaveDatesWithinRange(
-	 *   '2024-01-01',
-	 *   '2024-03-31'
-	 * );
-	 *
-	 * @example
-	 * // Check business hours entries
-	 * expectDate(logEntries).toHaveDatesWithinRange(
-	 *   new Date('2024-06-01T09:00:00Z'),
-	 *   new Date('2024-06-01T17:00:00Z')
-	 * );
-	 */
 	toHaveDatesWithinRange(actual: Date[], startDate: Date, endDate: Date) {
 		const assertionName = "toHaveDatesWithinRange";
 
@@ -1321,25 +1003,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: outOfRangeDates,
 		};
 	},
-	/**
-	 * Asserts that all dates in an array are unique.
-	 *
-	 * @param actual - Array of Date objects or ISO date strings
-	 * @param ignoreTime - If true, only compares dates (ignores time)
-	 *
-	 * @example
-	 * // Check for duplicate timestamps
-	 * expectDate(eventTimestamps).toHaveUniqueDates();
-	 *
-	 * @example
-	 * // Validate unique days (ignore time)
-	 * expectDate(dailyRecords).toHaveUniqueDates(true);
-	 *
-	 * @example
-	 * // Ensure no duplicate entries
-	 * const dates = ['2024-01-01T10:00:00Z', '2024-01-02T10:00:00Z'];
-	 * await expectDate(dates).toHaveUniqueDates();
-	 */
 	toHaveUniqueDates(actual: Date[], ignoreTime = false) {
 		const assertionName = "toHaveUniqueDates";
 
@@ -1349,7 +1012,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1406,23 +1069,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: duplicates,
 		};
 	},
-	/**
-	 * Asserts that a string is a valid ISO 8601 date format.
-	 *
-	 * Expected format: YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ssZ
-	 *
-	 * @param actual - The string to validate
-	 *
-	 * @example
-	 * // Validate API response format
-	 * const timestamp = await page.locator('.timestamp').textContent();
-	 * await expectDate(timestamp).toBeValidISODate();
-	 *
-	 * @example
-	 * // Check ISO format compliance
-	 * expectDate('2024-01-01T12:00:00.000Z').toBeValidISODate();
-	 * await expectDate('2024-01-01T12:00:00Z').toBeValidISODate();
-	 */
 	toBeValidISODate(actual: string) {
 		const assertionName = "toBeValidISODate";
 
@@ -1471,27 +1117,6 @@ export const expectlyDate = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that a date matches a specific timezone offset.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedOffset - Expected timezone offset as minutes (e.g., -300), string format (e.g., '+05:00', '-05:00'), or 'UTC'
-	 *
-	 * @example
-	 * // Check if date is in UTC
-	 * expectDate(timestamp).toMatchTimeZone(0);
-	 * await expectDate(timestamp).toMatchTimeZone('UTC');
-	 *
-	 * @example
-	 * // Check if date is in EST (UTC-5)
-	 * expectDate(date).toMatchTimeZone(-300);
-	 * await expectDate(date).toMatchTimeZone('-05:00');
-	 *
-	 * @example
-	 * // Check if date is in IST (UTC+5:30)
-	 * expectDate(date).toMatchTimeZone(330);
-	 * await expectDate(date).toMatchTimeZone('+05:30');
-	 */
 	toMatchTimeZone(actualDate: Date, expectedOffset: number | string) {
 		const assertionName = "toMatchTimeZone";
 
@@ -1569,19 +1194,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualOffset,
 		};
 	},
-	/**
-	 * Asserts that a date is the first day of the month.
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Check if billing date is start of month
-	 * expectDate(billingDate).toBeStartOfMonth();
-	 *
-	 * @example
-	 * // Validate monthly report date
-	 * expectDate(new Date('2024-01-01')).toBeStartOfMonth();
-	 */
 	toBeStartOfMonth(actualDate: Date) {
 		const assertionName = "toBeStartOfMonth";
 
@@ -1622,19 +1234,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualDate,
 		};
 	},
-	/**
-	 * Asserts that a date is the last day of the month.
-	 *
-	 * @param actualDate - The date to check
-	 *
-	 * @example
-	 * // Check if date is end of month
-	 * expectDate(paymentDate).toBeEndOfMonth();
-	 *
-	 * @example
-	 * // Validate month-end processing
-	 * expectDate(new Date('2024-01-31')).toBeEndOfMonth();
-	 */
 	toBeEndOfMonth(actualDate: Date) {
 		const assertionName = "toBeEndOfMonth";
 
@@ -1676,28 +1275,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualDate,
 		};
 	},
-	/**
-	 * Asserts that an array of dates has gaps larger than the specified duration.
-	 *
-	 * @param actual - Array of Date objects
-	 * @param minGap - Minimum gap duration to check for
-	 *
-	 * @example
-	 * // Check for gaps larger than 7 days
-	 * expectDate(activityDates).toHaveDateGapsLargerThan({ days: 7 });
-	 *
-	 * @example
-	 * // Find inactivity periods longer than 1 hour
-	 * expectDate(loginTimestamps).toHaveDateGapsLargerThan({ hours: 1 });
-	 *
-	 * @example
-	 * // Detect monthly gaps
-	 * expectDate(reportDates).toHaveDateGapsLargerThan({ months: 1 });
-	 *
-	 * @example
-	 * // Check for yearly gaps
-	 * expectDate(annualReviews).toHaveDateGapsLargerThan({ years: 1 });
-	 */
 	toHaveDateGapsLargerThan(
 		actual: Date[],
 		minGap: { seconds?: number; minutes?: number; hours?: number; days?: number; months?: number; years?: number }
@@ -1710,7 +1287,7 @@ export const expectlyDate = baseExpect.extend({
 
 		for (const date of actual) {
 			if (!isValidDate(date)) {
-				throw new Error(`Invalid date in array: ${date}`);
+				throw new Error(`Invalid date in array: ${String(date)}`);
 			}
 		}
 
@@ -1796,37 +1373,29 @@ export const expectlyDate = baseExpect.extend({
 			actual: largeGaps,
 		};
 	},
-	/**
-	 * Asserts that a date falls within a specific quarter of the year.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedQuarter - Quarter number (1-4)
-	 *
-	 * @example
-	 * // Check if date is in Q1 (Jan-Mar)
-	 * expectDate(date).toBeInQuarter(1);
-	 *
-	 * @example
-	 * // Validate Q4 date (Oct-Dec)
-	 * expectDate(yearEndReport).toBeInQuarter(4);
-	 */
 	toBeInQuarter(actualDate: Date, expectedQuarter: 1 | 2 | 3 | 4) {
 		const assertionName = "toBeInQuarter";
 
 		validateDate(actualDate, "actual date");
 
 		const month = actualDate.getMonth(); // 0-11
-		const actualQuarter = Math.floor(month / 3) + 1;
+		const getQuarterFromMonth = (value: number): 1 | 2 | 3 | 4 => {
+			if (value < 3) return 1;
+			if (value < 6) return 2;
+			if (value < 9) return 3;
+			return 4;
+		};
+		const actualQuarter = getQuarterFromMonth(month);
 		const pass = actualQuarter === expectedQuarter;
 
-		const getQuarterMonths = (q: number): string => {
-			const quarters = {
+		const getQuarterMonths = (q: 1 | 2 | 3 | 4): string => {
+			const quarters: Record<1 | 2 | 3 | 4, string> = {
 				1: "Jan-Mar",
 				2: "Apr-Jun",
 				3: "Jul-Sep",
 				4: "Oct-Dec",
 			};
-			return quarters[q as keyof typeof quarters];
+			return quarters[q];
 		};
 
 		const message = () => {
@@ -1863,21 +1432,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualQuarter,
 		};
 	},
-	/**
-	 * Asserts that a date falls on a specific day of the week.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedDay - Day name or number (0=Sunday, 1=Monday, etc.)
-	 *
-	 * @example
-	 * // Check if date is a Monday
-	 * expectDate(meetingDate).toBeSpecificDayOfWeek('Monday');
-	 * await expectDate(meetingDate).toBeSpecificDayOfWeek(1);
-	 *
-	 * @example
-	 * // Validate weekend day
-	 * expectDate(eventDate).toBeSpecificDayOfWeek('Saturday');
-	 */
 	toBeSpecificDayOfWeek(actualDate: Date, expectedDay: keyof typeof DAY_NAMES | number) {
 		const assertionName = "toBeSpecificDayOfWeek";
 
@@ -1935,21 +1489,6 @@ export const expectlyDate = baseExpect.extend({
 			actual: actualDayNumber,
 		};
 	},
-	/**
-	 * Asserts that a date falls within a specific month.
-	 *
-	 * @param actualDate - The date to check
-	 * @param expectedMonth - Month name or number (1-12)
-	 *
-	 * @example
-	 * // Check if date is in January
-	 * expectDate(date).toBeInMonth('January');
-	 * await expectDate(date).toBeInMonth(1);
-	 *
-	 * @example
-	 * // Validate December date
-	 * expectDate(holidayDate).toBeInMonth('December');
-	 */
 	toBeInMonth(actualDate: Date, expectedMonth: keyof typeof MONTH_NAMES | number) {
 		const assertionName = "toBeInMonth";
 
@@ -2008,3 +1547,5 @@ export const expectlyDate = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyDate = baseExpect.extend(expectlyDateMatchers);

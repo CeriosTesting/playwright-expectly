@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { setupExpectly } from "./src/playwright-setup";
+
+setupExpectly();
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -27,7 +30,7 @@ export default defineConfig({
 		// baseURL: 'http://localhost:3000',
 
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-		trace: "on-first-retry",
+		trace: "retain-on-failure",
 	},
 
 	/* Configure projects for major browsers */

@@ -1,44 +1,42 @@
 import { expect as baseExpect } from "@playwright/test";
+
 import {
 	checkMonotonic,
 	findDuplicates,
 	findNonMatching,
 	findStrictAscendingViolation,
 	findStrictDescendingViolation,
+	getMinMax,
 	sortedExpected,
 } from "./matchers/common-utils";
+import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
  * Expextly Custom matchers for number array validations.
  */
-export const expectlyNumberArray = baseExpect.extend({
-	/**
-	 * Asserts that an array of numbers is in ascending order (smallest to largest).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate sorted prices
-	 * const prices = [9.99, 19.99, 29.99, 49.99];
-	 * await expectNumber(prices).toHaveAscendingOrder();
-	 *
-	 * @example
-	 * // Check numeric scores
-	 * const scores = [85, 90, 92, 95];
-	 * await expectNumber(scores).toHaveAscendingOrder();
-	 */
+export const expectlyNumberArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: number[]) {
 		const assertionName = "toHaveAscendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
+		let matcherResult: { actual?: unknown } | undefined;
 
 		const expected: number[] = sortedExpected(actual, "ascending");
 		try {
 			baseExpect(actual).toEqual(expected);
-			matcherResult = actual;
+			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch (e: unknown) {
+			matcherResult = undefined;
+			if (
+				e != null &&
+				typeof e === "object" &&
+				"matcherResult" in e &&
+				e.matcherResult != null &&
+				typeof e.matcherResult === "object" &&
+				"actual" in e.matcherResult
+			) {
+				matcherResult = { actual: e.matcherResult.actual };
+			}
 			pass = false;
 		}
 
@@ -59,32 +57,28 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: matcherResult?.actual,
 		};
 	},
-	/**
-	 * Asserts that an array of numbers is in descending order (largest to smallest).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate ranked scores
-	 * const rankings = [100, 95, 87, 75, 60];
-	 * await expectNumber(rankings).toHaveDescendingOrder();
-	 *
-	 * @example
-	 * // Check leaderboard
-	 * expectNumber(leaderboardScores).toHaveDescendingOrder();
-	 */
 	toHaveDescendingOrder(actual: number[]) {
 		const assertionName = "toHaveDescendingOrder";
 		let pass: boolean;
-		let matcherResult: any;
+		let matcherResult: { actual?: unknown } | undefined;
 
 		const expected: number[] = sortedExpected(actual, "descending");
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = { actual };
 			pass = true;
-		} catch (e: any) {
-			matcherResult = e.matcherResult;
+		} catch (e: unknown) {
+			matcherResult = undefined;
+			if (
+				e != null &&
+				typeof e === "object" &&
+				"matcherResult" in e &&
+				e.matcherResult != null &&
+				typeof e.matcherResult === "object" &&
+				"actual" in e.matcherResult
+			) {
+				matcherResult = { actual: e.matcherResult.actual };
+			}
 			pass = false;
 		}
 
@@ -105,21 +99,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: matcherResult?.actual,
 		};
 	},
-	/**
-	 * Asserts that an array of numbers sums to the expected value.
-	 *
-	 * @param actual - Array of numbers
-	 * @param expected - The expected sum
-	 *
-	 * @example
-	 * // Validate cart total
-	 * const itemPrices = [10.99, 5.50, 15.00];
-	 * await expectNumber(itemPrices).toHaveSum(31.49);
-	 *
-	 * @example
-	 * // Check vote count
-	 * expectNumber([45, 32, 23]).toHaveSum(100);
-	 */
 	toHaveSum(actual: number[], expected: number) {
 		const assertionName = "toHaveSum";
 		let sum = 0;
@@ -163,21 +142,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: sum,
 		};
 	},
-	/**
-	 * Asserts that an array of numbers has the expected average (mean).
-	 *
-	 * @param actual - Array of numbers
-	 * @param expected - The expected average
-	 *
-	 * @example
-	 * // Validate test scores average
-	 * const scores = [85, 90, 95, 80];
-	 * await expectNumber(scores).toHaveAverage(87.5);
-	 *
-	 * @example
-	 * // Check rating average
-	 * expectNumber(ratings).toHaveAverage(4.5);
-	 */
 	toHaveAverage(actual: number[], expected: number) {
 		const assertionName = "toHaveAverage";
 		let sum = 0;
@@ -222,21 +186,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: average,
 		};
 	},
-	/**
-	 * Asserts that an array of numbers has the expected median (middle value).
-	 *
-	 * @param actual - Array of numbers
-	 * @param expected - The expected median
-	 *
-	 * @example
-	 * // Validate median salary
-	 * const salaries = [50000, 60000, 70000, 80000, 90000];
-	 * await expectNumber(salaries).toHaveMedian(70000);
-	 *
-	 * @example
-	 * // Check median response time
-	 * expectNumber(responseTimes).toHaveMedian(250);
-	 */
 	toHaveMedian(actual: number[], expected: number) {
 		const assertionName = "toHaveMedian";
 		const sorted = [...actual].sort((a, b) => a - b);
@@ -283,32 +232,9 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: median,
 		};
 	},
-	/**
-	 * Asserts that an array's minimum value equals the expected number.
-	 *
-	 * @param actual - Array of numbers
-	 * @param expected - The expected minimum value
-	 *
-	 * @example
-	 * // Validate lowest price
-	 * const prices = [19.99, 9.99, 29.99, 15.00];
-	 * await expectNumber(prices).toHaveMin(9.99);
-	 *
-	 * @example
-	 * // Check minimum temperature
-	 * expectNumber(temperatures).toHaveMin(-5);
-	 */
 	toHaveMin(actual: number[], expected: number) {
 		const assertionName = "toHaveMin";
-		let min = Number.NaN;
-		if (actual.length > 0) {
-			min = actual[0];
-			for (let i = 1; i < actual.length; i++) {
-				if (actual[i] < min) {
-					min = actual[i];
-				}
-			}
-		}
+		const { min } = getMinMax(actual);
 		const pass = min === expected;
 
 		const message = () => {
@@ -346,32 +272,9 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: min,
 		};
 	},
-	/**
-	 * Asserts that an array's maximum value equals the expected number.
-	 *
-	 * @param actual - Array of numbers
-	 * @param expected - The expected maximum value
-	 *
-	 * @example
-	 * // Validate highest score
-	 * const scores = [78, 92, 85, 95, 88];
-	 * await expectNumber(scores).toHaveMax(95);
-	 *
-	 * @example
-	 * // Check peak value
-	 * expectNumber(metrics).toHaveMax(1000);
-	 */
 	toHaveMax(actual: number[], expected: number) {
 		const assertionName = "toHaveMax";
-		let max = Number.NaN;
-		if (actual.length > 0) {
-			max = actual[0];
-			for (let i = 1; i < actual.length; i++) {
-				if (actual[i] > max) {
-					max = actual[i];
-				}
-			}
-		}
+		const { max } = getMinMax(actual);
 		const pass = max === expected;
 
 		const message = () => {
@@ -409,33 +312,9 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: max,
 		};
 	},
-	/**
-	 * Asserts that an array's range (max - min) equals the expected number.
-	 *
-	 * @param actual - Array of numbers
-	 * @param expected - The expected range
-	 *
-	 * @example
-	 * // Validate data spread
-	 * const values = [10, 15, 20, 25, 30];
-	 * await expectNumber(values).toHaveRange(20); // 30 - 10 = 20
-	 *
-	 * @example
-	 * // Check temperature variation
-	 * expectNumber(dailyTemps).toHaveRange(15);
-	 */
 	toHaveRange(actual: number[], expected: number) {
 		const assertionName = "toHaveRange";
-		let min = Number.NaN;
-		let max = Number.NaN;
-		if (actual.length > 0) {
-			min = actual[0];
-			max = actual[0];
-			for (let i = 1; i < actual.length; i++) {
-				if (actual[i] < min) min = actual[i];
-				if (actual[i] > max) max = actual[i];
-			}
-		}
+		const { min, max } = getMinMax(actual);
 		const range = max - min;
 		const pass = range === expected;
 
@@ -474,22 +353,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			actual: range,
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array fall within the specified range (inclusive).
-	 *
-	 * @param actual - Array of numbers
-	 * @param min - The minimum allowed value
-	 * @param max - The maximum allowed value
-	 *
-	 * @example
-	 * // Validate percentages
-	 * const percentages = [45, 67, 89, 92, 78];
-	 * await expectNumber(percentages).toBeAllBetween(0, 100);
-	 *
-	 * @example
-	 * // Check scores within range
-	 * expectNumber(testScores).toBeAllBetween(60, 100);
-	 */
 	toBeAllBetween(actual: number[], min: number, max: number) {
 		const assertionName = "toBeAllBetween";
 		const outOfRange = findNonMatching(actual, val => val >= min && val <= max);
@@ -529,20 +392,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			expected: [min, max],
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array are positive (greater than 0).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate positive values
-	 * const prices = [10.99, 5.50, 15.00];
-	 * await expectNumber(prices).toBeAllPositive();
-	 *
-	 * @example
-	 * // Check counts
-	 * expectNumber(userCounts).toBeAllPositive();
-	 */
 	toBeAllPositive(actual: number[]) {
 		const assertionName = "toBeAllPositive";
 		const nonPositive = findNonMatching(actual, val => val > 0);
@@ -581,20 +430,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array are negative (less than 0).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate negative adjustments
-	 * const adjustments = [-5, -10, -3.50];
-	 * await expectNumber(adjustments).toBeAllNegative();
-	 *
-	 * @example
-	 * // Check losses
-	 * expectNumber(lossValues).toBeAllNegative();
-	 */
 	toBeAllNegative(actual: number[]) {
 		const assertionName = "toBeAllNegative";
 		const nonNegative = findNonMatching(actual, val => val < 0);
@@ -633,20 +468,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array are integers (whole numbers).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate item counts
-	 * const quantities = [1, 5, 10, 3];
-	 * await expectNumber(quantities).toBeAllIntegers();
-	 *
-	 * @example
-	 * // Check whole numbers
-	 * expectNumber(votes).toBeAllIntegers();
-	 */
 	toBeAllIntegers(actual: number[]) {
 		const assertionName = "toBeAllIntegers";
 		const nonIntegers = findNonMatching(actual, val => Number.isInteger(val));
@@ -680,21 +501,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array are greater than a specified value.
-	 *
-	 * @param actual - Array of numbers
-	 * @param value - The threshold value
-	 *
-	 * @example
-	 * // Validate minimum threshold
-	 * const scores = [75, 82, 91, 88];
-	 * await expectNumber(scores).toBeAllGreaterThan(70);
-	 *
-	 * @example
-	 * // Check above baseline
-	 * expectNumber(measurements).toBeAllGreaterThan(0);
-	 */
 	toBeAllGreaterThan(actual: number[], value: number) {
 		const assertionName = "toBeAllGreaterThan";
 		const notGreater = findNonMatching(actual, val => val > value);
@@ -734,21 +540,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			expected: value,
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array are less than a specified value.
-	 *
-	 * @param actual - Array of numbers
-	 * @param value - The threshold value
-	 *
-	 * @example
-	 * // Validate maximum limit
-	 * const responseTimes = [150, 200, 180, 220];
-	 * await expectNumber(responseTimes).toBeAllLessThan(250);
-	 *
-	 * @example
-	 * // Check under cap
-	 * expectNumber(costs).toBeAllLessThan(1000);
-	 */
 	toBeAllLessThan(actual: number[], value: number) {
 		const assertionName = "toBeAllLessThan";
 		const notLess = findNonMatching(actual, val => val < value);
@@ -788,22 +579,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			expected: value,
 		};
 	},
-	/**
-	 * Asserts that numbers are in strictly ascending order (each element > previous).
-	 *
-	 * Unlike toHaveAscendingOrder, this rejects equal consecutive values.
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate increasing values
-	 * const growth = [10, 20, 35, 50];
-	 * await expectNumber(growth).toHaveStrictlyAscendingOrder();
-	 *
-	 * @example
-	 * // This would fail (has equal consecutive values)
-	 * expectNumber([1, 2, 2, 3]).not.toHaveStrictlyAscendingOrder();
-	 */
 	toHaveStrictlyAscendingOrder(actual: number[]) {
 		const assertionName = "toHaveStrictlyAscendingOrder";
 		const firstViolationIndex = findStrictAscendingViolation(actual);
@@ -842,22 +617,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that numbers are in strictly descending order (each element < previous).
-	 *
-	 * Unlike toHaveDescendingOrder, this rejects equal consecutive values.
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate decreasing values
-	 * const decline = [100, 75, 50, 25];
-	 * await expectNumber(decline).toHaveStrictlyDescendingOrder();
-	 *
-	 * @example
-	 * // This would fail (has equal consecutive values)
-	 * expectNumber([5, 4, 4, 3]).not.toHaveStrictlyDescendingOrder();
-	 */
 	toHaveStrictlyDescendingOrder(actual: number[]) {
 		const assertionName = "toHaveStrictlyDescendingOrder";
 		const firstViolationIndex = findStrictDescendingViolation(actual);
@@ -896,24 +655,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that an array is monotonic (consistently ascending or descending).
-	 *
-	 * A monotonic array never changes direction - it only goes up, only goes down,
-	 * or stays flat (equal consecutive values allowed).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Valid monotonic arrays
-	 * expectNumber([1, 2, 2, 3, 4]).toBeMonotonic(); // Ascending
-	 * await expectNumber([5, 4, 3, 3, 1]).toBeMonotonic(); // Descending
-	 * await expectNumber([2, 2, 2, 2]).toBeMonotonic(); // Flat
-	 *
-	 * @example
-	 * // Not monotonic (changes direction)
-	 * expectNumber([1, 3, 2, 4]).not.toBeMonotonic();
-	 */
 	toBeMonotonic(actual: number[]) {
 		const assertionName = "toBeMonotonic";
 
@@ -963,20 +704,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that all numbers in an array are unique (no duplicates).
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate unique IDs
-	 * const userIds = [101, 202, 303, 404];
-	 * await expectNumber(userIds).toHaveUniqueValues();
-	 *
-	 * @example
-	 * // Check for duplicates
-	 * expectNumber([1, 2, 2, 3]).not.toHaveUniqueValues();
-	 */
 	toHaveUniqueValues(actual: number[]) {
 		const assertionName = "toHaveUniqueValues";
 		const duplicates = findDuplicates(actual);
@@ -1015,27 +742,6 @@ export const expectlyNumberArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that an array contains consecutive integers (e.g., 1, 2, 3, 4).
-	 *
-	 * The array will be sorted before checking, so [3, 1, 2] would pass.
-	 * All values must be integers.
-	 *
-	 * @param actual - Array of numbers
-	 *
-	 * @example
-	 * // Validate sequential IDs
-	 * const pageNumbers = [1, 2, 3, 4, 5];
-	 * await expectNumber(pageNumbers).toHaveConsecutiveIntegers();
-	 *
-	 * @example
-	 * // Order doesn't matter
-	 * expectNumber([5, 3, 4, 2, 1]).toHaveConsecutiveIntegers();
-	 *
-	 * @example
-	 * // This would fail (missing 3)
-	 * expectNumber([1, 2, 4, 5]).not.toHaveConsecutiveIntegers();
-	 */
 	toHaveConsecutiveIntegers(actual: number[]) {
 		const assertionName = "toHaveConsecutiveIntegers";
 
@@ -1118,3 +824,5 @@ export const expectlyNumberArray = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyNumberArray = baseExpect.extend(expectlyNumberArrayMatchers);

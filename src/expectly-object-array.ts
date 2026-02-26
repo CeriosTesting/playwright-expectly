@@ -1,31 +1,11 @@
 import { expect as baseExpect } from "@playwright/test";
 
+import { withMatcherState } from "./matchers/matcher-state-utils";
+
 /**
  * Expextly Custom matchers for object array validations.
  */
-export const expectlyObjectArray = baseExpect.extend({
-	/**
-	 * Asserts that an array contains only unique objects (no duplicates).
-	 *
-	 * Uses deep equality comparison via JSON serialization to detect duplicates.
-	 * Handles circular references gracefully.
-	 *
-	 * @param actual - Array of objects to check
-	 *
-	 * @example
-	 * // Validate unique records
-	 * const users = [
-	 *   { id: 1, name: 'Alice' },
-	 *   { id: 2, name: 'Bob' },
-	 *   { id: 3, name: 'Charlie' }
-	 * ];
-	 * await expectObjectArray(users).toHaveOnlyUniqueObjects();
-	 *
-	 * @example
-	 * // This would fail (duplicate objects)
-	 * const items = [{ id: 1 }, { id: 1 }];
-	 * await expectObjectArray(items).not.toHaveOnlyUniqueObjects();
-	 */
+export const expectlyObjectArrayMatchers = withMatcherState({
 	toHaveOnlyUniqueObjects(actual: object[]) {
 		const assertionName = "toHaveOnlyUniqueObjects";
 		const duplicateObjects = getDuplicateObjects(actual);
@@ -54,30 +34,6 @@ export const expectlyObjectArray = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that an array of objects is sorted in ascending order by a specific property.
-	 *
-	 * @param actual - Array of objects to check
-	 * @param propertyName - The property name to sort by
-	 *
-	 * @example
-	 * // Validate sorted by age
-	 * const users = [
-	 *   { name: 'Alice', age: 25 },
-	 *   { name: 'Bob', age: 30 },
-	 *   { name: 'Charlie', age: 35 }
-	 * ];
-	 * await expectObjectArray(users).toHaveObjectsInAscendingOrderBy('age');
-	 *
-	 * @example
-	 * // Check alphabetical sorting
-	 * const products = [
-	 *   { id: 1, name: 'Apple' },
-	 *   { id: 2, name: 'Banana' },
-	 *   { id: 3, name: 'Cherry' }
-	 * ];
-	 * await expectObjectArray(products).toHaveObjectsInAscendingOrderBy('name');
-	 */
 	toHaveObjectsInAscendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInAscendingOrderBy";
 		const validation = validateSortOrder(actual, propertyName, "ascending");
@@ -117,30 +73,6 @@ export const expectlyObjectArray = baseExpect.extend({
 			expected: propertyName,
 		};
 	},
-	/**
-	 * Asserts that an array of objects is sorted in descending order by a specific property.
-	 *
-	 * @param actual - Array of objects to check
-	 * @param propertyName - The property name to sort by
-	 *
-	 * @example
-	 * // Validate sorted by score (high to low)
-	 * const players = [
-	 *   { name: 'Alice', score: 950 },
-	 *   { name: 'Bob', score: 850 },
-	 *   { name: 'Charlie', score: 750 }
-	 * ];
-	 * await expectObjectArray(players).toHaveObjectsInDescendingOrderBy('score');
-	 *
-	 * @example
-	 * // Check reverse chronological order
-	 * const posts = [
-	 *   { title: 'Latest', date: '2024-12-31' },
-	 *   { title: 'Earlier', date: '2024-11-15' },
-	 *   { title: 'Oldest', date: '2024-01-01' }
-	 * ];
-	 * await expectObjectArray(posts).toHaveObjectsInDescendingOrderBy('date');
-	 */
 	toHaveObjectsInDescendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInDescendingOrderBy";
 		const validation = validateSortOrder(actual, propertyName, "descending");
@@ -182,15 +114,21 @@ export const expectlyObjectArray = baseExpect.extend({
 	},
 });
 
+export const expectlyObjectArray = baseExpect.extend(expectlyObjectArrayMatchers);
+
 // Cache for memoizing safeStringify results
 const stringifyCache = new WeakMap<object, string>();
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 /**
  * Safely serializes an object to a string for comparison.
  * Handles circular references by tracking them during traversal.
  * Uses memoization to cache results for better performance.
  */
-function safeStringify(obj: any): string {
+function safeStringify(obj: unknown): string {
 	// Check cache first for non-primitive values
 	if (obj !== null && typeof obj === "object") {
 		const cached = stringifyCache.get(obj);
@@ -203,7 +141,7 @@ function safeStringify(obj: any): string {
 		const seen = new WeakMap<object, number>();
 		let counter = 0;
 
-		const normalize = (value: any): any => {
+		const normalize = (value: unknown): unknown => {
 			if (value === null || value === undefined) {
 				return value;
 			}
@@ -225,16 +163,19 @@ function safeStringify(obj: any): string {
 				return value.map(item => normalize(item));
 			}
 
-			// Handle regular objects
-			const sortedKeys = Object.keys(value).sort();
-			const normalized: any = {};
-			for (const key of sortedKeys) {
-				normalized[key] = normalize(value[key]);
+			if (isRecord(value)) {
+				const sortedKeys = Object.keys(value).sort();
+				const normalized: Record<string, unknown> = {};
+				for (const key of sortedKeys) {
+					normalized[key] = normalize(value[key]);
+				}
+				return normalized;
 			}
-			return normalized;
+
+			return value;
 		};
 
-		const result = JSON.stringify(normalize(obj));
+		const result = JSON.stringify(normalize(obj)) ?? "undefined";
 
 		// Cache the result for objects
 		if (obj !== null && typeof obj === "object") {
@@ -296,26 +237,26 @@ function validateSortOrder(
 	}
 
 	for (let i = 0; i < arr.length - 1; i++) {
-		const currentObj = arr[i] as any;
-		const nextObj = arr[i + 1] as any;
+		const currentObj = arr[i];
+		const nextObj = arr[i + 1];
 
 		// Check if property exists on both objects
-		if (!(propertyName in currentObj)) {
+		if (!Object.prototype.hasOwnProperty.call(currentObj, propertyName)) {
 			return {
 				isValid: false,
 				errorMessage: `Property "${propertyName}" not found on object at index ${i}`,
 			};
 		}
 
-		if (!(propertyName in nextObj)) {
+		if (!Object.prototype.hasOwnProperty.call(nextObj, propertyName)) {
 			return {
 				isValid: false,
 				errorMessage: `Property "${propertyName}" not found on object at index ${i + 1}`,
 			};
 		}
 
-		const currentValue = currentObj[propertyName];
-		const nextValue = nextObj[propertyName];
+		const currentValue: unknown = Reflect.get(currentObj, propertyName);
+		const nextValue: unknown = Reflect.get(nextObj, propertyName);
 
 		// Check if values are comparable
 		const currentType = typeof currentValue;

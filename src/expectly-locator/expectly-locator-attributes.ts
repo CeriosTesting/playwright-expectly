@@ -1,61 +1,39 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
-import { buildPollOptions } from "./poll-options-builder";
+
+import { withMatcherState } from "../matchers/matcher-state-utils";
+import { PollOptions } from "../types/poll-options";
 
 /**
  * Element attribute matchers for Playwright locators.
  * These matchers validate HTML attributes on elements.
  */
-export const expectlyLocatorAttributes = baseExpect.extend({
-	/**
-	 * Asserts that the locator's element has the specified placeholder attribute.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param expected - The expected placeholder text or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check input placeholder
-	 * await expectLocator(page.locator('input[name="email"]')).toHavePlaceholder('Enter your email');
-	 *
-	 * @example
-	 * // Validate placeholder with regex
-	 * await expectLocator(page.locator('.search-input')).toHavePlaceholder(/search/i);
-	 */
-	async toHavePlaceholder(
-		locator: Locator,
-		expected: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+export const expectlyLocatorAttributesMatchers = withMatcherState({
+	async toHavePlaceholder(locator: Locator, expected: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHavePlaceholder";
 		let pass: boolean = false;
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute("placeholder");
-						if (typeof expected === "string") {
-							return actual === expected;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("placeholder");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -98,56 +76,32 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element has the specified href attribute.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param expected - The expected href value or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check link destination
-	 * await expectLocator(page.locator('a.home-link')).toHaveHref('/');
-	 *
-	 * @example
-	 * // Validate external link with regex
-	 * await expectLocator(page.locator('.external-link')).toHaveHref(/^https:\/\//);
-	 */
-	async toHaveHref(
-		locator: Locator,
-		expected: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toHaveHref(locator: Locator, expected: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveHref";
 		let pass: boolean = false;
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute("href");
-						if (typeof expected === "string") {
-							return actual === expected;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("href");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -190,56 +144,32 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element has the specified src attribute.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param expected - The expected src value or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check image source
-	 * await expectLocator(page.locator('img.logo')).toHaveSrc('/images/logo.png');
-	 *
-	 * @example
-	 * // Validate CDN source with regex
-	 * await expectLocator(page.locator('.product-image')).toHaveSrc(/cdn\.example\.com/);
-	 */
-	async toHaveSrc(
-		locator: Locator,
-		expected: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toHaveSrc(locator: Locator, expected: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveSrc";
 		let pass: boolean = false;
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute("src");
-						if (typeof expected === "string") {
-							return actual === expected;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("src");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -282,56 +212,32 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element has the specified alt attribute.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param expected - The expected alt text or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check alt text for accessibility
-	 * await expectLocator(page.locator('img.avatar')).toHaveAlt('User profile picture');
-	 *
-	 * @example
-	 * // Validate alt text pattern
-	 * await expectLocator(page.locator('.thumbnail')).toHaveAlt(/product image/i);
-	 */
-	async toHaveAlt(
-		locator: Locator,
-		expected: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toHaveAlt(locator: Locator, expected: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveAlt";
 		let pass: boolean = false;
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute("alt");
-						if (typeof expected === "string") {
-							return actual === expected;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("alt");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -374,41 +280,7 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element has a data attribute with an optional expected value.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param name - The data attribute name (with or without 'data-' prefix)
-	 * @param expected - Optional: expected attribute value or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if data attribute exists
-	 * await expectLocator(page.locator('.item')).toHaveDataAttribute('id');
-	 *
-	 * @example
-	 * // Check data attribute value
-	 * await expectLocator(page.locator('.item')).toHaveDataAttribute('status', 'active');
-	 *
-	 * @example
-	 * // Validate with regex
-	 * await expectLocator(page.locator('.item')).toHaveDataAttribute('price', /^\d+\.\d{2}$/);
-	 */
-	async toHaveDataAttribute(
-		locator: Locator,
-		name: string,
-		expected?: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toHaveDataAttribute(locator: Locator, name: string, expected?: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveDataAttribute";
 		let pass: boolean = false;
 		let actual: string | null = null;
@@ -416,24 +288,28 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		const attrName = name.startsWith("data-") ? name : `data-${name}`;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute(attrName);
-						if (expected === undefined) {
-							return actual !== null;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute(attrName);
+							if (expected === undefined) {
+								return actual !== null;
+							}
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						if (typeof expected === "string") {
-							return actual === expected;
-						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -492,56 +368,32 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element has the specified aria-label attribute.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param expected - The expected aria-label text or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check accessibility label
-	 * await expectLocator(page.locator('button.close')).toHaveAriaLabel('Close dialog');
-	 *
-	 * @example
-	 * // Validate aria-label for screen readers
-	 * await expectLocator(page.locator('.menu-btn')).toHaveAriaLabel(/menu/i);
-	 */
-	async toHaveAriaLabel(
-		locator: Locator,
-		expected: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toHaveAriaLabel(locator: Locator, expected: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveAriaLabel";
 		let pass: boolean = false;
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute("aria-label");
-						if (typeof expected === "string") {
-							return actual === expected;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("aria-label");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -584,56 +436,32 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element has the specified target attribute.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param expected - The expected target value or regex pattern
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if link opens in new tab
-	 * await expectLocator(page.locator('a.external')).toHaveTarget('_blank');
-	 *
-	 * @example
-	 * // Validate target attribute
-	 * await expectLocator(page.locator('.help-link')).toHaveTarget(/_blank|_top/);
-	 */
-	async toHaveTarget(
-		locator: Locator,
-		expected: string | RegExp,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toHaveTarget(locator: Locator, expected: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveTarget";
 		let pass: boolean = false;
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						actual = await locator.getAttribute("target");
-						if (typeof expected === "string") {
-							return actual === expected;
+				.poll(
+					async () => {
+						try {
+							actual = await locator.getAttribute("target");
+							if (typeof expected === "string") {
+								return actual === expected;
+							}
+							return actual !== null && expected.test(actual);
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
 						}
-						return actual !== null && expected.test(actual);
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -676,53 +504,30 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			actual,
 		};
 	},
-	/**
-	 * Asserts that the locator's element is required (has the required attribute).
-	 * Applies to form input elements.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if input is required
-	 * await expectLocator(page.locator('input[name="email"]')).toBeRequired();
-	 *
-	 * @example
-	 * // Validate select is required
-	 * await expectLocator(page.locator('select[name="country"]')).toBeRequired();
-	 */
-	async toBeRequired(
-		locator: Locator,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toBeRequired(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeRequired";
 		let pass: boolean = false;
 		let hasAttribute: boolean = false;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						const requiredAttr = await locator.getAttribute("required");
-						hasAttribute = requiredAttr !== null;
-						return hasAttribute;
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+				.poll(
+					async () => {
+						try {
+							const requiredAttr = await locator.getAttribute("required");
+							hasAttribute = requiredAttr !== null;
+							return hasAttribute;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
+						}
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -753,53 +558,30 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 			name: assertionName,
 		};
 	},
-	/**
-	 * Asserts that the locator's element is readonly (has the readonly attribute).
-	 * Applies to input and textarea elements.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param options - Optional configuration
-	 *
-	 * @example
-	 * // Check if input is readonly
-	 * await expectLocator(page.locator('input[name="username"]')).toBeReadOnly();
-	 *
-	 * @example
-	 * // Validate textarea is readonly
-	 * await expectLocator(page.locator('textarea.readonly-field')).toBeReadOnly();
-	 */
-	async toBeReadOnly(
-		locator: Locator,
-		options?: {
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+	async toBeReadOnly(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeReadOnly";
 		let pass: boolean = false;
 		let hasAttribute: boolean = false;
 		let locatorError: Error | undefined;
 
 		try {
-			const pollOptions = buildPollOptions(options?.timeout, options?.intervals);
-
 			await baseExpect
-				.poll(async () => {
-					try {
-						const readonlyAttr = await locator.getAttribute("readonly");
-						hasAttribute = readonlyAttr !== null;
-						return hasAttribute;
-					} catch (e: any) {
-						locatorError = e;
-						throw e;
+				.poll(
+					async () => {
+						try {
+							const readonlyAttr = await locator.getAttribute("readonly");
+							hasAttribute = readonlyAttr !== null;
+							return hasAttribute;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
+						}
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
 					}
-				}, pollOptions)
+				)
 				.toBe(true);
 			pass = true;
 		} catch {
@@ -831,3 +613,5 @@ export const expectlyLocatorAttributes = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorAttributes = baseExpect.extend(expectlyLocatorAttributesMatchers);

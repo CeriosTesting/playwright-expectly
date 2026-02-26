@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
+
 import { expectlyLocator } from "../../src/expectly-locator";
+import { getRejectedError } from "../helpers/assertion-utils";
 
 // For granular imports, you can also use:
 // import { expectlyLocatorState } from "../../src/expectly-locator/state";
@@ -120,11 +122,11 @@ test.describe("expectLocator - toBeStable", () => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		const error = await expectlyLocator(element)
-			.toBeStable({
+		const error = await getRejectedError(
+			expectlyLocator(element).toBeStable({
 				checkInterval: 0,
 			})
-			.catch(e => e);
+		);
 
 		expect(error.message).toMatch(/checkInterval must be positive/);
 	});
@@ -133,11 +135,11 @@ test.describe("expectLocator - toBeStable", () => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		const error = await expectlyLocator(element)
-			.toBeStable({
+		const error = await getRejectedError(
+			expectlyLocator(element).toBeStable({
 				stabilityDuration: -100,
 			})
-			.catch(e => e);
+		);
 
 		expect(error.message).toMatch(/stabilityDuration must be positive/);
 	});
@@ -146,11 +148,11 @@ test.describe("expectLocator - toBeStable", () => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		const error = await expectlyLocator(element)
-			.toBeStable({
+		const error = await getRejectedError(
+			expectlyLocator(element).toBeStable({
 				timeout: 0,
 			})
-			.catch(e => e);
+		);
 
 		expect(error.message).toMatch(/timeout must be positive/);
 	});
@@ -159,12 +161,12 @@ test.describe("expectLocator - toBeStable", () => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		const error = await expectlyLocator(element)
-			.toBeStable({
+		const error = await getRejectedError(
+			expectlyLocator(element).toBeStable({
 				stabilityDuration: 500,
 				checkInterval: 600,
 			})
-			.catch(e => e);
+		);
 
 		expect(error.message).toMatch(/checkInterval.*cannot be greater than half of stabilityDuration/);
 	});
@@ -173,12 +175,12 @@ test.describe("expectLocator - toBeStable", () => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
-		const error = await expectlyLocator(element)
-			.toBeStable({
+		const error = await getRejectedError(
+			expectlyLocator(element).toBeStable({
 				stabilityDuration: 3000,
 				timeout: 2000,
 			})
-			.catch(e => e);
+		);
 
 		expect(error.message).toMatch(/stabilityDuration.*must be less than timeout/);
 	});
@@ -198,13 +200,13 @@ test.describe("expectLocator - toBeStable", () => {
 		const element = page.locator("#changing");
 
 		// This will timeout because content keeps changing
-		const error = await expectlyLocator(element)
-			.toBeStable({
+		const error = await getRejectedError(
+			expectlyLocator(element).toBeStable({
 				stabilityDuration: 500,
 				checkInterval: 100,
 				timeout: 1000,
 			})
-			.catch(e => e);
+		);
 
 		expect(error.message).toMatch(/content did not stabilize/);
 	});

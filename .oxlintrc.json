@@ -1,0 +1,42 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["unicorn", "typescript", "oxc"],
+	"categories": {},
+	"rules": {
+		"typescript/no-unused-vars": "warn",
+		"typescript/no-explicit-any": "warn"
+	},
+	"settings": {
+		"jsx-a11y": {
+			"polymorphicPropName": null,
+			"components": {},
+			"attributes": {}
+		},
+		"next": {
+			"rootDir": []
+		},
+		"react": {
+			"formComponents": [],
+			"linkComponents": [],
+			"version": null
+		},
+		"jsdoc": {
+			"ignorePrivate": false,
+			"ignoreInternal": false,
+			"ignoreReplacesDocs": true,
+			"overrideReplacesDocs": true,
+			"augmentsExtendsReplacesDocs": false,
+			"implementsReplacesDocs": false,
+			"exemptDestructuredRootsFromChecks": false,
+			"tagNamePreference": {}
+		},
+		"vitest": {
+			"typecheck": false
+		}
+	},
+	"env": {
+		"builtin": true
+	},
+	"globals": {},
+	"ignorePatterns": [".husky", "**/dist", "**/node_modules", "**/fixtures/**", "**/tests/output/**"]
+}

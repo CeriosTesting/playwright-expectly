@@ -1,53 +1,19 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { withMatcherState } from "../matchers/matcher-state-utils";
+import { PollOptions } from "../types/poll-options";
+
+type StabilityOptions = Pick<PollOptions, "timeout"> & {
+	stabilityDuration?: number;
+	checkInterval?: number;
+};
+
 /**
  * Element state and behavior matchers for Playwright locators.
  * These matchers validate dynamic behavior and element states.
  */
-export const expectlyLocatorState = baseExpect.extend({
-	/**
-	 * Asserts that the locator's content remains stable (unchanged) for a specified duration.
-	 * This is useful for waiting until dynamic content has finished updating.
-	 *
-	 * @param locator - The Playwright locator to check
-	 * @param options - Optional configuration
-	 * @param options.stabilityDuration - Duration in ms that content must remain unchanged (default: 500)
-	 * @param options.checkInterval - Interval in ms between stability checks (default: 100)
-	 * @param options.timeout - Maximum time in ms to wait for stability (default: playwright timeout)
-	 *
-	 * @example
-	 * // Wait for element to stop changing
-	 * await expectLocator(page.locator('.live-updates')).toBeStable();
-	 *
-	 * @example
-	 * // Custom stability requirements
-	 * await expectLocator(page.locator('.loading-content')).toBeStable({
-	 *   stabilityDuration: 1000,
-	 *   checkInterval: 200,
-	 *   timeout: 10000
-	 * });
-	 */
-	async toBeStable(
-		locator: Locator,
-		options?: {
-			/**
-			 * Duration in ms that content must remain unchanged (default: 500)
-			 */
-			stabilityDuration?: number;
-			/**
-			 * Interval in ms between stability checks (default: 100)
-			 */
-			checkInterval?: number;
-			/**
-			 * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-			 */
-			timeout?: number;
-			/**
-			 * Custom polling intervals in milliseconds. If not provided, Playwright's default intervals are used.
-			 */
-			intervals?: number[];
-		}
-	) {
+export const expectlyLocatorStateMatchers = withMatcherState({
+	async toBeStable(locator: Locator, options?: StabilityOptions) {
 		const assertionName = "toBeStable";
 		const stabilityDuration = options?.stabilityDuration ?? 500;
 		const checkInterval = options?.checkInterval ?? 100;
@@ -117,9 +83,9 @@ export const expectlyLocatorState = baseExpect.extend({
 						lastSnapshot = currentSnapshot;
 						stableStartTime = Date.now();
 					}
-				} catch (e: any) {
+				} catch (e: unknown) {
 					// Track the error for better diagnostics
-					lastError = e;
+					lastError = e instanceof Error ? e : new Error(String(e));
 					// If locator not found or not ready yet, reset
 					lastSnapshot = null;
 					stableStartTime = null;
@@ -148,12 +114,12 @@ export const expectlyLocatorState = baseExpect.extend({
 						`Check interval: ${checkInterval}ms`;
 				}
 			}
-		} catch (e: any) {
+		} catch (e: unknown) {
 			if (locatorError) {
 				throw locatorError;
 			}
 			pass = false;
-			errorMessage = e.message;
+			errorMessage = e instanceof Error ? e.message : String(e);
 		}
 
 		const message = () => {
@@ -193,3 +159,5 @@ export const expectlyLocatorState = baseExpect.extend({
 		};
 	},
 });
+
+export const expectlyLocatorState = baseExpect.extend(expectlyLocatorStateMatchers);

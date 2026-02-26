@@ -1,10 +1,11 @@
 import type { Expect } from "@playwright/test";
 import { mergeExpects } from "@playwright/test";
-import { expectlyLocatorAttributes } from "./expectly-locator-attributes";
-import { expectlyLocatorPositioning } from "./expectly-locator-positioning";
-import { expectlyLocatorState } from "./expectly-locator-state";
-import { expectlyLocatorText } from "./expectly-locator-text";
-import { expectlyLocatorVisibility } from "./expectly-locator-visibility";
+
+import { expectlyLocatorAttributes, expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
+import { expectlyLocatorPositioning, expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";
+import { expectlyLocatorState, expectlyLocatorStateMatchers } from "./expectly-locator-state";
+import { expectlyLocatorText, expectlyLocatorTextMatchers } from "./expectly-locator-text";
+import { expectlyLocatorVisibility, expectlyLocatorVisibilityMatchers } from "./expectly-locator-visibility";
 
 // Extract matcher types from each module
 type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
@@ -14,6 +15,18 @@ type ExpectlyLocatorMatchers = ExtractMatchers<typeof expectlyLocatorText> &
 	ExtractMatchers<typeof expectlyLocatorPositioning> &
 	ExtractMatchers<typeof expectlyLocatorState> &
 	ExtractMatchers<typeof expectlyLocatorVisibility>;
+
+/**
+ * Combined raw matchers object for all locator matchers.
+ * Can be used with expect.extend() to add all locator matchers at once.
+ */
+export const expectlyLocatorMatchers = {
+	...expectlyLocatorTextMatchers,
+	...expectlyLocatorAttributesMatchers,
+	...expectlyLocatorPositioningMatchers,
+	...expectlyLocatorStateMatchers,
+	...expectlyLocatorVisibilityMatchers,
+};
 
 /**
  * Unified expectly locator matchers.
@@ -28,10 +41,10 @@ export const expectlyLocator: Expect<ExpectlyLocatorMatchers> = mergeExpects(
 	expectlyLocatorPositioning,
 	expectlyLocatorState,
 	expectlyLocatorVisibility
-) as any;
+);
 
-export { expectlyLocatorAttributes } from "./expectly-locator-attributes";
-export { expectlyLocatorPositioning } from "./expectly-locator-positioning";
-export { expectlyLocatorState } from "./expectly-locator-state";
-export { expectlyLocatorText } from "./expectly-locator-text";
-export { expectlyLocatorVisibility } from "./expectly-locator-visibility";
+export { expectlyLocatorAttributes, expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
+export { expectlyLocatorPositioning, expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";
+export { expectlyLocatorState, expectlyLocatorStateMatchers } from "./expectly-locator-state";
+export { expectlyLocatorText, expectlyLocatorTextMatchers } from "./expectly-locator-text";
+export { expectlyLocatorVisibility, expectlyLocatorVisibilityMatchers } from "./expectly-locator-visibility";

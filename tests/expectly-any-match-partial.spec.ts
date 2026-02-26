@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
+
 import { expectlyAny } from "../src/expectly-any";
 
+import { getRejectedErrorSync } from "./helpers/assertion-utils";
+
 test.describe("toEqualPartially", () => {
-	test("should match object with extra properties", async () => {
+	test("should match object with extra properties", () => {
 		const actual = {
 			id: 1,
 			name: "Test",
@@ -17,7 +20,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should match nested objects with extra properties", async () => {
+	test("should match nested objects with extra properties", () => {
 		const actual = {
 			user: {
 				id: 1,
@@ -42,7 +45,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should match array with extra items regardless of order", async () => {
+	test("should match array with extra items regardless of order", () => {
 		const actual = [
 			{ id: 1, name: "Item 1" },
 			{ id: 2, name: "Item 2" },
@@ -53,7 +56,7 @@ test.describe("toEqualPartially", () => {
 		expectlyAny(actual).toEqualPartially([{ id: 2, name: "Item 2" }]);
 	});
 
-	test("should match array items in any order", async () => {
+	test("should match array items in any order", () => {
 		const actual = [
 			{ id: 1, name: "First" },
 			{ id: 2, name: "Second" },
@@ -67,7 +70,7 @@ test.describe("toEqualPartially", () => {
 		]);
 	});
 
-	test("should match complex nested structure from test example", async () => {
+	test("should match complex nested structure from test example", () => {
 		const actual = {
 			id: 1,
 			name: "Test",
@@ -92,7 +95,7 @@ test.describe("toEqualPartially", () => {
 		expectlyAny(actual).toEqualPartially(expected);
 	});
 
-	test("should match array with partial object properties", async () => {
+	test("should match array with partial object properties", () => {
 		const actual = [
 			{ id: 1, name: "Item 1", category: "A", price: 10 },
 			{ id: 2, name: "Item 2", category: "B", price: 20 },
@@ -106,7 +109,7 @@ test.describe("toEqualPartially", () => {
 		]);
 	});
 
-	test("should handle deeply nested structures", async () => {
+	test("should handle deeply nested structures", () => {
 		const actual = {
 			level1: {
 				level2: {
@@ -131,7 +134,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should handle arrays within nested objects", async () => {
+	test("should handle arrays within nested objects", () => {
 		const actual = {
 			users: [
 				{ id: 1, name: "Alice", roles: ["admin", "user"] },
@@ -155,7 +158,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should match empty arrays", async () => {
+	test("should match empty arrays", () => {
 		const actual = {
 			items: [],
 			count: 0,
@@ -167,7 +170,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should match primitive values in objects", async () => {
+	test("should match primitive values in objects", () => {
 		const actual = {
 			string: "hello",
 			number: 42,
@@ -184,29 +187,31 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should fail when expected property value doesn't match", async () => {
+	test("should fail when expected property value doesn't match", () => {
 		const actual = {
 			id: 1,
 			name: "Alice",
 		};
 
-		expect(() =>
+		expect(() => {
 			expectlyAny(actual).toEqualPartially({
 				name: "Bob",
-			})
-		).toThrow(/toEqualPartially/);
+			});
+		}).toThrow(/toEqualPartially/);
 	});
 
-	test("should fail when expected array item is missing", async () => {
+	test("should fail when expected array item is missing", () => {
 		const actual = [
 			{ id: 1, name: "Item 1" },
 			{ id: 2, name: "Item 2" },
 		];
 
-		expect(() => expectlyAny(actual).toEqualPartially([{ id: 3, name: "Item 3" }])).toThrow();
+		expect(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 3, name: "Item 3" }]);
+		}).toThrow();
 	});
 
-	test("should fail when expected nested property is missing", async () => {
+	test("should fail when expected nested property is missing", () => {
 		const actual = {
 			user: {
 				id: 1,
@@ -214,16 +219,16 @@ test.describe("toEqualPartially", () => {
 			},
 		};
 
-		expect(() =>
+		expect(() => {
 			expectlyAny(actual).toEqualPartially({
 				user: {
 					email: "alice@example.com",
 				},
-			})
-		).toThrow();
+			});
+		}).toThrow();
 	});
 
-	test("should work with .not for non-matching values", async () => {
+	test("should work with .not for non-matching values", () => {
 		const actual = {
 			id: 1,
 			name: "Alice",
@@ -234,21 +239,21 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should fail with .not when value matches", async () => {
+	test("should fail with .not when value matches", () => {
 		const actual = {
 			id: 1,
 			name: "Alice",
 			extra: "data",
 		};
 
-		expect(() =>
+		expect(() => {
 			expectlyAny(actual).not.toEqualPartially({
 				name: "Alice",
-			})
-		).toThrow(/not partially match/);
+			});
+		}).toThrow(/not partially match/);
 	});
 
-	test("should handle mixed array and object nesting", async () => {
+	test("should handle mixed array and object nesting", () => {
 		const actual = {
 			projects: [
 				{
@@ -280,7 +285,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should handle Date objects", async () => {
+	test("should handle Date objects", () => {
 		const date = new Date("2024-01-01");
 		const actual = {
 			createdAt: date,
@@ -292,7 +297,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should handle arrays of primitives", async () => {
+	test("should handle arrays of primitives", () => {
 		const actual = {
 			tags: ["javascript", "typescript", "playwright", "testing"],
 			count: 4,
@@ -303,7 +308,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("should match single item from large array", async () => {
+	test("should match single item from large array", () => {
 		const actual = {
 			items: Array.from({ length: 100 }, (_, i) => ({ id: i, value: `Item ${i}` })),
 		};
@@ -314,7 +319,7 @@ test.describe("toEqualPartially", () => {
 		});
 	});
 
-	test("error message should only show mismatched properties, not extra properties", async () => {
+	test("error message should only show mismatched properties, not extra properties", () => {
 		// This test verifies that the error message doesn't mark extra properties (like 'id', 'home')
 		// as failures - only the actual mismatches should be highlighted
 		const actual = {
@@ -326,32 +331,28 @@ test.describe("toEqualPartially", () => {
 			},
 		};
 
-		let error: Error | undefined;
-		try {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(actual).toEqualPartially({
 				name: "Bob", // This WILL mismatch
 				addresses: {
 					work: { street: "456 Office Rd", city: "Metropolis" }, // This matches
 				},
 			});
-		} catch (e) {
-			error = e as Error;
-		}
+		});
 
-		expect(error).toBeDefined();
-		expect(error?.message).toContain("toEqualPartially");
-		expect(error?.message).toContain("partial match");
+		expect(error.message).toContain("toEqualPartially");
+		expect(error.message).toContain("partial match");
 		// The error should show the mismatch
-		expect(error?.message).toContain('"name"');
-		expect(error?.message).toContain("Alice");
-		expect(error?.message).toContain("Bob");
+		expect(error.message).toContain('"name"');
+		expect(error.message).toContain("Alice");
+		expect(error.message).toContain("Bob");
 		// The error should NOT show 'id' as a problem since it's not in expected
-		expect(error?.message).not.toContain('"id"');
+		expect(error.message).not.toContain('"id"');
 		// The error should NOT show 'home' address since it's not in expected
-		expect(error?.message).not.toContain('"home"');
+		expect(error.message).not.toContain('"home"');
 	});
 
-	test("should support asymmetric matchers (expect.any, expect.objectContaining, etc.)", async () => {
+	test("should support asymmetric matchers (expect.any, expect.objectContaining, etc.)", () => {
 		const actual = {
 			id: 123,
 			name: "Alice",

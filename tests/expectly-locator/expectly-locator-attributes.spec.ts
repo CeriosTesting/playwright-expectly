@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+
 import { expectlyLocatorAttributes } from "../../src/expectly-locator/expectly-locator-attributes";
 
 test.describe("expectLocator - toHavePlaceholder", () => {
@@ -486,8 +487,10 @@ test.describe("Locator Form Attribute Matchers", () => {
 
 			// Add required attribute
 			await page.evaluate(() => {
-				const input = document.querySelector("#firstName") as HTMLInputElement;
-				input.setAttribute("required", "");
+				const input = document.querySelector("#firstName");
+				if (input) {
+					input.setAttribute("required", "");
+				}
 			});
 
 			// Now should be required
@@ -502,8 +505,10 @@ test.describe("Locator Form Attribute Matchers", () => {
 
 			// Remove readonly attribute
 			await page.evaluate(() => {
-				const input = document.querySelector("#userId") as HTMLInputElement;
-				input.removeAttribute("readonly");
+				const input = document.querySelector("#userId");
+				if (input) {
+					input.removeAttribute("readonly");
+				}
 			});
 
 			// Now should not be readonly
@@ -519,9 +524,11 @@ test.describe("Locator Form Attribute Matchers", () => {
 
 			// Make it readonly and required
 			await page.evaluate(() => {
-				const input = document.querySelector("#firstName") as HTMLInputElement;
-				input.setAttribute("readonly", "");
-				input.setAttribute("required", "");
+				const input = document.querySelector("#firstName");
+				if (input) {
+					input.setAttribute("readonly", "");
+					input.setAttribute("required", "");
+				}
 			});
 
 			// Now should be both
