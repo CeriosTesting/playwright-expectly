@@ -65,6 +65,12 @@ test("extended expect example", async ({ page }) => {
 });
 ```
 
+If your `playwright.config` is JavaScript or not included in your TypeScript project, add one ambient import once so IntelliSense sees the matcher types:
+
+```typescript
+import "@cerios/playwright-expectly";
+```
+
 ### Option 3: Extend Playwright `expect` manually
 
 If you prefer more control, extend `expect` yourself in a shared fixtures file:
