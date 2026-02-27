@@ -1,3 +1,6 @@
+// Ensure Playwright matcher type augmentation is applied whenever this package is imported.
+import "./types/matcher-types";
+
 // Main export - the merged expect with all custom matchers
 export { expectly, expectlyMatchers } from "./expectly";
 
