@@ -141,7 +141,7 @@ test.describe("Locator Positioning Matchers", () => {
 			const header = page.locator(".header");
 
 			await expect(expectlyLocator(footer).toBeAbove(header)).rejects.toThrowError(
-				/Expected first element to be above second element/
+				/Expected first element to be above second element/,
 			);
 		});
 
@@ -150,7 +150,7 @@ test.describe("Locator Positioning Matchers", () => {
 			const main = page.locator(".main");
 
 			await expect(expectlyLocator(sidebar).toBeAbove(main)).rejects.toThrowError(
-				/Expected first element to be above second element/
+				/Expected first element to be above second element/,
 			);
 		});
 
@@ -193,7 +193,7 @@ test.describe("Locator Positioning Matchers", () => {
 			const footer = page.locator(".footer");
 
 			await expect(expectlyLocator(header).toBeBelow(footer)).rejects.toThrowError(
-				/Expected first element to be below second element/
+				/Expected first element to be below second element/,
 			);
 		});
 
@@ -211,7 +211,7 @@ test.describe("Locator Positioning Matchers", () => {
 			// overlap2 overlaps with overlap1, so it's not strictly below
 			// (overlap2 top is 450px, overlap1 bottom is 500px, so overlap2 starts before overlap1 ends)
 			await expect(expectlyLocator(overlap2).toBeBelow(overlap1)).rejects.toThrowError(
-				/Expected first element to be below second element/
+				/Expected first element to be below second element/,
 			);
 		});
 	});
@@ -246,7 +246,7 @@ test.describe("Locator Positioning Matchers", () => {
 			const sidebar = page.locator(".sidebar");
 
 			await expect(expectlyLocator(main).toBeLeftOf(sidebar)).rejects.toThrowError(
-				/Expected first element to be left of second element/
+				/Expected first element to be left of second element/,
 			);
 		});
 
@@ -262,7 +262,7 @@ test.describe("Locator Positioning Matchers", () => {
 			const content = page.locator(".content");
 
 			await expect(expectlyLocator(header).toBeLeftOf(content)).rejects.toThrowError(
-				/Expected first element to be left of second element/
+				/Expected first element to be left of second element/,
 			);
 		});
 
@@ -307,7 +307,7 @@ test.describe("Locator Positioning Matchers", () => {
 			const aside = page.locator(".aside");
 
 			await expect(expectlyLocator(sidebar).toBeRightOf(aside)).rejects.toThrowError(
-				/Expected first element to be right of second element/
+				/Expected first element to be right of second element/,
 			);
 		});
 
@@ -325,7 +325,7 @@ test.describe("Locator Positioning Matchers", () => {
 			// overlap2 overlaps with overlap1 horizontally, so it's not strictly to the right
 			// (overlap2 left is 100px, overlap1 right is 200px, so overlap2 starts before overlap1 ends)
 			await expect(expectlyLocator(overlap2).toBeRightOf(overlap1)).rejects.toThrowError(
-				/Expected first element to be right of second element/
+				/Expected first element to be right of second element/,
 			);
 		});
 	});

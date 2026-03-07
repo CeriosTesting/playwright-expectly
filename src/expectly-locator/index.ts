@@ -40,7 +40,7 @@ export const expectlyLocator: Expect<ExpectlyLocatorMatchers> = mergeExpects(
 	expectlyLocatorAttributes,
 	expectlyLocatorPositioning,
 	expectlyLocatorState,
-	expectlyLocatorVisibility
+	expectlyLocatorVisibility,
 );
 
 export { expectlyLocatorAttributes, expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";

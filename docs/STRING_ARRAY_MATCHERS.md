@@ -202,7 +202,7 @@ test("validate file list sorting", async ({ page }) => {
 ```typescript
 test("validate API returns sorted data", async () => {
 	const response = await api.getUsers({ sort: "name" });
-	const names = response.users.map(u => u.name);
+	const names = response.users.map((u) => u.name);
 
 	expectly(names).toHaveAscendingOrder();
 	expectly(names).toHaveUniqueValues();
@@ -214,7 +214,7 @@ test("validate API returns sorted data", async () => {
 ```typescript
 test("validate priority ordering", async () => {
 	const tasks = await api.getTasks();
-	const priorities = tasks.map(t => t.priority);
+	const priorities = tasks.map((t) => t.priority);
 
 	// Priorities should be monotonic (all ascending or all descending)
 	expectly(priorities).toBeMonotonic();
@@ -226,7 +226,7 @@ test("validate priority ordering", async () => {
 ```typescript
 test("validate version progression", async () => {
 	const versions = await api.getReleases();
-	const versionNumbers = versions.map(v => v.version);
+	const versionNumbers = versions.map((v) => v.version);
 
 	// Versions should increase
 	expectly(versionNumbers).toHaveStrictlyAscendingOrder();
@@ -246,7 +246,7 @@ expectly(["apple", "Apple", "Banana"]).not.toHaveAscendingOrder();
 
 // To normalize case, transform the array first
 const items = ["apple", "Apple", "Banana"];
-const normalized = items.map(s => s.toLowerCase()).sort();
+const normalized = items.map((s) => s.toLowerCase()).sort();
 expectly(normalized).toHaveAscendingOrder();
 ```
 
@@ -261,7 +261,7 @@ expectly(["a", "a "]).toHaveUniqueValues(); // Actually different (true)
 
 // Trim whitespace if needed
 const values = ["  a  ", "  b  ", "  c  "];
-const trimmed = values.map(s => s.trim());
+const trimmed = values.map((s) => s.trim());
 expectly(trimmed).toHaveAscendingOrder();
 ```
 

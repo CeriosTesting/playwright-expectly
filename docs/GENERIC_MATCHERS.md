@@ -182,7 +182,7 @@ expect(response).toEqual(
 				name: "Alice",
 			}),
 		}),
-	})
+	}),
 );
 
 // Just use toEqualPartially - it's automatic:

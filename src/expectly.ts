@@ -45,7 +45,7 @@ export const expectly: Expect<ExpectlyMatchers> = mergeExpects(
 	expectlyNumberArray,
 	expectlyObjectArray,
 	expectlyString,
-	expectlyStringArray
+	expectlyStringArray,
 );
 
 /**

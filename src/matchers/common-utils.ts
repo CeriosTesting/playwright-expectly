@@ -55,7 +55,7 @@ export function validateDate(date: Date, paramName: string): void {
  * @returns Array of ISO string representations
  */
 export function formatDatesForDisplay(dates: Date[]): string[] {
-	return dates.map(date => date.toISOString());
+	return dates.map((date) => date.toISOString());
 }
 
 /**
@@ -147,7 +147,7 @@ export function findDuplicates<T>(actual: T[]): Set<T> {
  * @returns Array of elements that failed the predicate
  */
 export function findNonMatching<T>(actual: T[], predicate: (value: T) => boolean): T[] {
-	return actual.filter(val => !predicate(val));
+	return actual.filter((val) => !predicate(val));
 }
 
 /**
