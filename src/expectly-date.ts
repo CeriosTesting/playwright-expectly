@@ -35,7 +35,7 @@ export const expectlyDateMatchers = withMatcherState({
 	toBeCloseTo(
 		actualDate: Date,
 		expectedDate: Date,
-		deviation: { seconds?: number; minutes?: number; hours?: number; days?: number }
+		deviation: { seconds?: number; minutes?: number; hours?: number; days?: number },
 	) {
 		const assertionName = "toBeCloseTo";
 
@@ -58,7 +58,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const timeDiff = actualTime - expectedDate.getTime();
 		const timeDiffSeconds = Math.abs(timeDiff / 1000);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -110,7 +110,7 @@ export const expectlyDateMatchers = withMatcherState({
 			pass = false;
 		}
 
-		const message = () =>
+		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			}) +
@@ -139,7 +139,7 @@ export const expectlyDateMatchers = withMatcherState({
 			pass = false;
 		}
 
-		const message = () =>
+		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			}) +
@@ -164,7 +164,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = actualDate.getTime() < expectedDate.getTime();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -210,7 +210,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = parsedActual.getTime() > parsedExpected.getTime();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -259,7 +259,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const actualTime = parsedActual.getTime();
 		const pass = actualTime >= parsedStart.getTime() && actualTime <= parsedEnd.getTime();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -310,7 +310,7 @@ export const expectlyDateMatchers = withMatcherState({
 			parsedActual.getMonth() === parsedExpected.getMonth() &&
 			parsedActual.getDate() === parsedExpected.getDate();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -358,7 +358,7 @@ export const expectlyDateMatchers = withMatcherState({
 			parsedActual.getFullYear() === parsedExpected.getFullYear() &&
 			parsedActual.getMonth() === parsedExpected.getMonth();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -404,7 +404,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = parsedActual.getFullYear() === parsedExpected.getFullYear();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -452,7 +452,7 @@ export const expectlyDateMatchers = withMatcherState({
 			parsedActual.getMonth() === today.getMonth() &&
 			parsedActual.getDate() === today.getDate();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -499,7 +499,7 @@ export const expectlyDateMatchers = withMatcherState({
 			parsedActual.getMonth() === yesterday.getMonth() &&
 			parsedActual.getDate() === yesterday.getDate();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -546,7 +546,7 @@ export const expectlyDateMatchers = withMatcherState({
 			parsedActual.getMonth() === tomorrow.getMonth() &&
 			parsedActual.getDate() === tomorrow.getDate();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -589,7 +589,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const dayOfWeek = parsedActual.getDay();
 		const pass = dayOfWeek >= 1 && dayOfWeek <= 5;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -633,7 +633,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const dayOfWeek = parsedActual.getDay();
 		const pass = dayOfWeek === 0 || dayOfWeek === 6;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -677,7 +677,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const now = new Date();
 		const pass = parsedActual.getTime() < now.getTime();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -721,7 +721,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const now = new Date();
 		const pass = parsedActual.getTime() > now.getTime();
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -765,7 +765,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const year = parsedActual.getFullYear();
 		const pass = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -815,7 +815,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = Math.abs(diffDays - expectedDays) < 1; // Allow 1 day tolerance
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -905,7 +905,7 @@ export const expectlyDateMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -958,14 +958,14 @@ export const expectlyDateMatchers = withMatcherState({
 		const startTime = startDate.getTime();
 		const endTime = endDate.getTime();
 
-		const outOfRangeDates = actual.filter(date => {
+		const outOfRangeDates = actual.filter((date) => {
 			const time = date.getTime();
 			return time < startTime || time > endTime;
 		});
 
 		const pass = outOfRangeDates.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1036,7 +1036,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = duplicates.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1083,7 +1083,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = matchesPattern && isValid;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1132,7 +1132,7 @@ export const expectlyDateMatchers = withMatcherState({
 				const match = expectedOffset.match(/^([+-])(\d{2}):(\d{2})$/);
 				if (!match) {
 					throw new Error(
-						`Invalid timezone offset format: ${expectedOffset}. Expected format: '+HH:MM', '-HH:MM', or 'UTC'`
+						`Invalid timezone offset format: ${expectedOffset}. Expected format: '+HH:MM', '-HH:MM', or 'UTC'`,
 					);
 				}
 				const sign = match[1] === "+" ? 1 : -1;
@@ -1156,7 +1156,7 @@ export const expectlyDateMatchers = withMatcherState({
 			return `${sign}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 		};
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1201,7 +1201,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = actualDate.getDate() === 1;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1242,7 +1242,7 @@ export const expectlyDateMatchers = withMatcherState({
 		const lastDayOfMonth = new Date(actualDate.getFullYear(), actualDate.getMonth() + 1, 0).getDate();
 		const pass = actualDate.getDate() === lastDayOfMonth;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1277,7 +1277,7 @@ export const expectlyDateMatchers = withMatcherState({
 	},
 	toHaveDateGapsLargerThan(
 		actual: Date[],
-		minGap: { seconds?: number; minutes?: number; hours?: number; days?: number; months?: number; years?: number }
+		minGap: { seconds?: number; minutes?: number; hours?: number; days?: number; months?: number; years?: number },
 	) {
 		const assertionName = "toHaveDateGapsLargerThan";
 
@@ -1315,7 +1315,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const pass = largeGaps.length > 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1348,7 +1348,7 @@ export const expectlyDateMatchers = withMatcherState({
 					`Expected dates to not have gaps larger than ${formatGap(minGapMs)}\n\n` +
 					`Found ${largeGaps.length} gap(s):\n` +
 					largeGaps
-						.map(gap => `  ${gap.from.toISOString()} -> ${gap.to.toISOString()} (${formatGap(gap.gapMs)})`)
+						.map((gap) => `  ${gap.from.toISOString()} -> ${gap.to.toISOString()} (${formatGap(gap.gapMs)})`)
 						.join("\n")
 				);
 			}
@@ -1398,7 +1398,7 @@ export const expectlyDateMatchers = withMatcherState({
 			return quarters[q];
 		};
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1455,7 +1455,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const dayNamesArray = Object.keys(DAY_NAMES);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -1512,7 +1512,7 @@ export const expectlyDateMatchers = withMatcherState({
 
 		const monthNamesArray = Object.keys(MONTH_NAMES);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});

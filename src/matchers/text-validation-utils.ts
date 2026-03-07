@@ -75,7 +75,7 @@ export function isLowerCase(text: string): boolean {
  * Converts a string to title case (first letter of each word capitalized)
  */
 export function toTitleCase(text: string): string {
-	return text.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+	return text.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 }
 
 /**
@@ -103,5 +103,5 @@ export function isValidUUID(text: string, version?: 1 | 3 | 4 | 5): boolean {
  * Gets the UUID format description for error messages
  */
 export function getUUIDFormatDescription(version?: 1 | 3 | 4 | 5): string {
-	return `xxxxxxxx-xxxx-${version || "[1-5]"}xxx-[89ab]xxx-xxxxxxxxxxxx`;
+	return `xxxxxxxx-xxxx-${version ?? "[1-5]"}xxx-[89ab]xxx-xxxxxxxxxxxx`;
 }

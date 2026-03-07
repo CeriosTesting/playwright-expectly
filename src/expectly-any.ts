@@ -1,13 +1,13 @@
-import type { ExpectMatcherState } from "@playwright/test";
+import type { ExpectMatcherState, MatcherReturnType } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 /**
  * Expextly Custom matchers for any type validations.
  */
 export const expectlyAnyMatchers = {
-	toBeAnyOf(this: ExpectMatcherState, received: unknown, ...possibilities: unknown[]) {
+	toBeAnyOf(this: ExpectMatcherState, received: unknown, ...possibilities: unknown[]): MatcherReturnType {
 		const assertionName = "toBeAnyOf";
-		const pass = possibilities.some(possibility => {
+		const pass = possibilities.some((possibility) => {
 			try {
 				// Handle object comparison
 				if (
@@ -28,7 +28,7 @@ export const expectlyAnyMatchers = {
 			}
 		});
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -64,11 +64,11 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeNullish(this: ExpectMatcherState, received: unknown) {
+	toBeNullish(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBeNullish";
 		const pass = received === null || received === undefined;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -101,11 +101,11 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeInteger(this: ExpectMatcherState, received: unknown) {
+	toBeInteger(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBeInteger";
 		const pass = Number.isInteger(received);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -134,7 +134,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeFloat(this: ExpectMatcherState, received: unknown) {
+	toBeFloat(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBeFloat";
 		const pass =
 			typeof received === "number" &&
@@ -142,7 +142,7 @@ export const expectlyAnyMatchers = {
 			!Number.isInteger(received) &&
 			Number.isFinite(received);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -186,7 +186,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBePrimitive(this: ExpectMatcherState, received: unknown) {
+	toBePrimitive(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBePrimitive";
 		const receivedType = typeof received;
 		const pass =
@@ -198,7 +198,7 @@ export const expectlyAnyMatchers = {
 			receivedType === "bigint" ||
 			receivedType === "symbol";
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -231,11 +231,11 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeArray(this: ExpectMatcherState, received: unknown) {
+	toBeArray(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBeArray";
 		const pass = Array.isArray(received);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -264,11 +264,11 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toBeObject(this: ExpectMatcherState, received: unknown) {
+	toBeObject(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBeObject";
 		const pass = typeof received === "object" && received !== null && !Array.isArray(received);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -303,7 +303,7 @@ export const expectlyAnyMatchers = {
 			actual: received,
 		};
 	},
-	toEqualPartially(this: ExpectMatcherState, actual: unknown, expected: unknown) {
+	toEqualPartially(this: ExpectMatcherState, actual: unknown, expected: unknown): MatcherReturnType {
 		const assertionName = "toEqualPartially";
 		let pass = false;
 		let comparisonError = "";
@@ -321,7 +321,7 @@ export const expectlyAnyMatchers = {
 			comparisonError = e instanceof Error ? e.message : String(e);
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -397,7 +397,7 @@ function extractMatchingStructure(actual: unknown, expected: unknown): unknown {
 		const result: unknown[] = [];
 		for (const expectedItem of expected) {
 			// Find a matching item in actual
-			const matchingItem = actual.find(actualItem => {
+			const matchingItem = actual.find((actualItem) => {
 				try {
 					const extractedItem = extractMatchingStructure(actualItem, expectedItem);
 					baseExpect(extractedItem).toEqual(expectedItem);

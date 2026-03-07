@@ -19,7 +19,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = matcher.startsWith(expected);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -61,7 +61,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = matcher.endsWith(expected);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -103,7 +103,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = pattern.test(matcher);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -142,7 +142,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = isValidEmail(matcher);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -180,7 +180,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = isValidUrl(matcher);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -208,7 +208,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = isAlphanumeric(matcher);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -246,7 +246,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = isNumericString(matcher);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -284,7 +284,7 @@ export const expectlyStringMatchers = withMatcherState({
 		const actual = matcher;
 		const pass = isValidUUID(matcher, version);
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, version ? String(version) : undefined, {
 				isNot: this.isNot,
 			});

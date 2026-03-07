@@ -32,7 +32,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -42,7 +42,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -61,7 +61,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have placeholder: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(no placeholder attribute)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(no placeholder attribute)")}`
 				);
 			}
 
@@ -100,7 +100,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -110,7 +110,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -129,7 +129,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have href: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(no href attribute)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(no href attribute)")}`
 				);
 			}
 
@@ -168,7 +168,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -178,7 +178,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -197,7 +197,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have src: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(no src attribute)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(no src attribute)")}`
 				);
 			}
 
@@ -236,7 +236,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -246,7 +246,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -265,7 +265,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have alt: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(no alt attribute)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(no alt attribute)")}`
 				);
 			}
 
@@ -308,7 +308,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -318,14 +318,14 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(
 				assertionName,
 				undefined,
 				expected === undefined ? `"${name}"` : `"${name}", ${JSON.stringify(expected)}`,
 				{
 					isNot: this.isNot,
-				}
+				},
 			);
 
 			if (pass && this.isNot) {
@@ -353,7 +353,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have ${attrName}: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(attribute not found)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(attribute not found)")}`
 				);
 			}
 
@@ -392,7 +392,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -402,7 +402,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -421,7 +421,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have aria-label: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(no aria-label attribute)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(no aria-label attribute)")}`
 				);
 			}
 
@@ -460,7 +460,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -470,7 +470,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -489,7 +489,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected element to have target: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual === null ? "(no target attribute)" : actual)}`
+					`Received: ${this.utils.printReceived(actual ?? "(no target attribute)")}`
 				);
 			}
 
@@ -526,7 +526,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -536,7 +536,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -580,7 +580,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -590,7 +590,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
