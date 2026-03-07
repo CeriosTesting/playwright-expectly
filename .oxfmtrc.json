@@ -1,16 +1,9 @@
 {
 	"$schema": "./node_modules/oxfmt/configuration_schema.json",
-	"trailingComma": "es5",
-	"tabWidth": 2,
-	"useTabs": true,
-	"semi": true,
-	"singleQuote": false,
-	"endOfLine": "lf",
+	"ignorePatterns": [],
 	"printWidth": 120,
-	"bracketSpacing": true,
-	"arrowParens": "avoid",
-	"ignorePatterns": [".husky", "**/dist", "**/node_modules", "**/fixtures/**", "**/tests/output/**"],
-	"experimentalSortImports": {
+	"useTabs": true,
+	"sortImports": {
 		"groups": [
 			["side_effect"],
 			["builtin"],
@@ -20,8 +13,5 @@
 			["sibling", "type-sibling"],
 			["index", "type-index"]
 		]
-	},
-	"experimentalSortPackageJson": {
-		"sortScripts": true
 	}
 }
