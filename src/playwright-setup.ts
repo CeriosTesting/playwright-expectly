@@ -19,6 +19,6 @@ import { expectlyMatchers } from "./expectly";
  *
  * setupExpectly();
  */
-export function setupExpectly() {
+export function setupExpectly(): void {
 	expect.extend(expectlyMatchers);
 }

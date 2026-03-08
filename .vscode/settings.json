@@ -4,8 +4,11 @@
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"typescript.enablePromptUseWorkspaceTsdk": true,
 	"typescript.preferences.importModuleSpecifier": "non-relative",
+	"oxc.path.oxfmt": "./node_modules/.bin/oxfmt",
+	"oxc.path.oxlint": "./node_modules/.bin/oxlint",
+	"oxc.path.tsgolint": "./node_modules/.bin/tsgolint",
+	"oxc.configPath": ".oxlintrc.json",
+	"oxc.fmt.configPath": ".oxfmtrc.json",
 	"editor.defaultFormatter": "oxc.oxc-vscode",
-	"editor.formatOnSave": true,
-	"oxc.path.oxlint": "node_modules/.bin/oxlint",
-	"oxc.typeAware": true
+	"editor.formatOnSave": true
 }

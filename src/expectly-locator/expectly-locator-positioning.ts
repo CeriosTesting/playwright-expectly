@@ -37,7 +37,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -47,7 +47,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -111,7 +111,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -121,7 +121,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -185,7 +185,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -195,7 +195,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -259,7 +259,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -269,7 +269,7 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});

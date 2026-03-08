@@ -26,10 +26,12 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		} catch (e: unknown) {
 			matcherResult = undefined;
 			if (
-				e != null &&
+				e !== null &&
+				e !== undefined &&
 				typeof e === "object" &&
 				"matcherResult" in e &&
-				e.matcherResult != null &&
+				e.matcherResult !== null &&
+				e.matcherResult !== undefined &&
 				typeof e.matcherResult === "object" &&
 				"actual" in e.matcherResult
 			) {
@@ -38,14 +40,14 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			pass = false;
 		}
 
-		const message = () =>
+		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			}) +
 			"\n\n" +
 			`Expected array to ${this.isNot ? "not " : ""}be in ascending order\n\n` +
 			`Expected: ${this.utils.printExpected(expected)}\n` +
-			`Received: ${this.utils.printReceived(matcherResult?.actual || actual)}`;
+			`Received: ${this.utils.printReceived(matcherResult?.actual ?? actual)}`;
 
 		return {
 			message,
@@ -68,10 +70,12 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		} catch (e: unknown) {
 			matcherResult = undefined;
 			if (
-				e != null &&
+				e !== null &&
+				e !== undefined &&
 				typeof e === "object" &&
 				"matcherResult" in e &&
-				e.matcherResult != null &&
+				e.matcherResult !== null &&
+				e.matcherResult !== undefined &&
 				typeof e.matcherResult === "object" &&
 				"actual" in e.matcherResult
 			) {
@@ -80,14 +84,14 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			pass = false;
 		}
 
-		const message = () =>
+		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			}) +
 			"\n\n" +
 			`Expected array to ${this.isNot ? "not " : ""}be in descending order\n\n` +
 			`Expected: ${this.utils.printExpected(expected)}\n` +
-			`Received: ${this.utils.printReceived(matcherResult?.actual || actual)}`;
+			`Received: ${this.utils.printReceived(matcherResult?.actual ?? actual)}`;
 
 		return {
 			message,
@@ -102,7 +106,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		const firstViolationIndex = findStrictAscendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -140,7 +144,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		const firstViolationIndex = findStrictDescendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -178,7 +182,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 
 		if (actual.length <= 1) {
 			return {
-				message: () =>
+				message: (): string =>
 					this.utils.matcherHint(assertionName, undefined, undefined, {
 						isNot: this.isNot,
 					}),
@@ -190,7 +194,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		const { isAscending, isDescending } = checkMonotonic(actual);
 		const pass = isAscending || isDescending;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -227,7 +231,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		const duplicates = findDuplicates(actual);
 		const pass = duplicates.size === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});

@@ -119,10 +119,10 @@ test("validate table sorting", async ({ page }) => {
 
 	const rows = await page.locator("tbody tr").all();
 	const userData = await Promise.all(
-		rows.map(async row => ({
+		rows.map(async (row) => ({
 			name: await row.locator(".name").textContent(),
 			age: Number(await row.locator(".age").textContent()),
-		}))
+		})),
 	);
 
 	expectly(userData).toHaveObjectsInAscendingOrderBy("age");
@@ -153,11 +153,11 @@ test("validate product sorting options", async ({ page }) => {
 	await page.selectOption("#sort", "price-asc");
 	await page.waitForLoadState("networkidle");
 
-	const productData = await page.locator(".product").evaluateAll(elements =>
-		elements.map(el => ({
+	const productData = await page.locator(".product").evaluateAll((elements) =>
+		elements.map((el) => ({
 			name: el.querySelector(".name")?.textContent || "",
 			price: parseFloat(el.querySelector(".price")?.textContent || "0"),
-		}))
+		})),
 	);
 
 	expectly(productData).toHaveObjectsInAscendingOrderBy("price");
@@ -166,11 +166,11 @@ test("validate product sorting options", async ({ page }) => {
 	await page.selectOption("#sort", "price-desc");
 	await page.waitForLoadState("networkidle");
 
-	const productDataDesc = await page.locator(".product").evaluateAll(elements =>
-		elements.map(el => ({
+	const productDataDesc = await page.locator(".product").evaluateAll((elements) =>
+		elements.map((el) => ({
 			name: el.querySelector(".name")?.textContent || "",
 			price: parseFloat(el.querySelector(".price")?.textContent || "0"),
-		}))
+		})),
 	);
 
 	expectly(productDataDesc).toHaveObjectsInDescendingOrderBy("price");
@@ -255,7 +255,7 @@ For nested property access, you'll need to extract the value first:
 const users = [{ profile: { name: "Alice", level: 5 } }, { profile: { name: "Bob", level: 8 } }];
 
 // Extract nested property
-const levels = users.map(u => ({ level: u.profile.level }));
+const levels = users.map((u) => ({ level: u.profile.level }));
 expectly(levels).toHaveObjectsInAscendingOrderBy("level");
 ```
 
@@ -271,7 +271,7 @@ const data = [
 ];
 
 // Group and validate each category
-const categoryA = data.filter(d => d.category === "A");
+const categoryA = data.filter((d) => d.category === "A");
 expectly(categoryA).toHaveObjectsInAscendingOrderBy("priority");
 ```
 

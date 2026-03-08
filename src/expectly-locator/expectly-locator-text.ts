@@ -41,7 +41,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -51,7 +51,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -109,7 +109,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -119,7 +119,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -177,7 +177,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -187,7 +187,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -242,7 +242,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -252,7 +252,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -306,7 +306,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -316,7 +316,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -365,7 +365,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -375,7 +375,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -429,7 +429,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -439,7 +439,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -493,7 +493,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -503,7 +503,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -558,7 +558,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -568,7 +568,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -623,7 +623,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -633,7 +633,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -688,7 +688,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -698,7 +698,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, version ? String(version) : undefined, {
 				isNot: this.isNot,
 			});
@@ -746,13 +746,13 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 				.poll(
 					async () => {
 						try {
-							actual = await locator.evaluate(el =>
+							actual = await locator.evaluate((el) =>
 								Array.from(el.childNodes)
-									.filter(n => n.nodeType === Node.TEXT_NODE)
-									.map(n => n.textContent)
+									.filter((n) => n.nodeType === Node.TEXT_NODE)
+									.map((n) => n.textContent)
 									.join("")
 									.trim()
-									.replace(/\s+/g, " ")
+									.replace(/\s+/g, " "),
 							);
 							return actual === expectedText;
 						} catch (e: unknown) {
@@ -763,7 +763,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -773,7 +773,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});

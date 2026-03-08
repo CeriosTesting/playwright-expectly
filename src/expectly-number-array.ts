@@ -28,10 +28,12 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		} catch (e: unknown) {
 			matcherResult = undefined;
 			if (
-				e != null &&
+				e !== null &&
+				e !== undefined &&
 				typeof e === "object" &&
 				"matcherResult" in e &&
-				e.matcherResult != null &&
+				e.matcherResult !== null &&
+				e.matcherResult !== undefined &&
 				typeof e.matcherResult === "object" &&
 				"actual" in e.matcherResult
 			) {
@@ -40,14 +42,14 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			pass = false;
 		}
 
-		const message = () =>
+		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			}) +
 			"\n\n" +
 			`Expected array to ${this.isNot ? "not " : ""}be in ascending order\n\n` +
 			`Expected: ${this.utils.printExpected(expected)}\n` +
-			`Received: ${this.utils.printReceived(matcherResult?.actual || actual)}`;
+			`Received: ${this.utils.printReceived(matcherResult?.actual ?? actual)}`;
 
 		return {
 			message,
@@ -70,10 +72,12 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		} catch (e: unknown) {
 			matcherResult = undefined;
 			if (
-				e != null &&
+				e !== null &&
+				e !== undefined &&
 				typeof e === "object" &&
 				"matcherResult" in e &&
-				e.matcherResult != null &&
+				e.matcherResult !== null &&
+				e.matcherResult !== undefined &&
 				typeof e.matcherResult === "object" &&
 				"actual" in e.matcherResult
 			) {
@@ -82,14 +86,14 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			pass = false;
 		}
 
-		const message = () =>
+		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			}) +
 			"\n\n" +
 			`Expected array to ${this.isNot ? "not " : ""}be in descending order\n\n` +
 			`Expected: ${this.utils.printExpected(expected)}\n` +
-			`Received: ${this.utils.printReceived(matcherResult?.actual || actual)}`;
+			`Received: ${this.utils.printReceived(matcherResult?.actual ?? actual)}`;
 
 		return {
 			message,
@@ -107,7 +111,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		}
 		const pass = Math.abs(sum - expected) < Number.EPSILON;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
 				isNot: this.isNot,
 			});
@@ -151,7 +155,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const average = actual.length > 0 ? sum / actual.length : 0;
 		const pass = Math.abs(average - expected) < Number.EPSILON;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
 				isNot: this.isNot,
 			});
@@ -197,7 +201,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 					: sorted[Math.floor(sorted.length / 2)];
 		const pass = Math.abs(median - expected) < Number.EPSILON;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
 				isNot: this.isNot,
 			});
@@ -237,7 +241,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const { min } = getMinMax(actual);
 		const pass = min === expected;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
 				isNot: this.isNot,
 			});
@@ -277,7 +281,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const { max } = getMinMax(actual);
 		const pass = max === expected;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
 				isNot: this.isNot,
 			});
@@ -318,7 +322,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const range = max - min;
 		const pass = range === expected;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
 				isNot: this.isNot,
 			});
@@ -355,10 +359,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllBetween(actual: number[], min: number, max: number) {
 		const assertionName = "toBeAllBetween";
-		const outOfRange = findNonMatching(actual, val => val >= min && val <= max);
+		const outOfRange = findNonMatching(actual, (val) => val >= min && val <= max);
 		const pass = outOfRange.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, `${min}, ${max}`, {
 				isNot: this.isNot,
 			});
@@ -394,10 +398,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllPositive(actual: number[]) {
 		const assertionName = "toBeAllPositive";
-		const nonPositive = findNonMatching(actual, val => val > 0);
+		const nonPositive = findNonMatching(actual, (val) => val > 0);
 		const pass = nonPositive.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -432,10 +436,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllNegative(actual: number[]) {
 		const assertionName = "toBeAllNegative";
-		const nonNegative = findNonMatching(actual, val => val < 0);
+		const nonNegative = findNonMatching(actual, (val) => val < 0);
 		const pass = nonNegative.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -470,10 +474,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllIntegers(actual: number[]) {
 		const assertionName = "toBeAllIntegers";
-		const nonIntegers = findNonMatching(actual, val => Number.isInteger(val));
+		const nonIntegers = findNonMatching(actual, (val) => Number.isInteger(val));
 		const pass = nonIntegers.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -503,10 +507,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllGreaterThan(actual: number[], value: number) {
 		const assertionName = "toBeAllGreaterThan";
-		const notGreater = findNonMatching(actual, val => val > value);
+		const notGreater = findNonMatching(actual, (val) => val > value);
 		const pass = notGreater.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(value), {
 				isNot: this.isNot,
 			});
@@ -542,10 +546,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllLessThan(actual: number[], value: number) {
 		const assertionName = "toBeAllLessThan";
-		const notLess = findNonMatching(actual, val => val < value);
+		const notLess = findNonMatching(actual, (val) => val < value);
 		const pass = notLess.length === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(value), {
 				isNot: this.isNot,
 			});
@@ -584,7 +588,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const firstViolationIndex = findStrictAscendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -622,7 +626,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const firstViolationIndex = findStrictDescendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -660,7 +664,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 
 		if (actual.length <= 1) {
 			return {
-				message: () =>
+				message: (): string =>
 					this.utils.matcherHint(assertionName, undefined, undefined, {
 						isNot: this.isNot,
 					}),
@@ -672,7 +676,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const { isAscending, isDescending } = checkMonotonic(actual);
 		const pass = isAscending || isDescending;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -709,7 +713,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const duplicates = findDuplicates(actual);
 		const pass = duplicates.size === 0;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -747,7 +751,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 
 		if (actual.length === 0) {
 			return {
-				message: () =>
+				message: (): string =>
 					this.utils.matcherHint(assertionName, undefined, undefined, {
 						isNot: this.isNot,
 					}) +
@@ -759,10 +763,10 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		}
 
 		// Check if all are integers
-		const allIntegers = actual.every(val => Number.isInteger(val));
+		const allIntegers = actual.every((val) => Number.isInteger(val));
 		if (!allIntegers) {
 			return {
-				message: () =>
+				message: (): string =>
 					this.utils.matcherHint(assertionName, undefined, undefined, {
 						isNot: this.isNot,
 					}) +
@@ -789,7 +793,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 
 		const pass = isConsecutive;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});

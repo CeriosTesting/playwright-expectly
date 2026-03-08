@@ -52,7 +52,7 @@ Asserts that an array of dates is sorted chronologically.
 ```typescript
 // Testing API response dates
 const events = await api.getEvents();
-const dates = events.map(e => e.createdAt);
+const dates = events.map((e) => e.createdAt);
 expectly(dates).toHaveDatesAscendingOrder();
 
 // Descending order (newest to oldest)
@@ -342,7 +342,7 @@ test("validate event timing", async () => {
 ```typescript
 test("validate data timeline", async () => {
 	const records = await api.getRecords();
-	const dates = records.map(r => r.createdAt);
+	const dates = records.map((r) => r.createdAt);
 
 	expectly(dates).toHaveDatesAscendingOrder();
 	expectly(dates).toHaveDatesWithinRange(new Date("2024-01-01"), new Date("2024-12-31"));

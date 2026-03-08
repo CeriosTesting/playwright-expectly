@@ -12,14 +12,14 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 		const pass = duplicateObjects.length === 0;
 
 		const message = pass
-			? () =>
+			? (): string =>
 					this.utils.matcherHint(assertionName, undefined, undefined, {
 						isNot: this.isNot,
 					}) +
 					"\n\n" +
 					`Expected array: ${this.utils.printReceived(actual)}\n` +
 					`Expected to contain duplicate objects, but all objects were unique.`
-			: () =>
+			: (): string =>
 					this.utils.matcherHint(assertionName, undefined, undefined, {
 						isNot: this.isNot,
 					}) +
@@ -39,7 +39,7 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 		const validation = validateSortOrder(actual, propertyName, "ascending");
 		const pass = validation.isValid;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(propertyName), {
 				isNot: this.isNot,
 			});
@@ -78,7 +78,7 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 		const validation = validateSortOrder(actual, propertyName, "descending");
 		const pass = validation.isValid;
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(propertyName), {
 				isNot: this.isNot,
 			});
@@ -160,7 +160,7 @@ function safeStringify(obj: unknown): string {
 			seen.set(value, id);
 
 			if (Array.isArray(value)) {
-				return value.map(item => normalize(item));
+				return value.map((item) => normalize(item));
 			}
 
 			if (isRecord(value)) {
@@ -229,7 +229,7 @@ interface SortOrderValidation {
 function validateSortOrder(
 	arr: object[],
 	propertyName: string,
-	order: "ascending" | "descending"
+	order: "ascending" | "descending",
 ): SortOrderValidation {
 	// Empty or single element arrays are always sorted
 	if (arr.length <= 1) {

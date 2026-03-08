@@ -75,7 +75,7 @@ test.describe("toBeAnyOf", () => {
 		const obj = { user: { id: 1, name: "Alice" }, active: true };
 		expectlyAny(obj).toBeAnyOf(
 			{ user: { id: 1, name: "Alice" }, active: true },
-			{ user: { id: 2, name: "Bob" }, active: false }
+			{ user: { id: 2, name: "Bob" }, active: false },
 		);
 	});
 
@@ -179,8 +179,8 @@ test.describe("toBeAnyOf", () => {
 	});
 
 	test("should handle functions", () => {
-		const fn1 = () => "test";
-		const fn2 = () => "other";
+		const fn1 = (): string => "test";
+		const fn2 = (): string => "other";
 		expectlyAny(fn1).toBeAnyOf(fn1, fn2);
 	});
 
@@ -201,7 +201,7 @@ test.describe("toBeAnyOf", () => {
 		expectlyAny(obj).toBeAnyOf(
 			{ status: "inactive", count: 0 },
 			{ status: "pending", count: 3 },
-			{ status: "active", count: 5 }
+			{ status: "active", count: 5 },
 		);
 	});
 

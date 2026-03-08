@@ -64,7 +64,7 @@ test.describe("expectLocator - toBeStable", () => {
 				stabilityDuration: 500,
 				checkInterval: 100,
 				timeout: 1500,
-			})
+			}),
 		).rejects.toThrowError(/content did not stabilize/);
 	});
 
@@ -76,7 +76,7 @@ test.describe("expectLocator - toBeStable", () => {
 			expectlyLocator(element).toBeStable({
 				stabilityDuration: 300,
 				timeout: 1500,
-			})
+			}),
 		).rejects.toThrowError();
 	});
 
@@ -125,7 +125,7 @@ test.describe("expectLocator - toBeStable", () => {
 		const error = await getRejectedError(
 			expectlyLocator(element).toBeStable({
 				checkInterval: 0,
-			})
+			}),
 		);
 
 		expect(error.message).toMatch(/checkInterval must be positive/);
@@ -138,7 +138,7 @@ test.describe("expectLocator - toBeStable", () => {
 		const error = await getRejectedError(
 			expectlyLocator(element).toBeStable({
 				stabilityDuration: -100,
-			})
+			}),
 		);
 
 		expect(error.message).toMatch(/stabilityDuration must be positive/);
@@ -151,7 +151,7 @@ test.describe("expectLocator - toBeStable", () => {
 		const error = await getRejectedError(
 			expectlyLocator(element).toBeStable({
 				timeout: 0,
-			})
+			}),
 		);
 
 		expect(error.message).toMatch(/timeout must be positive/);
@@ -165,7 +165,7 @@ test.describe("expectLocator - toBeStable", () => {
 			expectlyLocator(element).toBeStable({
 				stabilityDuration: 500,
 				checkInterval: 600,
-			})
+			}),
 		);
 
 		expect(error.message).toMatch(/checkInterval.*cannot be greater than half of stabilityDuration/);
@@ -179,7 +179,7 @@ test.describe("expectLocator - toBeStable", () => {
 			expectlyLocator(element).toBeStable({
 				stabilityDuration: 3000,
 				timeout: 2000,
-			})
+			}),
 		);
 
 		expect(error.message).toMatch(/stabilityDuration.*must be less than timeout/);
@@ -205,7 +205,7 @@ test.describe("expectLocator - toBeStable", () => {
 				stabilityDuration: 500,
 				checkInterval: 100,
 				timeout: 1000,
-			})
+			}),
 		);
 
 		expect(error.message).toMatch(/content did not stabilize/);

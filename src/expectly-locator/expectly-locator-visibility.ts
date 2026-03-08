@@ -19,7 +19,7 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 					async () => {
 						try {
 							const handles = await locator.elementHandles();
-							const visArr = await Promise.all(handles.map(async h => h.isVisible()));
+							const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
 							visibleCount = visArr.filter(Boolean).length;
 							return visibleCount === count;
 						} catch (e: unknown) {
@@ -30,7 +30,7 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 					{
 						timeout: options?.timeout ?? this.timeout,
 						intervals: options?.intervals,
-					}
+					},
 				)
 				.toBe(true);
 			pass = true;
@@ -40,7 +40,7 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 			}
 		}
 
-		const message = () => {
+		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});

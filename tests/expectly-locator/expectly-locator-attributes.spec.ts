@@ -337,7 +337,7 @@ test.describe("Locator Form Attribute Matchers", () => {
 			const nickname = page.locator("#nickname");
 
 			await expect(expectlyLocatorAttributes(nickname).toBeRequired()).rejects.toThrowError(
-				/Expected element to be required/
+				/Expected element to be required/,
 			);
 		});
 
@@ -345,7 +345,7 @@ test.describe("Locator Form Attribute Matchers", () => {
 			const phone = page.locator("#phone");
 
 			await expect(expectlyLocatorAttributes(phone).toBeRequired()).rejects.toThrowError(
-				/Expected element to be required/
+				/Expected element to be required/,
 			);
 		});
 
@@ -358,7 +358,7 @@ test.describe("Locator Form Attribute Matchers", () => {
 			const username = page.locator("#username");
 
 			await expect(expectlyLocatorAttributes(username).not.toBeRequired()).rejects.toThrowError(
-				/Expected element to not be required/
+				/Expected element to not be required/,
 			);
 		});
 
@@ -398,7 +398,7 @@ test.describe("Locator Form Attribute Matchers", () => {
 			const firstName = page.locator("#firstName");
 
 			await expect(expectlyLocatorAttributes(firstName).toBeReadOnly()).rejects.toThrowError(
-				/Expected element to be readonly/
+				/Expected element to be readonly/,
 			);
 		});
 
@@ -406,7 +406,7 @@ test.describe("Locator Form Attribute Matchers", () => {
 			const lastName = page.locator("#lastName");
 
 			await expect(expectlyLocatorAttributes(lastName).toBeReadOnly()).rejects.toThrowError(
-				/Expected element to be readonly/
+				/Expected element to be readonly/,
 			);
 		});
 
@@ -419,7 +419,7 @@ test.describe("Locator Form Attribute Matchers", () => {
 			const userId = page.locator("#userId");
 
 			await expect(expectlyLocatorAttributes(userId).not.toBeReadOnly()).rejects.toThrowError(
-				/Expected element to not be readonly/
+				/Expected element to not be readonly/,
 			);
 		});
 
