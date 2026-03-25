@@ -3,7 +3,7 @@ import { expect as baseExpect } from "@playwright/test";
 import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
- * Expextly Custom matchers for object array validations.
+ * Expectly Custom matchers for object array validations.
  */
 export const expectlyObjectArrayMatchers = withMatcherState({
 	toHaveOnlyUniqueObjects(actual: object[]) {

@@ -161,8 +161,43 @@ Asserts that an object partially matches the expected structure.
 This matcher extracts only the fields specified in the expected structure and compares them:
 
 - **Objects**: Only checks properties present in expected (extra properties ignored)
-- **Arrays**: Finds matching items regardless of position or extra items
+- **Arrays**: Finds matching items regardless of position or extra items (default `arrayMode: "subset"`)
 - **Nested structures**: Applies partial matching recursively
+
+### Options
+
+`toEqualPartially(expected, options)` supports:
+
+- `requireExplicitUndefinedKeyPresence` (default: `false`)
+  - When `true`, keys explicitly set to `undefined` in expected must exist in actual.
+- `arrayMode` (default: `"subset"`)
+  - `"subset"`: expected arrays are matched one-to-one as a subset of actual (order ignored)
+  - `"exactLength"`: same as subset, but requires equal array lengths
+  - `"exactOrder"`: requires equal lengths and positional matching
+
+```typescript
+// Explicit undefined key must exist when option is enabled
+expectly({ profile: { lastName: "Doe" } }).toEqualPartially(
+	{ profile: { middleName: undefined } },
+	{ requireExplicitUndefinedKeyPresence: true },
+);
+
+// Nested exact order matching
+expectly({
+	projects: [
+		{ id: 1, tasks: [{ id: 101, status: "done" }] },
+		{ id: 2, tasks: [{ id: 201, status: "pending" }] },
+	],
+}).toEqualPartially(
+	{
+		projects: [
+			{ id: expect.any(Number), tasks: [{ id: 101, status: expect.stringContaining("done") }] },
+			{ id: 2, tasks: [expect.objectContaining({ status: "pending" })] },
+		],
+	},
+	{ arrayMode: "exactOrder" },
+);
+```
 
 ### Asymmetric Matcher Compatibility
 

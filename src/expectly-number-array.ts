@@ -12,7 +12,7 @@ import {
 import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
- * Expextly Custom matchers for number array validations.
+ * Expectly Custom matchers for number array validations.
  */
 export const expectlyNumberArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: number[]) {

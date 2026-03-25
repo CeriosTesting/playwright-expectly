@@ -10,7 +10,7 @@ import {
 import { withMatcherState } from "./matchers/matcher-state-utils";
 
 /**
- * Expextly Custom matchers for string array validations.
+ * Expectly Custom matchers for string array validations.
  */
 export const expectlyStringArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: string[]) {

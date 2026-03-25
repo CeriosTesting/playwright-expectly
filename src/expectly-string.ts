@@ -11,7 +11,7 @@ import {
 } from "./matchers/text-validation-utils";
 
 /**
- * Expextly Custom matchers for string validations.
+ * Expectly Custom matchers for string validations.
  */
 export const expectlyStringMatchers = withMatcherState({
 	toStartWith(matcher: string, expected: string) {
