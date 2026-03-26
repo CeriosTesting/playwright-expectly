@@ -80,6 +80,6 @@
 		"oxlint": "^1.57.0",
 		"oxlint-tsgolint": "^0.17.4",
 		"tsup": "^8.5.1",
-		"typescript": "^6.0.2"
+		"typescript": "^5.9.2"
 	}
 }
