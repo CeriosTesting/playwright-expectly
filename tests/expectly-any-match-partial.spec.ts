@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { expectlyAny } from "../src/expectly-any";
+import type { PartialMatchOptions } from "../src/types/matcher-types";
 
 import { getRejectedErrorSync } from "./helpers/assertion-utils";
 
@@ -209,6 +210,226 @@ test.describe("toEqualPartially", () => {
 		expect(() => {
 			expectlyAny(actual).toEqualPartially([{ id: 3, name: "Item 3" }]);
 		}).toThrow();
+	});
+
+	test("should fail when duplicate expected nested array items reuse the same actual item", () => {
+		const actual = {
+			items: [
+				{ id: 1, name: "Item 1" },
+				{ id: 2, name: "Item 2" },
+				{ id: 3, name: "Item 3" },
+				{ id: 4, name: "Item 4" },
+				{ id: 5, name: "Item 5" },
+			],
+		};
+
+		expect(() => {
+			expectlyAny(actual).toEqualPartially({
+				items: [{ id: 2 }, { id: 2 }, { id: 2 }, { id: 2 }, { id: 2 }],
+			});
+		}).toThrow(/toEqualPartially/);
+	});
+
+	test("should pass when duplicate counts in expected match actual", () => {
+		const actual = {
+			items: [
+				{ id: 1, name: "Item 1" },
+				{ id: 2, name: "Duplicate A" },
+				{ id: 2, name: "Duplicate B" },
+				{ id: 3, name: "Item 3" },
+				{ id: 4, name: "Item 4" },
+			],
+		};
+
+		expectlyAny(actual).toEqualPartially({
+			items: [{ id: 2 }, { id: 2 }],
+		});
+	});
+
+	test("should handle overlapping matches without greedy misassignment", () => {
+		const actual = {
+			items: [
+				{ id: 1, name: "Specific" },
+				{ id: 1, name: "Other" },
+			],
+		};
+
+		expectlyAny(actual).toEqualPartially({
+			items: [{ id: 1 }, { id: 1, name: "Specific" }],
+		});
+	});
+
+	test("should fail when expected duplicates exceed top-level actual duplicates", () => {
+		const actual = [{ id: 2 }];
+
+		expect(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }, { id: 2 }]);
+		}).toThrow(/toEqualPartially/);
+	});
+
+	test("should fail when expected duplicates exceed nested actual duplicates", () => {
+		const actual = {
+			items: [{ id: 2 }],
+		};
+
+		expect(() => {
+			expectlyAny(actual).toEqualPartially({
+				items: [{ id: 2 }, { id: 2 }],
+			});
+		}).toThrow(/toEqualPartially/);
+	});
+
+	test("should fail when asymmetric matcher capacity exceeds actual array size", () => {
+		const actual = [1];
+
+		expect(() => {
+			expectlyAny(actual).toEqualPartially([expect.any(Number), expect.any(Number)]);
+		}).toThrow(/toEqualPartially/);
+	});
+
+	test("should pass when explicit undefined key exists in actual", () => {
+		const actual = {
+			profile: {
+				middleName: undefined,
+				lastName: "Doe",
+			},
+		};
+
+		expectlyAny(actual).toEqualPartially({
+			profile: {
+				middleName: undefined,
+			},
+		});
+	});
+
+	test("should pass when explicit undefined key is missing and option is disabled", () => {
+		const actual = {
+			profile: {
+				lastName: "Doe",
+			},
+		};
+
+		expectlyAny(actual).toEqualPartially({
+			profile: {
+				middleName: undefined,
+			},
+		});
+	});
+
+	test("should fail when explicit undefined key is missing and option is enabled", () => {
+		const actual = {
+			profile: {
+				lastName: "Doe",
+			},
+		};
+
+		expect(() => {
+			expectlyAny(actual).toEqualPartially(
+				{
+					profile: {
+						middleName: undefined,
+					},
+				},
+				{ requireExplicitUndefinedKeyPresence: true },
+			);
+		}).toThrow(/toEqualPartially/);
+	});
+
+	test("should throw for unknown toEqualPartially option", () => {
+		expect(() => {
+			expectlyAny({ id: 1 }).toEqualPartially({ id: 1 }, { badOption: true } as unknown as PartialMatchOptions);
+		}).toThrow(/unknown option/);
+	});
+
+	test("should fail with matcher-style message for invalid options even with .not", () => {
+		expect(() => {
+			expectlyAny({ id: 1 }).not.toEqualPartially({ id: 1 }, { badOption: true } as unknown as PartialMatchOptions);
+		}).toThrow(/unknown option/);
+	});
+
+	test("should throw for invalid toEqualPartially option value", () => {
+		expect(() => {
+			expectlyAny({ id: 1 }).toEqualPartially({ id: 1 }, { arrayMode: "wrong" } as unknown as PartialMatchOptions);
+		}).toThrow(/arrayMode/);
+	});
+
+	test("should pass with arrayMode exactLength when lengths are equal", () => {
+		const actual = [{ id: 1 }, { id: 2 }];
+		expectlyAny(actual).toEqualPartially([{ id: 2 }, { id: 1 }], { arrayMode: "exactLength" });
+	});
+
+	test("should fail with arrayMode exactLength when lengths differ", () => {
+		const actual = [{ id: 1 }, { id: 2 }, { id: 3 }];
+		expect(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 1 }, { id: 2 }], { arrayMode: "exactLength" });
+		}).toThrow(/Array length mismatch/);
+	});
+
+	test("should pass with arrayMode exactOrder when positions match", () => {
+		const actual = [
+			{ id: 1, extra: true },
+			{ id: 2, extra: false },
+		];
+		expectlyAny(actual).toEqualPartially([{ id: 1 }, { id: 2 }], { arrayMode: "exactOrder" });
+	});
+
+	test("should fail with arrayMode exactOrder when positions do not match", () => {
+		const actual = [{ id: 1 }, { id: 2 }];
+		expect(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }, { id: 1 }], { arrayMode: "exactOrder" });
+		}).toThrow(/Unmatched expected index/);
+	});
+
+	test("should include unmatched expected indices in array mismatch error", () => {
+		const actual = [{ id: 1 }];
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 1 }, { id: 2 }]);
+		});
+
+		expect(error.message).toContain("Unmatched expected index 1");
+	});
+
+	test("should pass nested exactOrder with asymmetric matchers", () => {
+		const actual = {
+			projects: [
+				{ id: 1, tasks: [{ id: 101, status: "done" }] },
+				{ id: 2, tasks: [{ id: 201, status: "pending" }] },
+			],
+		};
+
+		expectlyAny(actual).toEqualPartially(
+			{
+				projects: [
+					{ id: expect.any(Number), tasks: [{ id: 101, status: expect.stringContaining("done") }] },
+					{ id: 2, tasks: [expect.objectContaining({ status: "pending" })] },
+				],
+			},
+			{ arrayMode: "exactOrder" },
+		);
+	});
+
+	test("should fail nested exactOrder with asymmetric matchers when order differs", () => {
+		const actual = {
+			projects: [
+				{ id: 1, tasks: [{ id: 101, status: "done" }] },
+				{ id: 2, tasks: [{ id: 201, status: "pending" }] },
+			],
+		};
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially(
+				{
+					projects: [
+						{ id: 2, tasks: [expect.objectContaining({ status: "pending" })] },
+						{ id: expect.any(Number), tasks: [{ id: 101, status: expect.stringContaining("done") }] },
+					],
+				},
+				{ arrayMode: "exactOrder" },
+			);
+		});
+
+		expect(error.message).toContain("Unmatched expected index");
+		expect(error.message).toContain("$.projects[0]");
 	});
 
 	test("should fail when expected nested property is missing", () => {

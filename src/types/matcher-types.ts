@@ -17,6 +17,10 @@ export type DateGapOptions = {
 	years?: number;
 };
 export type DateRangeOptions = { days?: number; months?: number; years?: number };
+export type PartialMatchOptions = {
+	requireExplicitUndefinedKeyPresence?: boolean;
+	arrayMode?: "subset" | "exactLength" | "exactOrder";
+};
 
 export type DayOfWeek = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
 export type MonthName =
@@ -40,9 +44,8 @@ declare global {
 			 * Asserts that the received value matches at least one of the provided possibilities.
 			 *
 			 * Supports comparison of:
-			 * - Primitive values (strings, numbers, booleans)
-			 * - Objects (using deep equality via JSON comparison)
-			 * - Special values like NaN
+			 * - Primitive values via Object.is (including NaN support)
+			 * - Structured values (objects, arrays, functions) via strict deep equality
 			 *
 			 * @param possibilities - One or more values to compare against
 			 *
@@ -142,6 +145,13 @@ declare global {
 			 * - Nested structures: applies partial matching recursively
 			 *
 			 * @param expected - The partial structure to match
+			 * @param options - Optional behavior flags
+			 *   - requireExplicitUndefinedKeyPresence: when true, keys explicitly set to undefined in expected
+			 *     must exist in actual. Default is false.
+			 *   - arrayMode:
+			 *     - subset (default): expected array is treated as a one-to-one subset of actual (order ignored)
+			 *     - exactLength: one-to-one matching with required equal lengths (order ignored)
+			 *     - exactOrder: one-to-one positional matching with required equal lengths
 			 *
 			 * @example
 			 * expect({ id: 1, name: 'Alice', role: 'admin' }).toEqualPartially({ name: 'Alice' });
@@ -149,7 +159,7 @@ declare global {
 			 * @example
 			 * expect([{ id: 1 }, { id: 2 }]).toEqualPartially([{ id: 2 }]);
 			 */
-			toEqualPartially(expected: unknown): R;
+			toEqualPartially(expected: unknown, options?: PartialMatchOptions): R;
 
 			/**
 			 * Asserts that a string starts with the expected substring.

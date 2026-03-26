@@ -29,7 +29,7 @@ const DAY_NAMES = {
 } as const;
 
 /**
- * Expextly Custom matchers for date validations.
+ * Expectly Custom matchers for date validations.
  */
 export const expectlyDateMatchers = withMatcherState({
 	toBeCloseTo(

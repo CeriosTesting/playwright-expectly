@@ -43,8 +43,8 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          version: npx changeset version
-          publish: npx changeset publish --provenance
+          version: npm run version-packages:prepare-release
+          publish: npm run release
           commit: "chore(release): bump version"
           title: "chore(release): bump version"
         env:
