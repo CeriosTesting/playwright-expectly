@@ -4,6 +4,15 @@ import { expectlyAny } from "../src/expectly-any";
 
 import { getRejectedErrorSync } from "./helpers/assertion-utils";
 
+const getBigIntConstructor = (): ((value: number) => unknown) => {
+	const globalObject = globalThis as unknown as { BigInt?: (value: number) => unknown };
+	if (!globalObject.BigInt) {
+		throw new Error("BigInt is not available in this runtime");
+	}
+
+	return globalObject.BigInt;
+};
+
 test.describe("toBeAnyOf", () => {
 	test("should pass when value matches first possibility", () => {
 		expectlyAny(5).toBeAnyOf(5, 10, 15);
@@ -156,8 +165,10 @@ test.describe("toBeAnyOf", () => {
 	});
 
 	test("should handle BigInt values", () => {
-		const bigInt = BigInt(9007199254740991);
-		expectlyAny(bigInt).toBeAnyOf(BigInt(123), bigInt, BigInt(456));
+		const bigIntConstructor = getBigIntConstructor();
+
+		const bigInt = bigIntConstructor(9007199254740991);
+		expectlyAny(bigInt).toBeAnyOf(bigIntConstructor(123), bigInt, bigIntConstructor(456));
 	});
 
 	test("should handle Date objects", () => {
@@ -486,7 +497,9 @@ test.describe("toBePrimitive", () => {
 	});
 
 	test("should pass for bigint", () => {
-		expectlyAny(BigInt(123)).toBePrimitive();
+		const bigIntConstructor = getBigIntConstructor();
+
+		expectlyAny(bigIntConstructor(123)).toBePrimitive();
 	});
 
 	test("should pass for symbol", () => {

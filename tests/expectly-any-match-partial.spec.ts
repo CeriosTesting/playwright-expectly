@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { expectlyAny } from "../src/expectly-any";
+import type { PartialMatchOptions } from "../src/types/matcher-types";
 
 import { getRejectedErrorSync } from "./helpers/assertion-utils";
 
@@ -336,19 +337,19 @@ test.describe("toEqualPartially", () => {
 
 	test("should throw for unknown toEqualPartially option", () => {
 		expect(() => {
-			expectlyAny({ id: 1 }).toEqualPartially({ id: 1 }, { badOption: true } as any);
+			expectlyAny({ id: 1 }).toEqualPartially({ id: 1 }, { badOption: true } as unknown as PartialMatchOptions);
 		}).toThrow(/unknown option/);
 	});
 
 	test("should fail with matcher-style message for invalid options even with .not", () => {
 		expect(() => {
-			expectlyAny({ id: 1 }).not.toEqualPartially({ id: 1 }, { badOption: true } as any);
+			expectlyAny({ id: 1 }).not.toEqualPartially({ id: 1 }, { badOption: true } as unknown as PartialMatchOptions);
 		}).toThrow(/unknown option/);
 	});
 
 	test("should throw for invalid toEqualPartially option value", () => {
 		expect(() => {
-			expectlyAny({ id: 1 }).toEqualPartially({ id: 1 }, { arrayMode: "wrong" } as any);
+			expectlyAny({ id: 1 }).toEqualPartially({ id: 1 }, { arrayMode: "wrong" } as unknown as PartialMatchOptions);
 		}).toThrow(/arrayMode/);
 	});
 
