@@ -75,11 +75,11 @@
 		"@types/node": "^25.5.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
-		"npm-check-updates": "^19.6.5",
-		"oxfmt": "^0.42.0",
+		"npm-check-updates": "^21.0.2",
+		"oxfmt": "^0.45.0",
 		"oxlint": "^1.57.0",
-		"oxlint-tsgolint": "^0.17.4",
+		"oxlint-tsgolint": "^0.21.1",
 		"tsup": "^8.5.1",
-		"typescript": "^5.9.2"
+		"typescript": "^6.0.3"
 	}
 }
