@@ -324,6 +324,9 @@ export const expectlyStringMatchers = withMatcherState({
 	toMatchFuzzy(matcher: string, expected: string, threshold = 80) {
 		const assertionName = "toMatchFuzzy";
 		const actual = matcher;
+		if (typeof threshold !== "number" || !Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+			throw new Error(`${assertionName}: threshold must be a finite number between 0 and 100, got: ${String(threshold)}`);
+		}
 		const score: number = fuzz.token_sort_ratio(matcher, expected);
 		const pass = score >= threshold;
 
