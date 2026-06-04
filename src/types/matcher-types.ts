@@ -251,6 +251,24 @@ declare global {
 			toBeUUID(version?: 1 | 3 | 4 | 5, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
+			 * Asserts that a string fuzzy-matches the expected string using token-sort ratio comparison.
+			 *
+			 * The comparison is word-order-insensitive: `"hello world"` and `"world hello"` score 100.
+			 * Scores range from 0 to 100. The assertion passes when the score meets or exceeds the threshold.
+			 *
+			 * @param expected - The string to compare against
+			 * @param threshold - Minimum similarity score (0–100). Defaults to 80.
+			 * @param options - Optional polling configuration
+			 *
+			 * @example
+			 * expect('Hello World').toMatchFuzzy('Hello Wrold');         // passes (default threshold 80)
+			 * expect('world hello').toMatchFuzzy('hello world');         // passes (word-order-insensitive)
+			 * expect('Hello World').toMatchFuzzy('Hi Earth', 60);        // passes with lower threshold
+			 * expect('completely different').toMatchFuzzy('hello world'); // fails
+			 */
+			toMatchFuzzy(expected: string, threshold?: number, options?: PollOptions): T extends Locator ? Promise<R> : R;
+
+			/**
 			 * Asserts that a date is close to another date within a specified deviation.
 			 *
 			 * The deviation can be specified in days, hours, minutes, and/or seconds.

@@ -12,6 +12,7 @@ String validation matchers for email, URL, UUID, and text format assertions.
 - [toStartWith()](#tostartwith)
 - [toEndWith()](#toendwith)
 - [toMatchPattern()](#tomatchpattern)
+- [toMatchFuzzy()](#tomatchfuzzy)
 
 ## toBeValidEmail()
 
@@ -138,6 +139,51 @@ test("validate file type", async () => {
 	const filename = "report.pdf";
 	expectly(filename).toEndWith(".pdf");
 });
+```
+
+## toMatchFuzzy()
+
+Asserts that a string fuzzy-matches the expected string using fuzzball's token-sort ratio algorithm. The comparison is word-order-insensitive and returns a similarity score from 0 to 100. The assertion passes when the score meets or exceeds the threshold.
+
+Particularly useful for validating AI-generated text where wording, phrasing, or word order may vary but the content is semantically equivalent.
+
+**Parameters:**
+
+- `expected` — the string to compare against
+- `threshold` _(optional)_ — minimum similarity score (0–100). Defaults to **80**.
+
+```typescript
+// Passes with default threshold (80) — minor typo tolerated
+expectly("Hello World").toMatchFuzzy("Hello Wrold");
+
+// Word-order-insensitive — both score 100
+expectly("world hello").toMatchFuzzy("hello world");
+
+// Custom threshold for more lenient matching
+expectly("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 70);
+
+// With negation
+expectly("completely different").not.toMatchFuzzy("hello world");
+
+// AI-generated content validation
+test("AI summary matches expected content", async ({ page }) => {
+	const summary = await page.locator("[data-testid='ai-summary']").textContent();
+	expectly(summary).toMatchFuzzy("The report shows an increase in quarterly revenue", 75);
+});
+
+// Validate chatbot response
+test("chatbot response is on topic", async ({ page }) => {
+	const response = await page.locator("[data-testid='bot-reply']").textContent();
+	expectly(response).toMatchFuzzy("Your order has been shipped and will arrive in 3 to 5 business days", 70);
+});
+```
+
+**Error messages** include the computed score and threshold for easy debugging:
+
+```
+Expected string to fuzzy match: "Hello World"
+Received: "completely different text"
+Similarity score: 14 (threshold: 80)
 ```
 
 ## toMatchPattern()

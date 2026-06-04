@@ -1,4 +1,5 @@
 import { expect as baseExpect } from "@playwright/test";
+import * as fuzz from "fuzzball";
 
 import { withMatcherState } from "./matchers/matcher-state-utils";
 import {
@@ -317,6 +318,48 @@ export const expectlyStringMatchers = withMatcherState({
 			message,
 			pass,
 			name: assertionName,
+			actual,
+		};
+	},
+	toMatchFuzzy(matcher: string, expected: string, threshold = 80) {
+		const assertionName = "toMatchFuzzy";
+		const actual = matcher;
+		const score: number = fuzz.token_sort_ratio(matcher, expected);
+		const pass = score >= threshold;
+
+		const message = (): string => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
+				isNot: this.isNot,
+			});
+
+			if (pass && this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected string to not fuzzy match: ${this.utils.printExpected(expected)}\n` +
+					`Received: ${this.utils.printReceived(actual)}\n` +
+					`Similarity score: ${score} (threshold: ${threshold})`
+				);
+			}
+
+			if (!pass && !this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected string to fuzzy match: ${this.utils.printExpected(expected)}\n` +
+					`Received: ${this.utils.printReceived(actual)}\n` +
+					`Similarity score: ${score} (threshold: ${threshold})`
+				);
+			}
+
+			return hint;
+		};
+
+		return {
+			message,
+			pass,
+			name: assertionName,
+			expected,
 			actual,
 		};
 	},
