@@ -1,4 +1,5 @@
 import { expect as baseExpect, Locator } from "@playwright/test";
+import * as fuzz from "fuzzball";
 
 import { withMatcherState } from "../matchers/matcher-state-utils";
 import {
@@ -804,6 +805,76 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			pass,
 			name: assertionName,
 			expected: expectedText,
+			actual,
+		};
+	},
+
+	async toMatchFuzzy(locator: Locator, expected: string, threshold = 80, options?: PollOptions) {
+		const assertionName = "toMatchFuzzy";
+		let pass: boolean = false;
+		let actual: string = "";
+		let score: number = 0;
+		let locatorError: Error | undefined;
+
+		try {
+			await baseExpect
+				.poll(
+					async () => {
+						try {
+							actual = await locator.innerText();
+							score = fuzz.token_sort_ratio(actual, expected);
+							return score >= threshold;
+						} catch (e: unknown) {
+							locatorError = e instanceof Error ? e : new Error(String(e));
+							throw e;
+						}
+					},
+					{
+						timeout: options?.timeout ?? this.timeout,
+						intervals: options?.intervals,
+					},
+				)
+				.toBe(true);
+			pass = true;
+		} catch {
+			if (locatorError) {
+				throw locatorError;
+			}
+		}
+
+		const message = (): string => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
+				isNot: this.isNot,
+			});
+
+			if (pass && this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected locator text to not fuzzy match: ${this.utils.printExpected(expected)}\n` +
+					`Received: ${this.utils.printReceived(actual)}\n` +
+					`Similarity score: ${score} (threshold: ${threshold})`
+				);
+			}
+
+			if (!pass && !this.isNot) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected locator text to fuzzy match: ${this.utils.printExpected(expected)}\n` +
+					`Received: ${this.utils.printReceived(actual)}\n` +
+					`Similarity score: ${score} (threshold: ${threshold})`
+				);
+			}
+
+			return hint;
+		};
+
+		return {
+			message,
+			pass,
+			name: assertionName,
+			expected,
 			actual,
 		};
 	},
