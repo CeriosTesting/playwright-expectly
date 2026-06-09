@@ -4,8 +4,7 @@
 	"workspaces": [
 		"packages/playwright-expectly-core",
 		"packages/playwright-expectly",
-		"packages/playwright-expectly-fuzzy",
-		"integration-tests"
+		"packages/playwright-expectly-fuzzy"
 	],
 	"scripts": {
 		"build": "npm run build --workspaces --if-present",
