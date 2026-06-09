@@ -55,7 +55,7 @@
 	},
 	"scripts": {
 		"build": "tsup",
-		"test": "NODE_OPTIONS=--no-deprecation playwright test"
+		"test": "PW_DISABLE_TS_ESM=1 playwright test"
 	},
 	"dependencies": {
 		"@cerios/playwright-expectly-core": "*",
