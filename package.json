@@ -2,7 +2,10 @@
 	"name": "playwright-expectly-workspace",
 	"private": true,
 	"workspaces": [
-		"packages/*"
+		"packages/playwright-expectly-core",
+		"packages/playwright-expectly",
+		"packages/playwright-expectly-fuzzy",
+		"integration-tests"
 	],
 	"scripts": {
 		"build": "npm run build --workspaces --if-present",
@@ -23,7 +26,7 @@
 	"devDependencies": {
 		"@arethetypeswrong/cli": "^0.18.2",
 		"@changesets/cli": "^2.30.0",
-		"@playwright/test": "^1.58.2",
+		"@playwright/test": "^1.60.0",
 		"@types/node": "^25.5.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",

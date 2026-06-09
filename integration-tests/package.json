@@ -5,12 +5,12 @@
 	"description": "Integration tests combining @cerios/playwright-expectly and @cerios/playwright-expectly-fuzzy.",
 	"type": "commonjs",
 	"scripts": {
-		"test": "PW_DISABLE_TS_ESM=1 playwright test"
+		"test": "playwright test"
 	},
 	"devDependencies": {
 		"@cerios/playwright-expectly": "*",
 		"@cerios/playwright-expectly-fuzzy": "*",
-		"@playwright/test": "^1.58.2",
+		"@playwright/test": "^1.60.0",
 		"@types/node": "^25.5.0",
 		"typescript": "^5.9.2"
 	}

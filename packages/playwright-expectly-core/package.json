@@ -48,7 +48,7 @@
 		"build": "tsup"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.58.2",
+		"@playwright/test": "^1.60.0",
 		"@types/node": "^25.5.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.2"

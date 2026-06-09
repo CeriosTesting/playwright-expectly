@@ -55,14 +55,14 @@
 	},
 	"scripts": {
 		"build": "tsup",
-		"test": "PW_DISABLE_TS_ESM=1 playwright test"
+		"test": "playwright test"
 	},
 	"dependencies": {
 		"@cerios/playwright-expectly-core": "*",
 		"fuzzball": "^2.2.6"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.58.2",
+		"@playwright/test": "^1.60.0",
 		"@types/node": "^25.5.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.2"
