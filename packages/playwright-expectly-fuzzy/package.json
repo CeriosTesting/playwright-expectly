@@ -1,0 +1,73 @@
+{
+	"name": "@cerios/playwright-expectly-fuzzy",
+	"version": "0.1.0",
+	"description": "Fuzzy string matching matchers for Playwright using fuzzball. Ideal for validating AI-generated text where wording may vary.",
+	"keywords": [
+		"ai-testing",
+		"assertions",
+		"cerios",
+		"e2e",
+		"end-to-end",
+		"expect",
+		"fuzzball",
+		"fuzzy",
+		"locator",
+		"matchers",
+		"playwright",
+		"qa",
+		"string-validation",
+		"test",
+		"test-automation",
+		"testing",
+		"typescript"
+	],
+	"homepage": "https://github.com/CeriosTesting/playwright-expectly#readme",
+	"bugs": {
+		"url": "https://github.com/CeriosTesting/playwright-expectly/issues"
+	},
+	"license": "MIT",
+	"author": "Ronald Veth - Cerios",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CeriosTesting/playwright-expectly.git",
+		"directory": "packages/playwright-expectly-fuzzy"
+	},
+	"files": [
+		"dist"
+	],
+	"type": "commonjs",
+	"sideEffects": false,
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			},
+			"require": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			}
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "tsup",
+		"test": "NODE_OPTIONS=--no-deprecation playwright test"
+	},
+	"dependencies": {
+		"@cerios/playwright-expectly-core": "*",
+		"fuzzball": "^2.2.6"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.58.2",
+		"@types/node": "^25.5.0",
+		"tsup": "^8.5.1",
+		"typescript": "^5.9.2"
+	},
+	"peerDependencies": {
+		"@playwright/test": ">=1.40.0"
+	}
+}
