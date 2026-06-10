@@ -10,13 +10,13 @@ import { expectlyFuzzyStringMatchers } from "./expectly-fuzzy-string";
 export const expectlyFuzzyMatchers = {
 	...expectlyFuzzyStringMatchers,
 	...expectlyFuzzyLocatorMatchers,
-	async toMatchFuzzy(
+	toMatchFuzzy(
 		this: ExpectMatcherState,
 		received: string | Locator,
 		expected: string,
 		threshold?: number,
 		options?: PollOptions,
-	): Promise<MatcherReturnType> {
+	): MatcherReturnType | Promise<MatcherReturnType> {
 		if (received && typeof received === "object" && "innerText" in received) {
 			return expectlyFuzzyLocatorMatchers.toMatchFuzzy.call(this, received, expected, threshold, options);
 		}

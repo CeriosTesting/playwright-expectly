@@ -15,7 +15,7 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 - 📦 **Object Arrays** - Sorting, uniqueness, and property validation
 - 🤖 **Fuzzy Matching** - AI-generated text validation with configurable similarity threshold (separate package)
 - 💪 **Type-Safe** - Full TypeScript support
-- ⚡ **Zero Dependencies** - Only Playwright required
+- ⚡ **Lightweight** - Only Playwright required. @cerios/playwright-expectly-fuzzy uses `fuzzball` as an optional dependency
 
 ## Installation
 
@@ -134,7 +134,6 @@ test("extended expect example", async ({ page }) => {
 - `toBeNumericString()` - Only digits
 - `toStartWith(prefix)` / `toEndWith(suffix)` - String boundaries
 - `toMatchPattern(regex)` - Regular expression matching
-- `toMatchFuzzy(expected, threshold?)` - Fuzzy string matching
 
 [📖 View all string matchers →](./docs/STRING_MATCHERS.md)
 

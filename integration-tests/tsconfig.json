@@ -2,7 +2,11 @@
 	"extends": "../tsconfig.json",
 	"compilerOptions": {
 		"rootDir": ".",
-		"outDir": "./dist"
+		"outDir": "./dist",
+		"paths": {
+			"@cerios/playwright-expectly": ["../packages/playwright-expectly/src/index.ts"],
+			"@cerios/playwright-expectly-fuzzy": ["../packages/playwright-expectly-fuzzy/src/index.ts"]
+		}
 	},
 	"include": ["playwright.config.ts", "tests/**/*.ts"]
 }

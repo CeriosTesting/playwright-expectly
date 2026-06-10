@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly-core",
-	"version": "0.1.0",
+	"version": "0.0.0",
 	"description": "Shared utilities for @cerios/playwright-expectly packages.",
 	"homepage": "https://github.com/CeriosTesting/playwright-expectly#readme",
 	"bugs": {

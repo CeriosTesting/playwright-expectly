@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 import { setupExpectlyFuzzy } from "./src/playwright-setup";
 
@@ -18,6 +18,11 @@ export default defineConfig({
 		{
 			name: "non-locator",
 			testMatch: /^(?!.*locator).*\.spec\.ts$/,
+		},
+		{
+			name: "locator",
+			testMatch: /.*locator.*\.spec\.ts$/,
+			use: { ...devices["Desktop Chrome"] },
 		},
 	],
 });

@@ -20,6 +20,8 @@ export const expectlyFuzzyLocatorMatchers = withMatcherState({
 			);
 		}
 
+		const pollCondition = this.isNot ? (s: number): boolean => s < threshold : (s: number): boolean => s >= threshold;
+
 		try {
 			await baseExpect
 				.poll(
@@ -27,7 +29,7 @@ export const expectlyFuzzyLocatorMatchers = withMatcherState({
 						try {
 							actual = await locator.innerText();
 							score = fuzz.token_sort_ratio(actual, expected);
-							return score >= threshold;
+							return pollCondition(score);
 						} catch (e: unknown) {
 							locatorError = e instanceof Error ? e : new Error(String(e));
 							throw e;
@@ -39,11 +41,12 @@ export const expectlyFuzzyLocatorMatchers = withMatcherState({
 					},
 				)
 				.toBe(true);
-			pass = true;
+			pass = score >= threshold;
 		} catch {
 			if (locatorError) {
 				throw locatorError;
 			}
+			pass = score >= threshold;
 		}
 
 		const message = (): string => {

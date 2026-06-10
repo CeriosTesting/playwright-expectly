@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly-fuzzy",
-	"version": "0.1.0",
+	"version": "0.0.0",
 	"description": "Fuzzy string matching matchers for Playwright using fuzzball. Ideal for validating AI-generated text where wording may vary.",
 	"keywords": [
 		"ai-testing",
@@ -26,7 +26,7 @@
 		"url": "https://github.com/CeriosTesting/playwright-expectly/issues"
 	},
 	"license": "MIT",
-	"author": "Ronald Veth - Cerios",
+	"author": "Patrick Schilder - Cerios",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/CeriosTesting/playwright-expectly.git",

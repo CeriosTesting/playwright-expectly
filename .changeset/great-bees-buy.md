@@ -1,5 +1,7 @@
 ---
 "@cerios/playwright-expectly": patch
+"@cerios/playwright-expectly-core": minor
+"@cerios/playwright-expectly-fuzzy": minor
 ---
 
 Refactored internals to use the new `@cerios/playwright-expectly-core` shared utilities package. No changes to the public API.

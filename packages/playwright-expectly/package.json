@@ -85,5 +85,8 @@
 		"oxlint-tsgolint": "^0.17.4",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.2"
+	},
+	"peerDependencies": {
+		"@playwright/test": ">=1.40.0"
 	}
 }
