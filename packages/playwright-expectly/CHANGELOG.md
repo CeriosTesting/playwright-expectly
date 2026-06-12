@@ -1,5 +1,11 @@
 # @cerios/playwright-expectly
 
+## 1.3.4
+
+### Patch Changes
+
+- a39a55d: Update documentation
+
 ## 1.3.3
 
 ### Patch Changes
