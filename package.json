@@ -17,6 +17,7 @@
 		"lint": "oxlint --type-aware",
 		"lint:fix": "oxlint --type-aware --fix",
 		"pack": "npm run --workspaces pack",
+		"prepare": "husky",
 		"release": "changeset publish",
 		"test": "npm run --workspaces test",
 		"version-packages": "changeset version",
