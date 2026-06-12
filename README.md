@@ -23,7 +23,7 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 npm install @cerios/playwright-expectly --save-dev
 ```
 
-For fuzzy matching support (AI-generated text):
+For fuzzy matching support (AI-generated text) — [`@cerios/playwright-expectly-fuzzy`](https://www.npmjs.com/package/@cerios/playwright-expectly-fuzzy):
 
 ```bash
 npm install @cerios/playwright-expectly-fuzzy --save-dev
