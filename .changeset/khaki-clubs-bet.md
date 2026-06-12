@@ -1,7 +1,7 @@
 ---
-"@cerios/playwright-expectly": minor
-"@cerios/playwright-expectly-core": minor
-"@cerios/playwright-expectly-fuzzy": minor
+"@cerios/playwright-expectly": patch
+"@cerios/playwright-expectly-core": patch
+"@cerios/playwright-expectly-fuzzy": patch
 ---
 
 **Migrate build tooling from tsup to tsdown and improve matcher type inference**
