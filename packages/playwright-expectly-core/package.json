@@ -35,7 +35,8 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build": "tsdown"
+		"build": "tsdown",
+		"test": "echo \"No tests for core package\""
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",
