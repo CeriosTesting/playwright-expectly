@@ -1,5 +1,11 @@
 # @cerios/playwright-expectly-fuzzy
 
+## 0.1.1
+
+### Patch Changes
+
+- a39a55d: Update documentation
+
 ## 0.1.0
 
 ### Minor Changes
