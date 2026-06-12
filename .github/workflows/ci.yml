@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build core package
+        run: npm run build --workspace=packages/playwright-expectly-core
+
+      - name: Build all packages
+        run: npm run build
+
       - name: Run linter and type check
         run: npm run lint
 
@@ -45,7 +51,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build package
+      - name: Build core package
+        run: npm run build --workspace=packages/playwright-expectly-core
+
+      - name: Build all packages
         run: npm run build
 
   test:
@@ -62,9 +71,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        run: |
-          npm ci
-          npx playwright install
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build core package
+        run: npm run build --workspace=packages/playwright-expectly-core
+
+      - name: Build packages
+        run: npm run build
 
       - name: Run tests
         run: npm run test

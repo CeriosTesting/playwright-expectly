@@ -13,13 +13,20 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 - 📅 **Date Operations** - Comparisons, ranges, quarters, and business logic
 - 🎨 **Locator Assertions** - DOM element validation and text formatting
 - 📦 **Object Arrays** - Sorting, uniqueness, and property validation
+- 🤖 **Fuzzy Matching** - AI-generated text validation with configurable similarity threshold (separate package)
 - 💪 **Type-Safe** - Full TypeScript support
-- ⚡ **Zero Dependencies** - Only Playwright required
+- ⚡ **Lightweight** - Only Playwright required. @cerios/playwright-expectly-fuzzy uses `fuzzball` as an optional dependency
 
 ## Installation
 
 ```bash
 npm install @cerios/playwright-expectly --save-dev
+```
+
+For fuzzy matching support (AI-generated text):
+
+```bash
+npm install @cerios/playwright-expectly-fuzzy --save-dev
 ```
 
 ## Quick Start
@@ -44,7 +51,7 @@ await expectly(page.locator(".username")).toBeAlphanumeric();
 
 ### Option 2: Extend Playwright `expect` with `setupExpectly`
 
-The simplest way to add all matchers to Playwright's native `expect`. Call `setupExpectly()` once and every test file gets full type support automatically.
+The simplest way to add all matchers to Playwright's native `expect`. Call `setupExpectly()` once in your Playwright config and every test file gets full IntelliSense and type support automatically — no per-file imports needed.
 
 ```typescript
 // playwright.config.ts
@@ -65,28 +72,45 @@ test("extended expect example", async ({ page }) => {
 });
 ```
 
-If your `playwright.config` is JavaScript or not included in your TypeScript project, add one ambient import once so IntelliSense sees the matcher types:
+If your `playwright.config` is JavaScript or is not included in your `tsconfig.json`, add one ambient import in a `.d.ts` or shared test file so IntelliSense picks up the matcher types:
 
 ```typescript
 import "@cerios/playwright-expectly";
 ```
 
+#### With fuzzy matching
+
+To also add `toMatchFuzzy()` to `expect`, call `setupExpectlyFuzzy()` alongside `setupExpectly()`:
+
+```typescript
+// playwright.config.ts
+import { setupExpectly } from "@cerios/playwright-expectly";
+import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+
+setupExpectly();
+setupExpectlyFuzzy();
+```
+
+Both calls register their matchers globally — `setupExpectlyFuzzy()` also augments Playwright's `Matchers` interface automatically when the package is imported.
+
 ### Option 3: Extend Playwright `expect` manually
 
-If you prefer more control, extend `expect` yourself in a shared fixtures file:
+If you prefer explicit control, extend `expect` in a shared fixtures file and re-export it:
 
 ```typescript
 // tests/fixtures.ts
 import { expect, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy"; // optional
 
 expect.extend(expectlyMatchers);
+expect.extend(expectlyFuzzyMatchers); // optional — adds toMatchFuzzy
 
 export { expect };
 export const test = base;
 ```
 
-Then use the re-exported `expect` in tests:
+Then import `expect` from your fixtures file in every test:
 
 ```typescript
 import { expect, test } from "./fixtures";
@@ -94,6 +118,7 @@ import { expect, test } from "./fixtures";
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
 	expect([1, 2, 3, 4]).toHaveAscendingOrder();
+	expect("Hello Wrold").toMatchFuzzy("Hello World");
 	await expect(page.locator(".username")).toBeAlphanumeric();
 });
 ```
@@ -171,6 +196,12 @@ test("extended expect example", async ({ page }) => {
 - `toBePrimitive()` / `toBeArray()` / `toBeObject()` - Type checking
 
 [📖 View all generic matchers →](./docs/GENERIC_MATCHERS.md)
+
+### Fuzzy Matchers (`@cerios/playwright-expectly-fuzzy`)
+
+- `toMatchFuzzy(expected, threshold?)` - Fuzzy string matching using fuzzball's token-sort ratio. Works on strings and locators. Ideal for AI-generated text validation.
+
+[📖 View fuzzy matchers →](./docs/FUZZY_MATCHERS.md)
 
 ## Usage Examples
 
@@ -297,6 +328,7 @@ await expectly(page.locator(".text")).not.toBeNumericString();
 - [📖 Object Array Matchers](./docs/OBJECT_ARRAY_MATCHERS.md) - Sorting and uniqueness by property
 - [📖 String Array Matchers](./docs/STRING_ARRAY_MATCHERS.md) - Alphabetical sorting and uniqueness
 - [📖 Generic Matchers](./docs/GENERIC_MATCHERS.md) - Type checking and partial matching
+- [📖 Fuzzy Matchers](./docs/FUZZY_MATCHERS.md) - AI-generated text validation with fuzzy string matching
 
 ## Contributing
 

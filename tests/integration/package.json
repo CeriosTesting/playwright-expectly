@@ -1,0 +1,17 @@
+{
+	"name": "@cerios/playwright-expectly-integration-tests",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Integration tests combining @cerios/playwright-expectly and @cerios/playwright-expectly-fuzzy.",
+	"type": "commonjs",
+	"scripts": {
+		"test": "playwright test"
+	},
+	"devDependencies": {
+		"@cerios/playwright-expectly": "*",
+		"@cerios/playwright-expectly-fuzzy": "*",
+		"@playwright/test": "^1.60.0",
+		"@types/node": "^25.5.0",
+		"typescript": "^5.9.2"
+	}
+}

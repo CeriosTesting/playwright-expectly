@@ -31,11 +31,15 @@ jobs:
         run: |
           npm install -g npm@latest
           npm ci
-          npx playwright install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: Build
-        run: npm run build
+        run: npm run build --workspace=packages/playwright-expectly-core && npm run build
 
+      - name: Build all packages
+        run: npm run build
       - name: Test
         run: npm test
 
