@@ -6,7 +6,7 @@ setupExpectly();
 setupExpectlyFuzzy();
 
 export default defineConfig({
-	testDir: "./tests",
+	testDir: ".",
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: 0,

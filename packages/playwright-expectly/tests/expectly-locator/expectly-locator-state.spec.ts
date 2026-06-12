@@ -1,6 +1,6 @@
-import { getRejectedError } from "@cerios/playwright-expectly-core/testing";
 import { expect, test } from "@playwright/test";
 
+import { getRejectedError } from "../../../../tests/common/assertion-utils";
 import { expectlyLocator } from "../../src/expectly-locator";
 
 // For granular imports, you can also use:

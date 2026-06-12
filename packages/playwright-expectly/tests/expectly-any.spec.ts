@@ -1,6 +1,6 @@
-import { getRejectedErrorSync } from "@cerios/playwright-expectly-core/testing";
 import { expect, test } from "@playwright/test";
 
+import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
 import { expectlyAny } from "../src/expectly-any";
 
 const getBigIntConstructor = (): ((value: number) => unknown) => {

@@ -32,16 +32,6 @@
 				"default": "./dist/index.js"
 			}
 		},
-		"./testing": {
-			"import": {
-				"types": "./dist/testing/assertion-utils.d.mts",
-				"default": "./dist/testing/assertion-utils.mjs"
-			},
-			"require": {
-				"types": "./dist/testing/assertion-utils.d.ts",
-				"default": "./dist/testing/assertion-utils.js"
-			}
-		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {

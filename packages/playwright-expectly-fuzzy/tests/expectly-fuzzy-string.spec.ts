@@ -1,6 +1,6 @@
-import { getRejectedErrorSync } from "@cerios/playwright-expectly-core/testing";
 import { expect, test } from "@playwright/test";
 
+import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
 import { expectlyFuzzyString } from "../src/expectly-fuzzy-string";
 
 test.describe("toMatchFuzzy", () => {

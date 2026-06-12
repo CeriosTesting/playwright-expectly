@@ -1,6 +1,6 @@
-import { getRejectedErrorSync } from "@cerios/playwright-expectly-core/testing";
 import { expect, test } from "@playwright/test";
 
+import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
 import { expectlyStringArray } from "../src/expectly-string-array";
 
 test.describe("toHaveAscendingOrder", () => {
