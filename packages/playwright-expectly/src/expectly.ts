@@ -66,4 +66,10 @@ export const expectlyMatchers = {
 	...expectlyObjectArrayMatchers,
 	...expectlyStringMatchers,
 	...expectlyStringArrayMatchers,
-};
+} as typeof expectlyAnyMatchers &
+	typeof expectlyDateMatchers &
+	typeof expectlyLocatorMatchers &
+	typeof expectlyNumberArrayMatchers &
+	typeof expectlyObjectArrayMatchers &
+	typeof expectlyStringMatchers &
+	typeof expectlyStringArrayMatchers;

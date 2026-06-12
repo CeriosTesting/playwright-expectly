@@ -12,6 +12,6 @@
 		"@cerios/playwright-expectly-fuzzy": "*",
 		"@playwright/test": "^1.60.0",
 		"@types/node": "^25.5.0",
-		"typescript": "^5.9.2"
+		"typescript": "^6.0.3"
 	}
 }

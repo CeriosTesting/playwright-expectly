@@ -37,9 +37,9 @@
 	],
 	"type": "commonjs",
 	"sideEffects": false,
-	"main": "./dist/index.js",
+	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
+	"types": "./dist/index.d.cts",
 	"exports": {
 		".": {
 			"import": {
@@ -47,14 +47,14 @@
 				"default": "./dist/index.mjs"
 			},
 			"require": {
-				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
 			}
 		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build": "tsup",
+		"build": "tsdown --config-loader bundle",
 		"changeset": "changeset",
 		"check-exports": "attw --pack .",
 		"check": "npm run lint && npm run format:check",
@@ -83,8 +83,8 @@
 		"oxfmt": "^0.42.0",
 		"oxlint": "^1.57.0",
 		"oxlint-tsgolint": "^0.17.4",
-		"tsup": "^8.5.1",
-		"typescript": "^5.9.2"
+		"tsdown": "^0.21.10",
+		"typescript": "^6.0.3"
 	},
 	"peerDependencies": {
 		"@playwright/test": ">=1.40.0"
