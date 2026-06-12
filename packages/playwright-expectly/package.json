@@ -73,18 +73,18 @@
 		"@cerios/playwright-expectly-core": "*"
 	},
 	"devDependencies": {
-		"@arethetypeswrong/cli": "^0.18.2",
-		"@changesets/cli": "^2.30.0",
+		"@arethetypeswrong/cli": "^0.18.3",
+		"@changesets/cli": "^2.31.0",
 		"@playwright/test": "^1.60.0",
-		"@types/node": "^25.5.0",
+		"@types/node": "^25.9.3",
 		"husky": "^9.1.7",
-		"lint-staged": "^16.4.0",
-		"npm-check-updates": "^19.6.5",
-		"oxfmt": "^0.42.0",
-		"oxlint": "^1.57.0",
-		"oxlint-tsgolint": "^0.17.4",
+		"lint-staged": "^17.0.7",
+		"npm-check-updates": "^22.2.3",
+		"oxfmt": "^0.54.0",
+		"oxlint": "^1.69.0",
+		"oxlint-tsgolint": "^0.23.0",
 		"tsup": "^8.5.1",
-		"typescript": "^5.9.2"
+		"typescript": "^6.0.3"
 	},
 	"peerDependencies": {
 		"@playwright/test": ">=1.40.0"
