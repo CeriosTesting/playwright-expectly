@@ -1,12 +1,13 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
-	entry: ["src/index.ts"],
+	entry: ["./src/index.ts"],
 	format: ["cjs", "esm"],
 	dts: true,
-	splitting: false,
 	sourcemap: true,
 	clean: true,
 	outDir: "dist",
-	external: ["@playwright/test"],
+	deps: {
+		neverBundle: ["@playwright/test"],
+	},
 });

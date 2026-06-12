@@ -26,7 +26,11 @@ export const expectlyLocatorMatchers = {
 	...expectlyLocatorPositioningMatchers,
 	...expectlyLocatorStateMatchers,
 	...expectlyLocatorVisibilityMatchers,
-};
+} as typeof expectlyLocatorTextMatchers &
+	typeof expectlyLocatorAttributesMatchers &
+	typeof expectlyLocatorPositioningMatchers &
+	typeof expectlyLocatorStateMatchers &
+	typeof expectlyLocatorVisibilityMatchers;
 
 /**
  * Unified expectly locator matchers.
