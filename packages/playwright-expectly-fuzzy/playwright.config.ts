@@ -10,7 +10,7 @@ export default defineConfig({
 	forbidOnly: !!process.env.CI,
 	retries: 0,
 	workers: undefined,
-	reporter: "html",
+	reporter: [["blob", { outputFile: "./../../blob-reports/test-results-fuzzy.zip" }]],
 	use: {
 		trace: "retain-on-failure",
 	},

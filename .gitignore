@@ -5,6 +5,6 @@ coverage/
 # Playwright
 **/test-results/
 **/playwright-report/
-**/blob-report/
+**/blob-reports/
 **/playwright/.cache/
 **/playwright/.auth/
