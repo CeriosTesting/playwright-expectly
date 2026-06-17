@@ -19,7 +19,10 @@
 		"pack": "npm pack --workspaces",
 		"prepare": "husky",
 		"release": "changeset publish",
-		"test": "npm run --workspaces test",
+		"test": "npm run --workspaces test && npm run test:integration && npm run report:merge",
+		"test:integration": "playwright test --config=./tests/integration/playwright.config.ts",
+		"report:merge": "npx playwright merge-reports -c ./playwright.merge.config.ts --reporter html ./blob-reports",
+		"report:show": "npx playwright show-report",
 		"version-packages": "changeset version",
 		"version-packages:prepare-release": "npm run version-packages && npm run format"
 	},
