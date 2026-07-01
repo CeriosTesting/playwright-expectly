@@ -43,7 +43,9 @@ test.describe("expectLocator - toBeStable", () => {
 	test("should pass with default options", async ({ page }) => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
-		await expectlyLocator(element).toBeStable();
+		await expectlyLocator(element).toBeStable({
+			timeout: 2000, // Only specifying timeout, other options will use defaults
+		});
 	});
 
 	test("should fail when content keeps changing", async ({ page }) => {

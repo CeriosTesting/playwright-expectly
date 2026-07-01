@@ -63,7 +63,7 @@
 		"lint": "oxlint --type-aware --type-check",
 		"lint:fix": "oxlint --type-aware --type-check --fix",
 		"prepare": "husky",
-		"test": "playwright test",
+		"test": "playwright test --config=../../playwright.config.ts --project=expectly",
 		"update-all-packages": "npx npm-check-updates -u && npm i",
 		"version-packages": "changeset version",
 		"version-packages:prepare-release": "npm run version-packages && npm run format",
