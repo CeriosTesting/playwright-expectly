@@ -48,19 +48,35 @@ expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
 
 ### Option 2: Extend Playwright `expect` with `setupExpectlyFuzzy`
 
-Call `setupExpectlyFuzzy()` once in your `playwright.config.ts` to register `toMatchFuzzy` on Playwright's native `expect` globally. Full IntelliSense and type support is included automatically — no per-file imports needed.
+`setupExpectlyFuzzy()` extends Playwright's `expect` in the current process.
+
+In some Playwright versions or project setups, calling it from `playwright.config.ts` may appear to work. However, config-time setup is not guaranteed across worker boundaries.
+
+The reliable approach is to call it in the same worker context that imports and uses Playwright's `expect`, typically from a shared fixtures module.
 
 ```typescript
-// playwright.config.ts
+// Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
 import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
 
 setupExpectlyFuzzy();
 ```
 
+Recommended worker-side setup:
+
+```typescript
+// tests/fixtures.ts
+import { expect, test } from "@playwright/test";
+import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+
+setupExpectlyFuzzy();
+
+export { expect, test };
+```
+
 Then use `expect` as usual in your tests:
 
 ```typescript
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("AI content validation", async ({ page }) => {
 	expect("Hello Wrold").toMatchFuzzy("Hello World");
@@ -71,13 +87,18 @@ test("AI content validation", async ({ page }) => {
 Use alongside `setupExpectly()` from the core package to get all matchers:
 
 ```typescript
-// playwright.config.ts
+// tests/fixtures.ts
+import { expect, test } from "@playwright/test";
 import { setupExpectly } from "@cerios/playwright-expectly";
 import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
 
 setupExpectly();
 setupExpectlyFuzzy();
+
+export { expect, test };
 ```
+
+Idempotency note: calling `setupExpectlyFuzzy()` more than once is safe; repeated calls are ignored.
 
 ### Option 3: Manual `expect.extend`
 

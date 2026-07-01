@@ -359,9 +359,17 @@ test.describe("toEqualPartially", () => {
 
 	test("should fail with arrayMode exactLength when lengths differ", () => {
 		const actual = [{ id: 1 }, { id: 2 }, { id: 3 }];
-		expect(() => {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(actual).toEqualPartially([{ id: 1 }, { id: 2 }], { arrayMode: "exactLength" });
-		}).toThrow(/Array length mismatch/);
+		});
+
+		expect(error.message).toContain("partial match (exactLength)");
+		expect(error.message).toContain("Expected");
+		expect(error.message).toContain("Received partial");
+		expect(error.message).toContain("Call log:");
+		expect(error.message).toContain("Array length mismatch at $: expected 2, received 3.");
+		expect(error.message).not.toContain("First failing path:");
+		expect(error.message).not.toContain("Closest actual[");
 	});
 
 	test("should pass with arrayMode exactOrder when positions match", () => {
@@ -374,18 +382,31 @@ test.describe("toEqualPartially", () => {
 
 	test("should fail with arrayMode exactOrder when positions do not match", () => {
 		const actual = [{ id: 1 }, { id: 2 }];
-		expect(() => {
+		const error = getRejectedErrorSync(() => {
 			expectlyAny(actual).toEqualPartially([{ id: 2 }, { id: 1 }], { arrayMode: "exactOrder" });
-		}).toThrow(/Unmatched expected index/);
+		});
+
+		expect(error.message).toContain("First failing path: $[0].id");
+		expect(error.message).toContain("Failing array: $ (exactOrder)");
+		expect(error.message).toContain("Expected partial");
+		expect(error.message).toContain("Closest candidate");
+		expect(error.message).toMatch(/Closest actual\[0\] \(\d+% match\)/);
+		expect(error.message).toContain("Call log:");
+		expect(error.message).toContain("root array expected[0] did not fully match; closest candidate was actual[0].");
+		expect(error.message.indexOf("First failing path: $[0].id")).toBeLessThan(
+			error.message.indexOf("Closest actual[0]"),
+		);
+		expect(error.message.indexOf("Closest actual[0]")).toBeLessThan(error.message.indexOf("Call log:"));
 	});
 
-	test("should include unmatched expected indices in array mismatch error", () => {
+	test("should include a human-readable unmatched array item in the error", () => {
 		const actual = [{ id: 1 }];
 		const error = getRejectedErrorSync(() => {
 			expectlyAny(actual).toEqualPartially([{ id: 1 }, { id: 2 }]);
 		});
 
-		expect(error.message).toContain("Unmatched expected index 1");
+		expect(error.message).toContain("First failing path: $[1]");
+		expect(error.message).toContain("root array expected[1] did not fully match; no close match was found.");
 	});
 
 	test("should pass nested exactOrder with asymmetric matchers", () => {
@@ -427,8 +448,11 @@ test.describe("toEqualPartially", () => {
 			);
 		});
 
-		expect(error.message).toContain("Unmatched expected index");
-		expect(error.message).toContain("$.projects[0]");
+		expect(error.message).toContain("First failing path: $.projects[0].id");
+		expect(error.message).toContain("Failing array: $.projects (exactOrder)");
+		expect(error.message).toContain(
+			"projects expected[0] did not fully match; failure continues at $.projects[0].tasks.",
+		);
 	});
 
 	test("should fail when expected nested property is missing", () => {
@@ -618,5 +642,227 @@ test.describe("toEqualPartially", () => {
 				zipCode: expect.any(String),
 			}),
 		});
+	});
+});
+
+test("toEqualPartially shows the closest matching array item as a focused diff", () => {
+	const actual = [
+		{
+			id: 1,
+			name: "Alice",
+			email: "alice@example.com",
+			addresses: [
+				{ street: "123 Main St", city: "Wonderland" },
+				{ street: "456 Office Rd", city: "Metropolis" },
+			],
+		},
+		{
+			id: 2,
+			name: "Bob",
+			email: "bob@example.com",
+			addresses: [
+				{ street: "789 Elm St", city: "Gotham" },
+				{ street: "101 Maple Ave", city: "Star City" },
+			],
+		},
+	];
+
+	const error = getRejectedErrorSync(() => {
+		expectlyAny(actual).toEqualPartially([
+			{
+				addresses: [{ street: "456 Office Rd", city: "Metroplis" }],
+			},
+		]);
+	});
+
+	expect(error.message).toContain("First failing path: $[0].addresses[0].city");
+	expect(error.message).toContain("Failing array: $[0].addresses (subset)");
+	expect(error.message).not.toContain("Match route");
+	expect(error.message).toContain("Expected partial");
+	expect(error.message).toContain("Closest candidate");
+	expect(error.message).toMatch(/Closest actual\[1\] \(\d+% match\)/);
+	expect(error.message).toContain("456 Office Rd");
+	expect(error.message).toContain("Metropolis");
+	expect(error.message).toContain("Metroplis");
+	expect(error.message).toContain("Call log:");
+	expect(error.message).toContain("addresses expected[0] did not fully match; closest candidate was actual[1].");
+	expect(error.message).not.toContain("Failure details:");
+	expect(error.message).not.toContain("Unmatched expected index 0 at $[0].addresses[0]");
+	expect(error.message).not.toContain("Extra actual items");
+	expect(error.message).not.toContain("Array path:");
+	expect(error.message.match(/Closest actual\[/g) ?? []).toHaveLength(1);
+	expect(error.message.indexOf("First failing path:")).toBeLessThan(error.message.indexOf("Closest actual[1]"));
+});
+
+test.describe("toEqualPartially array error rendering", () => {
+	const nestedActual = {
+		organizations: [
+			{
+				id: "org-europe",
+				name: "Europe Ops",
+				teams: [
+					{
+						id: "team-support",
+						name: "Support",
+						members: [
+							{
+								id: "member-anna",
+								name: "Anna",
+								addresses: [
+									{ type: "home", city: "Amsterdam" },
+									{ type: "office", city: "Utrecht" },
+								],
+								projects: [
+									{
+										name: "Atlas",
+										phases: [
+											{
+												name: "Design",
+												tasks: [{ title: "Draft wireframes", comments: [{ author: "Lead", message: "Ready" }] }],
+											},
+										],
+									},
+								],
+							},
+						],
+					},
+					{
+						id: "team-platform",
+						name: "Platform Core",
+						members: [
+							{
+								id: "member-sam",
+								name: "Sam",
+								addresses: [
+									{ type: "home", city: "Rotterdam" },
+									{ type: "office", city: "The Hague" },
+								],
+								projects: [
+									{
+										name: "Apollo",
+										phases: [
+											{
+												name: "Discovery",
+												tasks: [
+													{
+														title: "Map dependencies",
+														comments: [{ author: "Architect", message: "Dependencies mapped" }],
+													},
+												],
+											},
+											{
+												name: "Delivery",
+												tasks: [
+													{
+														title: "Release train",
+														comments: [
+															{ author: "Lead QA", message: "Smoke suite green" },
+															{ author: "Release Manager", message: "Release candidate deployed" },
+														],
+													},
+												],
+											},
+										],
+									},
+								],
+							},
+						],
+					},
+				],
+			},
+			{
+				id: "org-us",
+				name: "US Ops",
+				teams: [
+					{
+						id: "team-growth",
+						name: "Growth",
+						members: [
+							{
+								id: "member-jules",
+								name: "Jules",
+								addresses: [{ type: "office", city: "Austin" }],
+								projects: [
+									{
+										name: "Beacon",
+										phases: [
+											{
+												name: "Pilot",
+												tasks: [
+													{ title: "Prep launch", comments: [{ author: "Marketing", message: "Assets approved" }] },
+												],
+											},
+										],
+									},
+								],
+							},
+						],
+					},
+				],
+			},
+		],
+	};
+
+	test("should keep the correct nested array branch in a large structure", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(nestedActual).toEqualPartially({
+				organizations: [
+					{
+						id: "org-europe",
+						name: "Eurpe Ops",
+						teams: [
+							{
+								id: "team-platform",
+								members: [
+									{
+										id: "member-sam",
+										projects: [
+											{
+												name: "Apollo",
+												phases: [
+													{
+														name: "Delivery",
+														tasks: [
+															{
+																title: "Release train",
+																comments: [{ author: "Release Manager", message: "Release candiate deployed" }],
+															},
+														],
+													},
+												],
+											},
+										],
+									},
+								],
+							},
+						],
+					},
+				],
+			});
+		});
+
+		expect(error.message).toContain("First failing path: $.organizations[0].name");
+		expect(error.message).toContain("Failing array: $.organizations (subset)");
+		expect(error.message).not.toContain("Match route");
+		expect(error.message).toMatch(/Closest actual\[0\] \(\d+% match\)/);
+		expect(error.message).toContain("Expected partial");
+		expect(error.message).toContain("Closest candidate");
+		expect(error.message).toContain("Europe Ops");
+		expect(error.message).toContain("Eurpe Ops");
+		expect(error.message).toContain("Release candidate deployed");
+		expect(error.message).toContain("Release candiate deployed");
+		expect(error.message).toContain("Call log:");
+		expect(error.message).toContain(
+			"organizations expected[0] did not fully match; failure continues at $.organizations[0].teams[0].members[0].projects[0].phases[0].tasks[0].comments.",
+		);
+		expect(error.message).not.toContain("Failure details:");
+		expect(error.message).not.toContain(
+			"Unmatched expected index 0 at $.organizations[0].teams[0].members[0].projects[0].phases[0].tasks[0].comments[0]",
+		);
+		expect(error.message).not.toContain("Unmatched expected index 0 at $.organizations[0]");
+		expect(error.message).not.toContain("Extra actual items");
+		expect(error.message).not.toContain("Array path:");
+		expect(error.message.match(/Closest actual\[/g) ?? []).toHaveLength(1);
+		expect(error.message.indexOf("First failing path:")).toBeLessThan(error.message.indexOf("Closest actual[0]"));
 	});
 });

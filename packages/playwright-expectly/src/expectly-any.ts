@@ -314,6 +314,7 @@ export const expectlyAnyMatchers = {
 			requireExplicitUndefinedKeyPresence: validatedOptions.requireExplicitUndefinedKeyPresence ?? false,
 			arrayMode: validatedOptions.arrayMode ?? "subset",
 			arrayMismatchDetails: [],
+			arrayReports: [],
 		};
 
 		if (optionsValidationError) {
@@ -354,6 +355,10 @@ export const expectlyAnyMatchers = {
 			}
 
 			if (!finalComparison.pass && !this.isNot) {
+				if (extractionState.arrayReports.length > 0) {
+					return buildArrayFailureMessage(this, hint, expected, actualSubset, extractionState);
+				}
+
 				// Parse the error to extract just the diff portion
 				const diffMatch = finalComparison.comparisonError.match(/(?:- Expected.*\n[\s\S]*)/);
 				const diffOnly = diffMatch ? diffMatch[0] : finalComparison.comparisonError;
@@ -399,9 +404,31 @@ type ExtractionState = {
 	requireExplicitUndefinedKeyPresence: boolean;
 	arrayMode: ArrayMatchMode;
 	arrayMismatchDetails: string[];
+	arrayReports: ArrayMatchReport[];
 };
 
 type ArrayMatchMode = "subset" | "exactLength" | "exactOrder";
+
+type ArrayMatchReport = {
+	path: string;
+	mode: ArrayMatchMode;
+	expected: unknown[];
+	matchedPairs: Array<{
+		expectedIndex: number;
+		actualIndex: number;
+		expectedItem: unknown;
+		actualItem: unknown;
+		extractedActual: unknown;
+	}>;
+	unmatchedExpectedItems: Array<{
+		expectedIndex: number;
+		expectedItem: unknown;
+		diagnosticActualIndex?: number;
+		diagnosticExtractedActual?: unknown;
+		diagnosticMatchPercentage?: number;
+		nestedMismatchPath?: string;
+	}>;
+};
 
 function validatePartialMatchOptions(options: PartialMatchOptions | undefined): PartialMatchOptions {
 	if (options === undefined) {
@@ -523,20 +550,560 @@ function createIsolatedExtractionState(state: ExtractionState): ExtractionState 
 		requireExplicitUndefinedKeyPresence: state.requireExplicitUndefinedKeyPresence,
 		arrayMode: state.arrayMode,
 		arrayMismatchDetails: [],
+		arrayReports: [],
 	};
 }
 
 function registerUnmatchedExpectedIndex(
 	state: ExtractionState,
+	report: ArrayMatchReport,
 	path: string,
 	index: number,
 	expectedItem: unknown,
+	diagnosticActualIndex?: number,
+	diagnosticExtractedActual?: unknown,
+	diagnosticMatchPercentage?: number,
+	nestedMismatchPath?: string,
 ): void {
 	state.allArrayItemsMatchedOneToOne = false;
+	report.unmatchedExpectedItems.push({
+		expectedIndex: index,
+		expectedItem,
+		diagnosticActualIndex,
+		diagnosticExtractedActual,
+		diagnosticMatchPercentage,
+		nestedMismatchPath,
+	});
 	pushArrayMismatchDetail(
 		state,
 		`Unmatched expected index ${index} at ${path}[${index}]: ${formatExpectedValue(expectedItem)}.`,
 	);
+}
+
+function mergeExtractionState(targetState: ExtractionState, sourceState: ExtractionState): void {
+	for (const detail of sourceState.arrayMismatchDetails) {
+		pushArrayMismatchDetail(targetState, detail);
+	}
+
+	targetState.arrayReports.push(...sourceState.arrayReports);
+}
+
+function createArrayMatchReport(path: string, mode: ArrayMatchMode, expected: unknown[]): ArrayMatchReport {
+	return {
+		path,
+		mode,
+		expected,
+		matchedPairs: [],
+		unmatchedExpectedItems: [],
+	};
+}
+
+function getDeepestNestedMismatchPath(state: ExtractionState): string | undefined {
+	let deepestPath: string | undefined;
+
+	for (const report of state.arrayReports) {
+		if (deepestPath === undefined || report.path.length > deepestPath.length) {
+			deepestPath = report.path;
+		}
+	}
+
+	return deepestPath;
+}
+
+function isAsymmetricMatcher(value: unknown): boolean {
+	return !!value && typeof value === "object" && "$$typeof" in value;
+}
+
+function scoreExactMatch(actual: unknown, expected: unknown): number {
+	try {
+		baseExpect(actual).toEqual(expected);
+		return 1;
+	} catch {
+		return 0;
+	}
+}
+
+function getMatchPercentageFromUnits(expected: unknown, matchedUnits: number): number {
+	const totalUnits = countExpectedMatchUnits(expected);
+	return Math.round((matchedUnits / totalUnits) * 100);
+}
+
+function findBestArrayMatch(
+	actual: unknown[],
+	expectedItem: unknown,
+	usedActualIndexes: Set<number>,
+): { bestActualIndex: number; bestScore: number } {
+	let bestActualIndex = -1;
+	let bestScore = -1;
+
+	for (let actualIndex = 0; actualIndex < actual.length; actualIndex++) {
+		if (usedActualIndexes.has(actualIndex)) {
+			continue;
+		}
+
+		const candidateScore = countDeepMatches(actual[actualIndex], expectedItem);
+		if (candidateScore > bestScore) {
+			bestScore = candidateScore;
+			bestActualIndex = actualIndex;
+		}
+	}
+
+	return { bestActualIndex, bestScore };
+}
+
+function scoreArrayMatch(actual: unknown[], expected: unknown[]): number {
+	const usedActualIndexes = new Set<number>();
+	let score = 0;
+
+	for (const expectedItem of expected) {
+		const { bestActualIndex, bestScore } = findBestArrayMatch(actual, expectedItem, usedActualIndexes);
+		if (bestActualIndex !== -1 && bestScore > 0) {
+			usedActualIndexes.add(bestActualIndex);
+			score += bestScore;
+		}
+	}
+
+	return score;
+}
+
+function scoreObjectMatch(actual: Record<string, unknown>, expected: Record<string, unknown>): number {
+	let score = 0;
+
+	for (const key of Object.keys(expected)) {
+		if (key in actual) {
+			score += countDeepMatches(actual[key], expected[key]);
+		}
+	}
+
+	return score;
+}
+
+function countDeepMatches(actual: unknown, expected: unknown): number {
+	if (isAsymmetricMatcher(expected)) {
+		return scoreExactMatch(actual, expected);
+	}
+
+	if (Array.isArray(expected)) {
+		return Array.isArray(actual) ? scoreArrayMatch(actual, expected) : 0;
+	}
+
+	if (isPlainObject(expected)) {
+		return isPlainObject(actual) ? scoreObjectMatch(actual, expected) : 0;
+	}
+
+	return scoreExactMatch(actual, expected);
+}
+
+function findBestDiagnosticActualIndex(
+	actualArray: unknown[],
+	expectedItem: unknown,
+	matchedActualIndexes: Set<number>,
+): number | undefined {
+	const candidateGroups = [
+		actualArray.map((_, index) => index).filter((index) => !matchedActualIndexes.has(index)),
+		actualArray.map((_, index) => index),
+	];
+
+	for (const candidateIndexes of candidateGroups) {
+		let bestIndex: number | undefined;
+		let bestScore = -1;
+
+		for (const actualIndex of candidateIndexes) {
+			const score = countDeepMatches(actualArray[actualIndex], expectedItem);
+			if (score > bestScore) {
+				bestScore = score;
+				bestIndex = actualIndex;
+			}
+		}
+
+		if (bestIndex !== undefined && bestScore > 0) {
+			return bestIndex;
+		}
+	}
+
+	return undefined;
+}
+
+function countExpectedMatchUnits(expected: unknown): number {
+	if (isAsymmetricMatcher(expected)) {
+		return 1;
+	}
+
+	if (Array.isArray(expected)) {
+		const total = expected.reduce((sum, item) => sum + countExpectedMatchUnits(item), 0);
+		return Math.max(1, total);
+	}
+
+	if (isPlainObject(expected)) {
+		const total = Object.keys(expected).reduce((sum, key) => sum + countExpectedMatchUnits(expected[key]), 0);
+		return Math.max(1, total);
+	}
+
+	return 1;
+}
+
+function getMatchPercentage(actual: unknown, expected: unknown): number {
+	const matchedUnits = countDeepMatches(actual, expected);
+	return getMatchPercentageFromUnits(expected, matchedUnits);
+}
+
+function findBestDiagnosticActualIndexByScore(
+	scoresByActualIndex: Array<number | undefined>,
+	matchedActualIndexes: Set<number>,
+	preferUnmatchedOnly: boolean,
+): number | undefined {
+	let bestIndex: number | undefined;
+	let bestScore = -1;
+
+	for (let actualIndex = 0; actualIndex < scoresByActualIndex.length; actualIndex++) {
+		const score = scoresByActualIndex[actualIndex] ?? 0;
+		if (preferUnmatchedOnly && matchedActualIndexes.has(actualIndex)) {
+			continue;
+		}
+
+		if (score > bestScore) {
+			bestScore = score;
+			bestIndex = actualIndex;
+		}
+	}
+
+	return bestScore > 0 ? bestIndex : undefined;
+}
+
+function findFirstMismatchPath(actual: unknown, expected: unknown, path: string): string | undefined {
+	if (isAsymmetricMatcher(expected)) {
+		return scoreExactMatch(actual, expected) === 1 ? undefined : path;
+	}
+
+	if (Array.isArray(expected)) {
+		if (!Array.isArray(actual)) {
+			return path;
+		}
+
+		for (let index = 0; index < expected.length; index++) {
+			const mismatchPath = findFirstMismatchPath(actual[index], expected[index], `${path}[${index}]`);
+			if (mismatchPath) {
+				return mismatchPath;
+			}
+		}
+
+		return undefined;
+	}
+
+	if (isPlainObject(expected)) {
+		if (!isPlainObject(actual)) {
+			return path;
+		}
+
+		for (const key of Object.keys(expected)) {
+			const mismatchPath = findFirstMismatchPath(actual[key], expected[key], `${path}.${key}`);
+			if (mismatchPath) {
+				return mismatchPath;
+			}
+		}
+
+		return undefined;
+	}
+
+	return scoreExactMatch(actual, expected) === 1 ? undefined : path;
+}
+
+function indentBlock(text: string, prefix = "  "): string {
+	return text
+		.split("\n")
+		.map((line) => `${prefix}${line}`)
+		.join("\n");
+}
+
+function formatArraySectionItem(label: string, value: string): string {
+	return `${label}:\n${indentBlock(value)}`;
+}
+
+function formatClosestCandidateDiff(
+	matcherState: ExpectMatcherState,
+	expectedItem: unknown,
+	diagnosticExtractedActual: unknown,
+): string {
+	return matcherState.utils.printDiffOrStringify(
+		expectedItem,
+		diagnosticExtractedActual,
+		"Expected partial",
+		"Closest candidate",
+		false,
+	);
+}
+
+function isArrayPathAncestor(ancestorPath: string, descendantPath: string): boolean {
+	return descendantPath === ancestorPath || descendantPath.startsWith(`${ancestorPath}[`);
+}
+
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function pathOwnsMismatch(ownerPath: string, mismatchPath: string): boolean {
+	return (
+		mismatchPath === ownerPath || mismatchPath.startsWith(`${ownerPath}.`) || mismatchPath.startsWith(`${ownerPath}[`)
+	);
+}
+
+function getExpectedIndexForChildPath(parentPath: string, childPath: string): number | undefined {
+	if (!childPath.startsWith(parentPath)) {
+		return undefined;
+	}
+
+	const suffix = childPath.slice(parentPath.length);
+	const match = suffix.match(/^\[(\d+)\](?:\.|$)/);
+	return match ? Number(match[1]) : undefined;
+}
+
+function findPrimaryFailure(
+	state: ExtractionState,
+	actualSubset: unknown,
+	expected: unknown,
+):
+	| {
+			report: ArrayMatchReport;
+			item: ArrayMatchReport["unmatchedExpectedItems"][number];
+			mismatchPath: string;
+	  }
+	| undefined {
+	const mismatchPath = findFirstMismatchPath(actualSubset, expected, "$");
+	if (!mismatchPath) {
+		return undefined;
+	}
+
+	let selected:
+		| {
+				report: ArrayMatchReport;
+				item: ArrayMatchReport["unmatchedExpectedItems"][number];
+				mismatchPath: string;
+				itemPathLength: number;
+		  }
+		| undefined;
+
+	for (const report of state.arrayReports) {
+		for (const item of report.unmatchedExpectedItems) {
+			const itemPath = `${report.path}[${item.expectedIndex}]`;
+			if (!pathOwnsMismatch(itemPath, mismatchPath)) {
+				continue;
+			}
+
+			if (!selected || itemPath.length > selected.itemPathLength) {
+				selected = {
+					report,
+					item,
+					mismatchPath,
+					itemPathLength: itemPath.length,
+				};
+			}
+		}
+	}
+
+	if (selected) {
+		return {
+			report: selected.report,
+			item: selected.item,
+			mismatchPath: selected.mismatchPath,
+		};
+	}
+
+	const fallbackReports = state.arrayReports.filter((report) => report.unmatchedExpectedItems.length > 0);
+	const fallbackReport = fallbackReports.sort((left, right) => right.path.length - left.path.length)[0];
+	const fallbackItem = fallbackReport?.unmatchedExpectedItems[0];
+	if (!fallbackReport || !fallbackItem) {
+		return undefined;
+	}
+
+	return {
+		report: fallbackReport,
+		item: fallbackItem,
+		mismatchPath,
+	};
+}
+
+function buildFailureRoute(state: ExtractionState, failurePath: string): Array<ArrayMatchReport> {
+	return state.arrayReports
+		.filter((report) => isArrayPathAncestor(report.path, failurePath))
+		.sort((left, right) => left.path.length - right.path.length);
+}
+
+function getRelevantMismatchDetails(state: ExtractionState, failurePath: string): string[] {
+	const escapedFailurePath = escapeRegExp(failurePath);
+	const relevantPathPattern = new RegExp(` at ${escapedFailurePath}(?:\\[|\\.|:|$)`);
+
+	return state.arrayMismatchDetails.filter((detail) => relevantPathPattern.test(detail));
+}
+
+function getArrayLabel(path: string): string {
+	if (path === "$") {
+		return "root array";
+	}
+
+	const lastDotIndex = path.lastIndexOf(".");
+	return lastDotIndex === -1 ? path : path.slice(lastDotIndex + 1);
+}
+
+function formatIdentityValue(value: unknown): string | undefined {
+	if (typeof value === "string") {
+		return value;
+	}
+
+	if (typeof value === "number" || typeof value === "boolean") {
+		return String(value);
+	}
+
+	return undefined;
+}
+
+function getActualIdentitySnippet(actualItem: unknown): string | undefined {
+	if (!isPlainObject(actualItem)) {
+		return formatIdentityValue(actualItem);
+	}
+
+	const preferredKeys = ["id", "name", "title", "type", "author"] as const;
+	for (const key of preferredKeys) {
+		const formattedValue = formatIdentityValue(actualItem[key]);
+		if (formattedValue !== undefined) {
+			return `${key}: ${formattedValue}`;
+		}
+	}
+
+	return undefined;
+}
+
+function formatRouteLine(
+	report: ArrayMatchReport,
+	expectedIndex: number,
+	actualIndex: number,
+	actualItem: unknown,
+): string {
+	const arrayLabel = getArrayLabel(report.path);
+	const identitySnippet = getActualIdentitySnippet(actualItem);
+	return identitySnippet
+		? `${arrayLabel} expected[${expectedIndex}] matched actual[${actualIndex}] (${identitySnippet})`
+		: `${arrayLabel} expected[${expectedIndex}] matched actual[${actualIndex}]`;
+}
+
+function formatCallLogEntry(
+	report: ArrayMatchReport,
+	item: ArrayMatchReport["unmatchedExpectedItems"][number],
+): string {
+	const arrayLabel = getArrayLabel(report.path);
+	const baseMessage = `${arrayLabel} expected[${item.expectedIndex}] did not fully match`;
+
+	if (item.nestedMismatchPath) {
+		return `${baseMessage}; failure continues at ${item.nestedMismatchPath}.`;
+	}
+
+	if (item.diagnosticActualIndex !== undefined) {
+		return `${baseMessage}; closest candidate was actual[${item.diagnosticActualIndex}].`;
+	}
+
+	return `${baseMessage}; no close match was found.`;
+}
+
+function formatFailureRoute(route: Array<ArrayMatchReport>): string | undefined {
+	if (route.length <= 1) {
+		return undefined;
+	}
+
+	const lines: string[] = [];
+
+	for (let index = 0; index < route.length - 1; index++) {
+		const report = route[index];
+		const nextReport = route[index + 1];
+		const expectedIndex = getExpectedIndexForChildPath(report.path, nextReport.path);
+		if (expectedIndex === undefined) {
+			continue;
+		}
+
+		const matchedPair = report.matchedPairs.find((pair) => pair.expectedIndex === expectedIndex);
+		if (!matchedPair) {
+			continue;
+		}
+
+		lines.push(formatRouteLine(report, expectedIndex, matchedPair.actualIndex, matchedPair.actualItem));
+	}
+
+	return lines.length > 0 ? lines.join("\n") : undefined;
+}
+
+function formatPrimaryArrayFailure(
+	matcherState: ExpectMatcherState,
+	report: ArrayMatchReport,
+	item: ArrayMatchReport["unmatchedExpectedItems"][number],
+	mismatchPath: string,
+	state: ExtractionState,
+): string {
+	const failingItemPath = mismatchPath;
+	const route = buildFailureRoute(state, report.path);
+	const sections = [`First failing path: ${failingItemPath}`, `Failing array: ${report.path} (${report.mode})`];
+
+	const routeText = formatFailureRoute(route);
+	if (routeText) {
+		sections.push(`Match route:\n${indentBlock(routeText)}`);
+	}
+
+	if (item.diagnosticActualIndex !== undefined && item.diagnosticExtractedActual !== undefined) {
+		const matchPercentage =
+			item.diagnosticMatchPercentage ?? getMatchPercentage(item.diagnosticExtractedActual, item.expectedItem);
+		sections.push(
+			formatArraySectionItem(
+				`Closest actual[${item.diagnosticActualIndex}] (${matchPercentage}% match)`,
+				formatClosestCandidateDiff(matcherState, item.expectedItem, item.diagnosticExtractedActual),
+			),
+		);
+	} else if (item.nestedMismatchPath) {
+		sections.push(`Failure continues at: ${item.nestedMismatchPath}`);
+	} else {
+		sections.push("No close match found.");
+	}
+
+	return sections.join("\n\n");
+}
+
+function buildArrayFailureMessage(
+	matcherState: ExpectMatcherState,
+	hint: string,
+	expected: unknown,
+	actualSubset: unknown,
+	state: ExtractionState,
+): string {
+	const sections = [`${hint} // partial match (${state.arrayMode})`];
+	const primaryFailure = findPrimaryFailure(state, actualSubset, expected);
+
+	if (primaryFailure) {
+		sections.push(
+			formatPrimaryArrayFailure(
+				matcherState,
+				primaryFailure.report,
+				primaryFailure.item,
+				primaryFailure.mismatchPath,
+				state,
+			),
+		);
+
+		const primaryCallLogEntries = primaryFailure.report.unmatchedExpectedItems.map((item) =>
+			formatCallLogEntry(primaryFailure.report, item),
+		);
+		const relevantDetails = getRelevantMismatchDetails(state, primaryFailure.report.path).filter(
+			(detail) => !detail.startsWith("Unmatched expected index "),
+		);
+		const callLogEntries = [...primaryCallLogEntries, ...relevantDetails];
+		if (callLogEntries.length > 0) {
+			sections.push(`Call log:\n${indentBlock(callLogEntries.map((detail) => `- ${detail}`).join("\n"))}`);
+		}
+	} else {
+		sections.push(formatArraySectionItem("Expected", matcherState.utils.printExpected(expected)));
+		sections.push(formatArraySectionItem("Received partial", matcherState.utils.printReceived(actualSubset)));
+
+		if (state.arrayMismatchDetails.length > 0) {
+			sections.push(`Call log:\n${indentBlock(state.arrayMismatchDetails.map((detail) => `- ${detail}`).join("\n"))}`);
+		}
+	}
+
+	return sections.join("\n\n");
 }
 
 function checkArrayLengthForMode(
@@ -564,6 +1131,8 @@ function buildExactOrderArraySubset(
 	path: string,
 ): unknown[] {
 	const result: unknown[] = [];
+	const report = createArrayMatchReport(path, state.arrayMode, expectedArray);
+	state.arrayReports.push(report);
 
 	for (let index = 0; index < expectedArray.length; index++) {
 		const expectedItem = expectedArray[index];
@@ -571,7 +1140,7 @@ function buildExactOrderArraySubset(
 		const indexedPath = `${path}[${index}]`;
 
 		if (index >= actualArray.length) {
-			registerUnmatchedExpectedIndex(state, path, index, expectedItem);
+			registerUnmatchedExpectedIndex(state, report, path, index, expectedItem);
 			result.push(undefined);
 			continue;
 		}
@@ -581,15 +1150,47 @@ function buildExactOrderArraySubset(
 			const extractedItem = extractMatchingStructure(actualItem, expectedItem, pairState, indexedPath);
 			baseExpect(extractedItem).toEqual(expectedItem);
 			if (!pairState.allArrayItemsMatchedOneToOne || !pairState.allExplicitUndefinedKeysExist) {
-				registerUnmatchedExpectedIndex(state, path, index, expectedItem);
-				for (const detail of pairState.arrayMismatchDetails) {
-					pushArrayMismatchDetail(state, detail);
-				}
+				mergeExtractionState(state, pairState);
+				registerUnmatchedExpectedIndex(
+					state,
+					report,
+					path,
+					index,
+					expectedItem,
+					undefined,
+					undefined,
+					undefined,
+					getDeepestNestedMismatchPath(pairState),
+				);
+				result.push(extractedItem);
+				continue;
 			}
+
+			mergeExtractionState(state, pairState);
+			report.matchedPairs.push({
+				expectedIndex: index,
+				actualIndex: index,
+				expectedItem,
+				actualItem,
+				extractedActual: extractedItem,
+			});
 			result.push(extractedItem);
 		} catch {
-			registerUnmatchedExpectedIndex(state, path, index, expectedItem);
-			result.push(extractMatchingStructure(actualItem, expectedItem, state, indexedPath));
+			const diagnosticState = createIsolatedExtractionState(state);
+			const diagnosticItem = extractMatchingStructure(actualItem, expectedItem, diagnosticState, indexedPath);
+			mergeExtractionState(state, diagnosticState);
+			registerUnmatchedExpectedIndex(
+				state,
+				report,
+				path,
+				index,
+				expectedItem,
+				index,
+				diagnosticItem,
+				undefined,
+				getDeepestNestedMismatchPath(diagnosticState),
+			);
+			result.push(diagnosticItem);
 		}
 	}
 
@@ -604,14 +1205,19 @@ function buildPairCandidates(
 ): {
 	candidateActualIndexesByExpected: number[][];
 	extractedByPair: unknown[][];
+	pairStateByExpectedAndActual: Array<Array<ExtractionState | undefined>>;
+	scoreByExpectedAndActual: Array<Array<number | undefined>>;
 } {
 	const candidateActualIndexesByExpected: number[][] = expectedArray.map(() => []);
 	const extractedByPair: unknown[][] = expectedArray.map(() => []);
+	const pairStateByExpectedAndActual: Array<Array<ExtractionState | undefined>> = expectedArray.map(() => []);
+	const scoreByExpectedAndActual: Array<Array<number | undefined>> = expectedArray.map(() => []);
 
 	for (let expectedIndex = 0; expectedIndex < expectedArray.length; expectedIndex++) {
 		const expectedItem = expectedArray[expectedIndex];
 		for (let actualIndex = 0; actualIndex < actualArray.length; actualIndex++) {
 			const actualItem = actualArray[actualIndex];
+			scoreByExpectedAndActual[expectedIndex][actualIndex] = countDeepMatches(actualItem, expectedItem);
 			try {
 				const pairState = createIsolatedExtractionState(state);
 				const extractedItem = extractMatchingStructure(
@@ -626,13 +1232,14 @@ function buildPairCandidates(
 				}
 				candidateActualIndexesByExpected[expectedIndex].push(actualIndex);
 				extractedByPair[expectedIndex][actualIndex] = extractedItem;
+				pairStateByExpectedAndActual[expectedIndex][actualIndex] = pairState;
 			} catch {
 				// This pair does not match; keep searching.
 			}
 		}
 	}
 
-	return { candidateActualIndexesByExpected, extractedByPair };
+	return { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual, scoreByExpectedAndActual };
 }
 
 function assignExpectedToActual(candidateActualIndexesByExpected: number[][], actualLength: number): number[] {
@@ -674,34 +1281,67 @@ function buildSubsetModeArraySubset(
 	state: ExtractionState,
 	path: string,
 ): unknown[] {
-	const { candidateActualIndexesByExpected, extractedByPair } = buildPairCandidates(
-		actualArray,
-		expectedArray,
-		state,
-		path,
-	);
+	const report = createArrayMatchReport(path, state.arrayMode, expectedArray);
+	state.arrayReports.push(report);
+	const { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual, scoreByExpectedAndActual } =
+		buildPairCandidates(actualArray, expectedArray, state, path);
 	const assignedActualByExpected = assignExpectedToActual(candidateActualIndexesByExpected, actualArray.length);
 	const usedActualIndexes = new Set<number>();
 
-	return expectedArray.map((expectedItem, expectedIndex) => {
+	const extractedArray = expectedArray.map((expectedItem, expectedIndex) => {
 		const assignedActualIndex = assignedActualByExpected[expectedIndex];
 		if (assignedActualIndex !== -1) {
 			usedActualIndexes.add(assignedActualIndex);
+			const pairState = pairStateByExpectedAndActual[expectedIndex][assignedActualIndex];
+			if (pairState) {
+				mergeExtractionState(state, pairState);
+			}
+
+			report.matchedPairs.push({
+				expectedIndex,
+				actualIndex: assignedActualIndex,
+				expectedItem,
+				actualItem: actualArray[assignedActualIndex],
+				extractedActual: extractedByPair[expectedIndex][assignedActualIndex],
+			});
+
 			return extractedByPair[expectedIndex][assignedActualIndex];
 		}
 
-		registerUnmatchedExpectedIndex(state, path, expectedIndex, expectedItem);
-		const firstUnusedIndex = actualArray.findIndex((_, index) => !usedActualIndexes.has(index));
-		const fallbackIndex = firstUnusedIndex !== -1 ? firstUnusedIndex : 0;
-		if (fallbackIndex >= 0) {
-			usedActualIndexes.add(fallbackIndex);
-		}
+		const fallbackScores = scoreByExpectedAndActual[expectedIndex];
+		const fallbackIndex =
+			findBestDiagnosticActualIndexByScore(fallbackScores, usedActualIndexes, true) ??
+			findBestDiagnosticActualIndexByScore(fallbackScores, usedActualIndexes, false) ??
+			findBestDiagnosticActualIndex(actualArray, expectedItem, usedActualIndexes);
+		const fallbackItem = fallbackIndex === undefined ? undefined : actualArray[fallbackIndex];
+		const fallbackMatchPercentage =
+			fallbackIndex === undefined
+				? undefined
+				: getMatchPercentageFromUnits(expectedItem, fallbackScores[fallbackIndex] ?? 0);
+		const diagnosticState = createIsolatedExtractionState(state);
+		const diagnosticItem =
+			fallbackItem !== undefined
+				? extractMatchingStructure(fallbackItem, expectedItem, diagnosticState, `${path}[${expectedIndex}]`)
+				: undefined;
 
-		const fallbackItem = actualArray[fallbackIndex];
-		return fallbackItem !== undefined
-			? extractMatchingStructure(fallbackItem, expectedItem, state, `${path}[${expectedIndex}]`)
-			: undefined;
+		mergeExtractionState(state, diagnosticState);
+
+		registerUnmatchedExpectedIndex(
+			state,
+			report,
+			path,
+			expectedIndex,
+			expectedItem,
+			fallbackIndex,
+			diagnosticItem,
+			fallbackMatchPercentage,
+			getDeepestNestedMismatchPath(diagnosticState),
+		);
+
+		return diagnosticItem;
 	});
+
+	return extractedArray;
 }
 
 function buildBestArraySubsetForExpected(
