@@ -67,38 +67,59 @@ test("chatbot response is on topic", async ({ page }) => {
 
 ### Extending Playwright `expect`
 
-#### Option A: `setupExpectlyFuzzy()` (recommended)
+#### Option A: `setupExpectlyFuzzy()`
 
-Call `setupExpectlyFuzzy()` in your `playwright.config.ts` to register `toMatchFuzzy` on Playwright's native `expect` globally. Full IntelliSense and type support is included automatically.
+`setupExpectlyFuzzy()` extends Playwright's `expect` in the current process.
+
+In some Playwright versions or project setups, calling it from `playwright.config.ts` may appear to work. However, config-time setup is not guaranteed across worker boundaries.
+
+The reliable approach is to call it in the same worker context that imports and uses Playwright's `expect`, typically from a shared fixtures module.
 
 ```typescript
-// playwright.config.ts
+// Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
 import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
 
 setupExpectlyFuzzy();
+```
+
+Recommended worker-side setup:
+
+```typescript
+// tests/fixtures.ts
+import { expect, test } from "@playwright/test";
+import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+
+setupExpectlyFuzzy();
+
+export { expect, test };
 ```
 
 Use alongside `setupExpectly()` if you also want the core matchers:
 
 ```typescript
-// playwright.config.ts
+// tests/fixtures.ts
+import { expect, test } from "@playwright/test";
 import { setupExpectly } from "@cerios/playwright-expectly";
 import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
 
 setupExpectly();
 setupExpectlyFuzzy();
+
+export { expect, test };
 ```
 
-Then use `expect` in any test file without additional imports:
+Then use `expect` in your tests:
 
 ```typescript
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("fuzzy match via expect", async ({ page }) => {
 	expect("Hello Wrold").toMatchFuzzy("Hello World");
 	await expect(page.locator("[data-testid='summary']")).toMatchFuzzy("quarterly revenue increase", 75);
 });
 ```
+
+Idempotency note: calling `setupExpectlyFuzzy()` more than once is safe; repeated calls are ignored.
 
 #### Option B: Manual `expect.extend`
 

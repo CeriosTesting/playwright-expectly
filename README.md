@@ -51,19 +51,36 @@ await expectly(page.locator(".username")).toBeAlphanumeric();
 
 ### Option 2: Extend Playwright `expect` with `setupExpectly`
 
-The simplest way to add all matchers to Playwright's native `expect`. Call `setupExpectly()` once in your Playwright config and every test file gets full IntelliSense and type support automatically — no per-file imports needed.
+`setupExpectly()` extends Playwright's `expect` in the current process.
+
+In some Playwright versions or project setups, calling it from `playwright.config.ts` may appear to work. However, config-time setup is not guaranteed across worker boundaries.
+
+The reliable approach is to call it in the same worker context that imports and uses Playwright's `expect`, typically from a shared fixtures module.
 
 ```typescript
+// Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
 // playwright.config.ts
 import { setupExpectly } from "@cerios/playwright-expectly";
 
 setupExpectly();
 ```
 
-Then use `expect` as usual in your tests — no extra imports needed:
+Recommended worker-side setup:
 
 ```typescript
+// tests/fixtures.ts
 import { expect, test } from "@playwright/test";
+import { setupExpectly } from "@cerios/playwright-expectly";
+
+setupExpectly();
+
+export { expect, test };
+```
+
+Then use `expect` as usual in your tests:
+
+```typescript
+import { expect, test } from "./fixtures";
 
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
@@ -80,22 +97,27 @@ import "@cerios/playwright-expectly";
 
 #### With fuzzy matching
 
-To also add `toMatchFuzzy()` to `expect`, call `setupExpectlyFuzzy()` alongside `setupExpectly()`:
+To also add `toMatchFuzzy()` to `expect`, call `setupExpectlyFuzzy()` alongside `setupExpectly()` in the same shared fixtures module:
 
 ```typescript
-// playwright.config.ts
+// tests/fixtures.ts
+import { expect, test } from "@playwright/test";
 import { setupExpectly } from "@cerios/playwright-expectly";
 import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
 
 setupExpectly();
 setupExpectlyFuzzy();
+
+export { expect, test };
 ```
 
-Both calls register their matchers globally — `setupExpectlyFuzzy()` also augments Playwright's `Matchers` interface automatically when the package is imported.
+Both calls register their matchers on Playwright's native `expect` in the current worker process. `setupExpectlyFuzzy()` also augments Playwright's `Matchers` interface automatically when the package is imported.
+
+Idempotency note: calling `setupExpectly()` or `setupExpectlyFuzzy()` more than once is safe; repeated calls are ignored.
 
 ### Option 3: Extend Playwright `expect` manually
 
-If you prefer explicit control, extend `expect` in a shared fixtures file and re-export it:
+If you prefer explicit control over exactly which matcher objects are registered, extend `expect` manually in a shared fixtures file and re-export it:
 
 ```typescript
 // tests/fixtures.ts
@@ -191,7 +213,7 @@ test("extended expect example", async ({ page }) => {
 
 - `toBeInteger()` / `toBeFloat()` - Number type validation
 - `toBeAnyOf(...values)` - Multiple value matching
-- `toEqualPartially(expected)` - Partial object matching
+- `toEqualPartially(expected, options)` - Partial object and array matching with configurable array modes
 - `toBeNullish()` - Null or undefined check
 - `toBePrimitive()` / `toBeArray()` / `toBeObject()` - Type checking
 
