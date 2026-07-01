@@ -1,3 +1,6 @@
+// Import matcher-types to activate the global PlaywrightTest.Matchers augmentation
+import "./types/matcher-types";
+
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import { expect, ExpectMatcherState, Locator, MatcherReturnType } from "@playwright/test";
 

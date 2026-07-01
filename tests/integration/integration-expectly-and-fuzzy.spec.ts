@@ -1,4 +1,6 @@
-import { expectlyAny, expectlyString } from "@cerios/playwright-expectly";
+import "@cerios/playwright-expectly-fuzzy";
+import "@cerios/playwright-expectly";
+
 import { expect, test } from "@playwright/test";
 
 /**
@@ -42,7 +44,7 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			const label = "Playwright test assertions documentation";
 
 			// Exact structural validation via expectly
-			expectlyString(url).toBeValidUrl();
+			expect(url).toBeValidUrl();
 
 			// Fuzzy content match via expectly-fuzzy
 			expect(label).toMatchFuzzy("Playwright test assertions docs");
@@ -53,7 +55,7 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			const username = "john.doe";
 
 			// Exact format check
-			expectlyString(email).toBeValidEmail();
+			expect(email).toBeValidEmail();
 
 			// Fuzzy match on the username
 			expect(username).toMatchFuzzy("john doe");
@@ -63,7 +65,7 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			const actual = "playwright is a great testing framework";
 
 			// Exact prefix check
-			expectlyString(actual).toStartWith("playwright");
+			expect(actual).toStartWith("playwright");
 
 			// Fuzzy content match — tolerates minor wording differences
 			expect(actual).toMatchFuzzy("playwright is a great test framework");
@@ -73,7 +75,7 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			const actual = "The quick brown fox jumps over the lazy dog";
 
 			// Exact suffix check
-			expectlyString(actual).toEndWith("lazy dog");
+			expect(actual).toEndWith("lazy dog");
 
 			// Fuzzy match on the full sentence
 			expect(actual).toMatchFuzzy("The quick brown fox jumps over the laazy dog");
@@ -83,7 +85,7 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			const value = "playwright42";
 
 			// Exact alphanumeric check
-			expectlyString(value).toBeAlphanumeric();
+			expect(value).toBeAlphanumeric();
 
 			// Fuzzy match
 			expect(value).toMatchFuzzy("playwright42");
@@ -98,8 +100,8 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			expect(text).toBeTruthy();
 
 			// Exact expectly matcher
-			expectlyString(text).toStartWith("Hello");
-			expectlyString(text).toEndWith("World");
+			expect(text).toStartWith("Hello");
+			expect(text).toEndWith("World");
 
 			// Fuzzy matcher
 			expect(text).toMatchFuzzy("Hello Wrold"); // typo intentional
@@ -109,11 +111,11 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			const value = "test-run-result";
 
 			// Type check via expectlyAny
-			expectlyAny(value).toBePrimitive();
+			expect(value).toBePrimitive();
 
 			// Format check via expectlyString
-			expectlyString(value).toStartWith("test");
-			expectlyString(value).toEndWith("result");
+			expect(value).toStartWith("test");
+			expect(value).toEndWith("result");
 
 			// Fuzzy similarity
 			expect(value).toMatchFuzzy("test-run-result");
