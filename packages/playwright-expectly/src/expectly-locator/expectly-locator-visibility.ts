@@ -1,4 +1,4 @@
-import { withMatcherState } from "@cerios/playwright-expectly-core";
+import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
@@ -12,31 +12,19 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 		let visibleCount: number = 0;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const handles = await locator.elementHandles();
-							const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
-							visibleCount = visArr.filter(Boolean).length;
-							return visibleCount === count;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const handles = await locator.elementHandles();
+				const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
+				visibleCount = visArr.filter(Boolean).length;
+				return visibleCount === count;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {

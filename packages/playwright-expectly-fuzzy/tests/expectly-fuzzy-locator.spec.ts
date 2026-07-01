@@ -1,5 +1,6 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import { getRejectedError } from "../../../tests/common/assertion-utils";
 import { expectlyFuzzyLocator } from "../src/expectly-fuzzy-locator";
 
 test.describe("expectlyFuzzyLocator - toMatchFuzzy", () => {
@@ -36,6 +37,29 @@ test.describe("expectlyFuzzyLocator - toMatchFuzzy", () => {
 	test("should pass with .not for strings that will never match above threshold", async ({ page }) => {
 		await page.setContent('<div id="text">foo bar baz</div>');
 		await expectlyFuzzyLocator(page.locator("#text")).not.toMatchFuzzy("completely unrelated content");
+	});
+
+	test("should fail quickly for .not when strings are already below threshold", async ({ page }) => {
+		await page.setContent('<div id="text">foo bar baz</div>');
+		const locator = page.locator("#text");
+
+		const startTime = Date.now();
+		await expectlyFuzzyLocator(locator).not.toMatchFuzzy("completely unrelated content");
+		const elapsedTime = Date.now() - startTime;
+
+		expect(elapsedTime).toBeLessThan(200);
+	});
+
+	test("should respect configured expect timeout when failing .not keeps matching", async ({ page }) => {
+		await page.setContent('<div id="text">Hello World</div>');
+		const locator = page.locator("#text");
+
+		const startTime = Date.now();
+		await getRejectedError(expectlyFuzzyLocator(locator).not.toMatchFuzzy("Hello World"));
+		const elapsedTime = Date.now() - startTime;
+
+		expect(elapsedTime).toBeGreaterThanOrEqual(100);
+		expect(elapsedTime).toBeLessThan(1_000);
 	});
 
 	test("should support custom timeout option", async ({ page }) => {

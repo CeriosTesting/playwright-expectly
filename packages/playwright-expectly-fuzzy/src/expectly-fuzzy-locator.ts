@@ -1,4 +1,4 @@
-import { withMatcherState } from "@cerios/playwright-expectly-core";
+import { runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import { expect as baseExpect, Locator } from "@playwright/test";
 import * as fuzz from "fuzzball";
@@ -20,33 +20,18 @@ export const expectlyFuzzyLocatorMatchers = withMatcherState({
 			);
 		}
 
-		const pollCondition = this.isNot ? (s: number): boolean => s < threshold : (s: number): boolean => s >= threshold;
-
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.innerText();
-							score = fuzz.token_sort_ratio(actual, expected);
-							return pollCondition(score);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = score >= threshold;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.innerText();
+				score = fuzz.token_sort_ratio(actual, expected);
+				return score >= threshold;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
-			pass = score >= threshold;
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {

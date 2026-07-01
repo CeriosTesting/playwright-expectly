@@ -14,6 +14,9 @@ export default defineConfig({
 	use: {
 		trace: "retain-on-failure",
 	},
+	expect: {
+		timeout: 200,
+	},
 	projects: [
 		{
 			name: "locator",
