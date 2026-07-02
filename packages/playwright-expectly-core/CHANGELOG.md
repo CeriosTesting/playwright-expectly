@@ -1,5 +1,11 @@
 # @cerios/playwright-expectly-core
 
+## 0.1.1
+
+### Patch Changes
+
+- 2496788: Move the shared negated-aware polling helper into core and fix locator and fuzzy locator `.not` matchers so passing negated assertions stop as soon as the negated condition is met instead of waiting for the full poll timeout.
+
 ## 0.1.0
 
 ### Minor Changes
@@ -17,6 +23,7 @@
   New optional package for fuzzy string matching using [fuzzball](https://www.npmjs.com/package/fuzzball)'s `token_sort_ratio` algorithm. Ideal for validating AI-generated text where wording or word order may vary.
 
   **`toMatchFuzzy(expected, threshold?)`**
+
   - Works on both strings and Playwright locators
   - Word-order-insensitive: `"hello world"` and `"world hello"` score 100
   - Scores range from 0–100; assertion passes when score ≥ threshold
