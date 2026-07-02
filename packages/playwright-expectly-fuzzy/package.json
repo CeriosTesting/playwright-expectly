@@ -55,7 +55,7 @@
 	},
 	"scripts": {
 		"build": "tsdown",
-		"test": "playwright test"
+		"test": "playwright test --config=../../playwright.config.ts --project=expectly-fuzzy"
 	},
 	"dependencies": {
 		"@cerios/playwright-expectly-core": "*",

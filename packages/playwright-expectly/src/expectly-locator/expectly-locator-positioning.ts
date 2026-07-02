@@ -1,4 +1,4 @@
-import { withMatcherState } from "@cerios/playwright-expectly-core";
+import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
@@ -14,36 +14,24 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 		let otherTop: number | undefined;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
+				if (!box || !otherBox) {
+					return false;
+				}
 
-							actualBottom = box.y + box.height;
-							otherTop = otherBox.y;
-							return actualBottom <= otherTop;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+				actualBottom = box.y + box.height;
+				otherTop = otherBox.y;
+				return actualBottom <= otherTop;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -88,36 +76,24 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 		let otherBottom: number | undefined;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
+				if (!box || !otherBox) {
+					return false;
+				}
 
-							actualTop = box.y;
-							otherBottom = otherBox.y + otherBox.height;
-							return actualTop >= otherBottom;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+				actualTop = box.y;
+				otherBottom = otherBox.y + otherBox.height;
+				return actualTop >= otherBottom;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -162,36 +138,24 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 		let otherLeft: number | undefined;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
+				if (!box || !otherBox) {
+					return false;
+				}
 
-							actualRight = box.x + box.width;
-							otherLeft = otherBox.x;
-							return actualRight <= otherLeft;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+				actualRight = box.x + box.width;
+				otherLeft = otherBox.x;
+				return actualRight <= otherLeft;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -236,36 +200,24 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 		let otherRight: number | undefined;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
 
-							if (!box || !otherBox) {
-								return false;
-							}
+				if (!box || !otherBox) {
+					return false;
+				}
 
-							actualLeft = box.x;
-							otherRight = otherBox.x + otherBox.width;
-							return actualLeft >= otherRight;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+				actualLeft = box.x;
+				otherRight = otherBox.x + otherBox.width;
+				return actualLeft >= otherRight;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {

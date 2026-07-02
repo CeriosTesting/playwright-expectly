@@ -5,7 +5,7 @@
 	"description": "Integration tests combining @cerios/playwright-expectly and @cerios/playwright-expectly-fuzzy.",
 	"type": "commonjs",
 	"scripts": {
-		"test": "playwright test"
+		"test": "playwright test --config=../../playwright.config.ts --project=integration"
 	},
 	"devDependencies": {
 		"@cerios/playwright-expectly": "*",

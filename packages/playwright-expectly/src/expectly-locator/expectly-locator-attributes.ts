@@ -1,4 +1,4 @@
-import { withMatcherState } from "@cerios/playwright-expectly-core";
+import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
@@ -13,32 +13,20 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute("placeholder");
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute("placeholder");
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -81,32 +69,20 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute("href");
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute("href");
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -149,32 +125,20 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute("src");
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute("src");
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -217,32 +181,20 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute("alt");
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute("alt");
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -286,35 +238,23 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let locatorError: Error | undefined;
 		const attrName = name.startsWith("data-") ? name : `data-${name}`;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute(attrName);
-							if (expected === undefined) {
-								return actual !== null;
-							}
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute(attrName);
+				if (expected === undefined) {
+					return actual !== null;
+				}
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -373,32 +313,20 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute("aria-label");
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute("aria-label");
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -441,32 +369,20 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let actual: string | null = null;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							actual = await locator.getAttribute("target");
-							if (typeof expected === "string") {
-								return actual === expected;
-							}
-							return actual !== null && expected.test(actual);
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				actual = await locator.getAttribute("target");
+				if (typeof expected === "string") {
+					return actual === expected;
+				}
+				return actual !== null && expected.test(actual);
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -509,30 +425,18 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let hasAttribute: boolean = false;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const requiredAttr = await locator.getAttribute("required");
-							hasAttribute = requiredAttr !== null;
-							return hasAttribute;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const requiredAttr = await locator.getAttribute("required");
+				hasAttribute = requiredAttr !== null;
+				return hasAttribute;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
@@ -563,30 +467,18 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		let hasAttribute: boolean = false;
 		let locatorError: Error | undefined;
 
-		try {
-			await baseExpect
-				.poll(
-					async () => {
-						try {
-							const readonlyAttr = await locator.getAttribute("readonly");
-							hasAttribute = readonlyAttr !== null;
-							return hasAttribute;
-						} catch (e: unknown) {
-							locatorError = e instanceof Error ? e : new Error(String(e));
-							throw e;
-						}
-					},
-					{
-						timeout: options?.timeout ?? this.timeout,
-						intervals: options?.intervals,
-					},
-				)
-				.toBe(true);
-			pass = true;
-		} catch {
-			if (locatorError) {
-				throw locatorError;
+		pass = await runPolledMatcher(this, options, async () => {
+			try {
+				const readonlyAttr = await locator.getAttribute("readonly");
+				hasAttribute = readonlyAttr !== null;
+				return hasAttribute;
+			} catch (e: unknown) {
+				locatorError = e instanceof Error ? e : new Error(String(e));
+				throw e;
 			}
+		});
+		if (locatorError) {
+			throw locatorError;
 		}
 
 		const message = (): string => {
