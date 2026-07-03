@@ -724,7 +724,10 @@ declare global {
 			 * // Fail if more than one row matches
 			 * expect(rows).toContainObjectMatching({ status: 'active' }, { allowMultiple: false });
 			 */
-			toContainObjectMatching(expected: Record<string, unknown>, options?: { allowMultiple?: boolean }): R;
+			toContainObjectMatching(
+				expected: T extends object[] ? Partial<T[number]> : Record<string, unknown>,
+				options?: { allowMultiple?: boolean },
+			): R;
 
 			/**
 			 * Asserts that an array contains only unique objects (no duplicates).

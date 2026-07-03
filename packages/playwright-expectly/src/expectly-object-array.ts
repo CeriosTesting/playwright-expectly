@@ -5,7 +5,11 @@ import { expect as baseExpect } from "@playwright/test";
  * Expectly Custom matchers for object array validations.
  */
 export const expectlyObjectArrayMatchers = withMatcherState({
-	toContainObjectMatching(actual: object[], expected: Record<string, unknown>, options?: { allowMultiple?: boolean }) {
+	toContainObjectMatching(
+		actual: object[],
+		expected: Partial<Record<string, unknown>>,
+		options?: { allowMultiple?: boolean },
+	) {
 		const assertionName = "toContainObjectMatching";
 		const allowMultiple = options?.allowMultiple ?? true;
 
