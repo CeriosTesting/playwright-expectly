@@ -5,6 +5,59 @@ import { expect as baseExpect } from "@playwright/test";
  * Expectly Custom matchers for object array validations.
  */
 export const expectlyObjectArrayMatchers = withMatcherState({
+	toContainObjectMatching(actual: object[], expected: Record<string, unknown>, options?: { allowMultiple?: boolean }) {
+		const assertionName = "toContainObjectMatching";
+		const allowMultiple = options?.allowMultiple ?? true;
+
+		const matchingObjects = actual.filter((item) => {
+			try {
+				baseExpect(item).toEqual(baseExpect.objectContaining(expected));
+				return true;
+			} catch {
+				return false;
+			}
+		});
+
+		const hasAtLeastOne = matchingObjects.length > 0;
+		const hasMultiple = matchingObjects.length > 1;
+		const pass = hasAtLeastOne && (allowMultiple || !hasMultiple);
+
+		const message = (): string => {
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, { isNot: this.isNot });
+
+			if (!hasAtLeastOne) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected array to contain an object matching: ${this.utils.printExpected(expected)}\n\n` +
+					`Received array (${actual.length} items):\n${this.utils.printReceived(actual)}`
+				);
+			}
+
+			if (hasMultiple && !allowMultiple) {
+				return (
+					hint +
+					"\n\n" +
+					`Expected array to contain exactly 1 object matching: ${this.utils.printExpected(expected)}\n` +
+					`But found ${this.utils.printReceived(matchingObjects.length)} matching objects:\n${this.utils.printReceived(matchingObjects)}`
+				);
+			}
+
+			return (
+				hint +
+				"\n\n" +
+				`Expected array: ${this.utils.printReceived(actual)}\n` +
+				`Expected to NOT contain an object matching: ${this.utils.printExpected(expected)}`
+			);
+		};
+
+		return {
+			message,
+			pass,
+			name: assertionName,
+			expected,
+		};
+	},
 	toHaveOnlyUniqueObjects(actual: object[]) {
 		const assertionName = "toHaveOnlyUniqueObjects";
 		const duplicateObjects = getDuplicateObjects(actual);

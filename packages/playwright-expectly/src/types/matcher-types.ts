@@ -711,6 +711,22 @@ declare global {
 			toHaveConsecutiveIntegers(): R;
 
 			/**
+			 * Asserts that an array contains at least one object matching the expected partial object.
+			 *
+			 * Uses `expect.objectContaining` internally, so matched objects may have additional properties.
+			 *
+			 * @param expected - A partial object whose properties must be present on at least one element
+			 * @param options.allowMultiple - When `false`, fails if more than one object matches. Defaults to `true`.
+			 *
+			 * @example
+			 * expect([{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }]).toContainObjectMatching({ id: 1 });
+			 * expect([{ id: 1, name: 'Alice' }]).not.toContainObjectMatching({ id: 99 });
+			 * // Fail if more than one row matches
+			 * expect(rows).toContainObjectMatching({ status: 'active' }, { allowMultiple: false });
+			 */
+			toContainObjectMatching(expected: Record<string, unknown>, options?: { allowMultiple?: boolean }): R;
+
+			/**
 			 * Asserts that an array contains only unique objects (no duplicates).
 			 *
 			 * Uses deep equality comparison via JSON serialization to detect duplicates.

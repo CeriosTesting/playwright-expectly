@@ -2,6 +2,87 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyObjectArray } from "../src/expectly-object-array";
 
+test.describe("toContainObjectMatching", () => {
+	test("should pass when array contains an object matching the expected partial", () => {
+		const array = [
+			{ id: 1, name: "Alice", role: "admin" },
+			{ id: 2, name: "Bob", role: "user" },
+		];
+
+		expectlyObjectArray(array).toContainObjectMatching({ id: 1, name: "Alice" });
+	});
+
+	test("should pass when matching object has additional properties", () => {
+		const array = [{ id: 1, name: "Alice", role: "admin", active: true }];
+
+		expectlyObjectArray(array).toContainObjectMatching({ id: 1 });
+	});
+
+	test("should fail when no object in the array matches", () => {
+		const array = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		expect(() => {
+			expectlyObjectArray(array).toContainObjectMatching({ id: 99 });
+		}).toThrow();
+	});
+
+	test("should work with negation when no object matches", () => {
+		const array = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		expectlyObjectArray(array).not.toContainObjectMatching({ id: 99 });
+	});
+
+	test("should fail with negation when object is found", () => {
+		const array = [{ id: 1, name: "Alice" }];
+
+		expect(() => {
+			expectlyObjectArray(array).not.toContainObjectMatching({ id: 1 });
+		}).toThrow();
+	});
+
+	test("should pass for empty expected object (matches any object)", () => {
+		const array = [{ id: 1 }];
+
+		expectlyObjectArray(array).toContainObjectMatching({});
+	});
+
+	test("should pass with allowMultiple: false when exactly one object matches", () => {
+		const array = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		expectlyObjectArray(array).toContainObjectMatching({ id: 1 }, { allowMultiple: false });
+	});
+
+	test("should fail with allowMultiple: false when more than one object matches", () => {
+		const array = [
+			{ id: 1, name: "Alice", role: "admin" },
+			{ id: 2, name: "Bob", role: "admin" },
+		];
+
+		expect(() => {
+			expectlyObjectArray(array).toContainObjectMatching({ role: "admin" }, { allowMultiple: false });
+		}).toThrow();
+	});
+
+	test("should pass with allowMultiple: true (default) when multiple objects match", () => {
+		const array = [
+			{ id: 1, role: "admin" },
+			{ id: 2, role: "admin" },
+		];
+
+		expectlyObjectArray(array).toContainObjectMatching({ role: "admin" });
+		expectlyObjectArray(array).toContainObjectMatching({ role: "admin" }, { allowMultiple: true });
+	});
+});
+
 test.describe("toHaveOnlyUniqueObjects", () => {
 	test("should pass when array contains only unique objects", () => {
 		const uniqueArray = [
