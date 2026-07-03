@@ -1,5 +1,20 @@
 # @cerios/playwright-expectly-fuzzy
 
+## 0.1.2
+
+### Patch Changes
+
+- 2496788: Move the shared negated-aware polling helper into core and fix locator and fuzzy locator `.not` matchers so passing negated assertions stop as soon as the negated condition is met instead of waiting for the full poll timeout.
+- 17295ec: Improve matcher setup reliability and refresh the docs around worker-side Playwright setup.
+
+  For `@cerios/playwright-expectly`, `toEqualPartially()` now has clearer array mismatch output, supports configurable array modes, validates matcher options at runtime, and tolerates repeated `setupExpectly()` calls safely.
+
+  For `@cerios/playwright-expectly-fuzzy`, `setupExpectlyFuzzy()` can now be called repeatedly without re-registering matchers, and the docs now explain that worker-side shared fixtures are the reliable way to register fuzzy matchers across Playwright workers.
+
+- de1d5ef: Fix running integration test in CI and generating reports for all tests.
+- Updated dependencies [2496788]
+  - @cerios/playwright-expectly-core@0.1.1
+
 ## 0.1.1
 
 ### Patch Changes
@@ -23,6 +38,7 @@
   New optional package for fuzzy string matching using [fuzzball](https://www.npmjs.com/package/fuzzball)'s `token_sort_ratio` algorithm. Ideal for validating AI-generated text where wording or word order may vary.
 
   **`toMatchFuzzy(expected, threshold?)`**
+
   - Works on both strings and Playwright locators
   - Word-order-insensitive: `"hello world"` and `"world hello"` score 100
   - Scores range from 0–100; assertion passes when score ≥ threshold
@@ -36,6 +52,7 @@
 ### Patch Changes
 
 - 1dbbb85: **Migrate build tooling from tsup to tsdown and improve matcher type inference**
+
   - Replaced `tsup` with `tsdown` as the build tool for all three packages (`playwright-expectly`, `playwright-expectly-core`, `playwright-expectly-fuzzy`)
   - Added explicit type assertions on `expectlyMatchers` and `expectlyLocatorMatchers` spread objects so TypeScript correctly infers the full union of all matcher method signatures, improving IntelliSense across all matcher groups
 
