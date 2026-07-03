@@ -725,7 +725,7 @@ declare global {
 			 * expect(rows).toContainObjectMatching({ status: 'active' }, { allowMultiple: false });
 			 */
 			toContainObjectMatching(
-				expected: T extends object[] ? Partial<T[number]> : Record<string, unknown>,
+				expected: T extends readonly object[] ? Partial<T[number]> : Record<string, unknown>,
 				options?: { allowMultiple?: boolean },
 			): R;
 

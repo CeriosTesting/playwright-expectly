@@ -130,7 +130,7 @@ test.describe("toContainObjectMatching (typed objects)", () => {
 		expectlyObjectArray(users).toContainObjectMatching(expectedUser);
 	});
 
-	test("should pass when using a typed object which should not match with negation", () => {
+	test("should pass when negation is used and a typed object does not match", () => {
 		const expectedUser: Partial<User> = { id: 99, name: "Nonexistent" };
 		expectlyObjectArray(users).not.toContainObjectMatching(expectedUser);
 	});
@@ -142,7 +142,7 @@ test.describe("toContainObjectMatching (typed objects)", () => {
 		}).toThrow(/Expected array to contain an object matching/);
 	});
 
-	test("should fail when using a typed object which should not match with negation", () => {
+	test("should fail when negation is used and a typed object matches", () => {
 		const expectedUser: Partial<User> = { id: 2, name: "Bob" };
 		expect(() => {
 			expectlyObjectArray(users).not.toContainObjectMatching(expectedUser);

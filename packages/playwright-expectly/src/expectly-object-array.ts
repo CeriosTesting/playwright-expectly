@@ -13,9 +13,10 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 		const assertionName = "toContainObjectMatching";
 		const allowMultiple = options?.allowMultiple ?? true;
 
+		const expectedMatcher = baseExpect.objectContaining(expected);
 		const matchingObjects = actual.filter((item) => {
 			try {
-				baseExpect(item).toEqual(baseExpect.objectContaining(expected));
+				baseExpect(item).toEqual(expectedMatcher);
 				return true;
 			} catch {
 				return false;
