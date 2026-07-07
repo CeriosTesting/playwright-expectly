@@ -67,51 +67,39 @@ test("chatbot response is on topic", async ({ page }) => {
 
 ### Extending Playwright `expect`
 
-#### Option A: `setupExpectlyFuzzy()`
+#### Option A (recommended): a single `tests/support` module
 
-`setupExpectlyFuzzy()` extends Playwright's `expect` in the current process.
-
-In some Playwright versions or project setups, calling it from `playwright.config.ts` may appear to work. However, config-time setup is not guaranteed across worker boundaries.
-
-The reliable approach is to call it in the same worker context that imports and uses Playwright's `expect`, typically from a shared fixtures module.
+Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
-// Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, test as base } from "@playwright/test";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 
-setupExpectlyFuzzy();
+// MUST capture the return value — never call `.extend()` and discard it.
+export const expect = baseExpect.extend(expectlyFuzzyMatchers);
+export const test = base;
 ```
 
-Recommended worker-side setup:
+Combining with `@cerios/playwright-expectly` (or your own matchers) via `mergeExpects()`:
 
 ```typescript
-// tests/fixtures.ts
-import { expect, test } from "@playwright/test";
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 
-setupExpectlyFuzzy();
+const expectlyExpect = baseExpect.extend(expectlyMatchers);
+const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);
 
-export { expect, test };
-```
-
-Use alongside `setupExpectly()` if you also want the core matchers:
-
-```typescript
-// tests/fixtures.ts
-import { expect, test } from "@playwright/test";
-import { setupExpectly } from "@cerios/playwright-expectly";
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
-
-setupExpectly();
-setupExpectlyFuzzy();
-
-export { expect, test };
+export const expect = mergeExpects(baseExpect, expectlyExpect, fuzzyExpect);
+export const test = base;
 ```
 
 Then use `expect` in your tests:
 
 ```typescript
-import { expect, test } from "./fixtures";
+import { expect, test } from "./support/expect";
 
 test("fuzzy match via expect", async ({ page }) => {
 	expect("Hello Wrold").toMatchFuzzy("Hello World");
@@ -119,32 +107,7 @@ test("fuzzy match via expect", async ({ page }) => {
 });
 ```
 
-Idempotency note: calling `setupExpectlyFuzzy()` more than once is safe; repeated calls are ignored.
-
-#### Option B: Manual `expect.extend`
-
-For explicit control, extend `expect` in a shared fixtures file:
-
-```typescript
-// tests/fixtures.ts
-import { expect, test as base } from "@playwright/test";
-import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
-
-expect.extend(expectlyFuzzyMatchers);
-
-export { expect };
-export const test = base;
-```
-
-Then import `expect` from your fixtures file in each test:
-
-```typescript
-import { expect, test } from "./fixtures";
-
-test("fuzzy match", async ({ page }) => {
-	expect("Hello Wrold").toMatchFuzzy("Hello World");
-});
-```
+> **Note:** You may see a `setupExpectlyFuzzy()` function in older docs or code — it is **deprecated**. It works for `toMatchFuzzy` (which doesn't collide with any Playwright built-in), but it relies on discarding the return value of `expect.extend()`, which is unsafe in general (see the root README's "Why not just call a setup function?" section) and no longer the recommended pattern.
 
 #### TypeScript type augmentation
 

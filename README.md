@@ -49,38 +49,23 @@ expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
-### Option 2: Extend Playwright `expect` with `setupExpectly`
+### Option 2 (recommended): a single `tests/support` module for native `expect`
 
-`setupExpectly()` extends Playwright's `expect` in the current process.
-
-In some Playwright versions or project setups, calling it from `playwright.config.ts` may appear to work. However, config-time setup is not guaranteed across worker boundaries.
-
-The reliable approach is to call it in the same worker context that imports and uses Playwright's `expect`, typically from a shared fixtures module.
+Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file in your project imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
-// Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
-// playwright.config.ts
-import { setupExpectly } from "@cerios/playwright-expectly";
+// tests/support/expect.ts
+import { expect as baseExpect, test as base } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
 
-setupExpectly();
+// MUST capture the return value — never call `.extend()` and discard it.
+export const expect = baseExpect.extend(expectlyMatchers);
+export const test = base;
 ```
 
-Recommended worker-side setup:
-
 ```typescript
-// tests/fixtures.ts
-import { expect, test } from "@playwright/test";
-import { setupExpectly } from "@cerios/playwright-expectly";
-
-setupExpectly();
-
-export { expect, test };
-```
-
-Then use `expect` as usual in your tests:
-
-```typescript
-import { expect, test } from "./fixtures";
+// any-spec-file.spec.ts
+import { expect, test } from "./support/expect"; // or wherever your support module lives
 
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
@@ -88,6 +73,63 @@ test("extended expect example", async ({ page }) => {
 	await expect(page.locator(".username")).toBeAlphanumeric();
 });
 ```
+
+#### Combining multiple matcher sources
+
+If you also use `@cerios/playwright-expectly-fuzzy`, your own custom matchers, or multiple fixture files, combine them in that one `tests/support/expect.ts` module. Two equally valid ways to do this:
+
+**`mergeExpects()`** — combines already-built `Expect` instances. Use this when composing 2+ independent matcher sources (recommended for multiple packages):
+
+```typescript
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+
+// Each matcher set is applied via `.extend()`, capturing the return value, then combined.
+const expectlyExpect = baseExpect.extend(expectlyMatchers);
+const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);
+
+export const expect = mergeExpects(baseExpect, expectlyExpect, fuzzyExpect);
+export const test = base;
+```
+
+**`.extend()` directly** — layer multiple matcher sets (or your own custom matchers) in one call:
+
+```typescript
+// tests/support/expect.ts
+import { expect as baseExpect, test as base } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy"; // optional
+
+// MUST capture the return value — never call `.extend()` and discard it.
+export const expect = baseExpect.extend({
+	...expectlyMatchers,
+	...expectlyFuzzyMatchers,
+	toBeMyCustomThing(received) {
+		/* ... */
+	},
+});
+export const test = base;
+```
+
+> **Common mistake:** `mergeTests()` combines Playwright _fixture_ (`test`) objects, not matchers. Don't pass `expectlyMatchers` (a raw matcher-function dictionary) into `mergeTests()` or `mergeExpects()` — only pass real `Expect` instances (the result of `.extend()`) like `expectlyExpect` above.
+
+If you have several fixture files (page objects, auth, API clients, etc.), give each its own `test.extend()` module, then combine them with `mergeTests()` in the same `tests/support` index alongside the merged `expect`:
+
+```typescript
+// tests/support/index.ts
+import { mergeTests } from "@playwright/test";
+
+import { expect } from "./expect";
+import { test as authTest } from "./fixtures/auth.fixture";
+import { test as apiTest } from "./fixtures/api.fixture";
+
+export const test = mergeTests(authTest, apiTest);
+export { expect };
+```
+
+Then every spec file imports `test`/`expect` from `tests/support` — never straight from `@playwright/test`.
 
 If your `playwright.config` is JavaScript or is not included in your `tsconfig.json`, add one ambient import in a `.d.ts` or shared test file so IntelliSense picks up the matcher types:
 
@@ -95,55 +137,9 @@ If your `playwright.config` is JavaScript or is not included in your `tsconfig.j
 import "@cerios/playwright-expectly";
 ```
 
-#### With fuzzy matching
+#### Why not just call a setup function?
 
-To also add `toMatchFuzzy()` to `expect`, call `setupExpectlyFuzzy()` alongside `setupExpectly()` in the same shared fixtures module:
-
-```typescript
-// tests/fixtures.ts
-import { expect, test } from "@playwright/test";
-import { setupExpectly } from "@cerios/playwright-expectly";
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
-
-setupExpectly();
-setupExpectlyFuzzy();
-
-export { expect, test };
-```
-
-Both calls register their matchers on Playwright's native `expect` in the current worker process. `setupExpectlyFuzzy()` also augments Playwright's `Matchers` interface automatically when the package is imported.
-
-Idempotency note: calling `setupExpectly()` or `setupExpectlyFuzzy()` more than once is safe; repeated calls are ignored.
-
-### Option 3: Extend Playwright `expect` manually
-
-If you prefer explicit control over exactly which matcher objects are registered, extend `expect` manually in a shared fixtures file and re-export it:
-
-```typescript
-// tests/fixtures.ts
-import { expect, test as base } from "@playwright/test";
-import { expectlyMatchers } from "@cerios/playwright-expectly";
-import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy"; // optional
-
-expect.extend(expectlyMatchers);
-expect.extend(expectlyFuzzyMatchers); // optional — adds toMatchFuzzy
-
-export { expect };
-export const test = base;
-```
-
-Then import `expect` from your fixtures file in every test:
-
-```typescript
-import { expect, test } from "./fixtures";
-
-test("extended expect example", async ({ page }) => {
-	expect("john@example.com").toBeValidEmail();
-	expect([1, 2, 3, 4]).toHaveAscendingOrder();
-	expect("Hello Wrold").toMatchFuzzy("Hello World");
-	await expect(page.locator(".username")).toBeAlphanumeric();
-});
-```
+You may see a `setupExpectly()`/`setupExpectlyFuzzy()` function in older docs or code. **These are deprecated.** Playwright's `expect.extend()` only mutates the _original_ `expect` object in place for matcher names that don't collide with a Playwright built-in. `toBeCloseTo` collides with Playwright's own built-in numeric matcher, so `setupExpectly()` (which discards the return value of `.extend()`) can never make the Date `toBeCloseTo` matcher work — regardless of where you call it, including `playwright.config.ts` or a worker fixtures file. The `tests/support` pattern above always works because it captures the return value of `.extend()`/`mergeExpects()` correctly.
 
 ## Available Matchers
 

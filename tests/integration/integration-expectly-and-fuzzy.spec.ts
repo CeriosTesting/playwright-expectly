@@ -1,7 +1,4 @@
-import "@cerios/playwright-expectly-fuzzy";
-import "@cerios/playwright-expectly";
-
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/expect";
 
 /**
  * Integration tests combining @cerios/playwright-expectly and @cerios/playwright-expectly-fuzzy.
@@ -9,12 +6,15 @@ import { expect, test } from "@playwright/test";
  * These tests show a real-world pattern: validate the structure/format of a string
  * with exact matchers from expectly, then validate its content similarity with
  * fuzzy matchers from expectly-fuzzy — useful for AI-generated or dynamic text.
+ *
+ * `test`/`expect` come from `./support/expect`, a single canonical module that merges both
+ * packages' matchers via `mergeExpects()` — see that file for the recommended pattern. This
+ * works reliably regardless of process/worker boundaries, unlike the deprecated
+ * `setupExpectly()`/`setupExpectlyFuzzy()` functions.
  */
 test.describe("Integration: expectly + expectly-fuzzy", () => {
 	test.describe("setup verification", () => {
-		test("setupExpectly registers expectly matchers on the native expect", () => {
-			// These matchers are only available after setupExpectly() is called in playwright.config.ts.
-			// If setup was skipped, this test throws: "expect(...).toBeNullish is not a function".
+		test("mergeExpects registers expectly matchers on the merged expect", () => {
 			expect(null).toBeNullish();
 			expect(undefined).toBeNullish();
 			expect("hello@example.com").toBeValidEmail();
@@ -22,18 +22,16 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			expect("abc123").toBeAlphanumeric();
 		});
 
-		test("setupExpectlyFuzzy registers toMatchFuzzy on the native expect", () => {
-			// These matchers are only available after setupExpectlyFuzzy() is called in playwright.config.ts.
-			// If setup was skipped, this test throws: "expect(...).toMatchFuzzy is not a function".
+		test("mergeExpects registers toMatchFuzzy on the merged expect", () => {
 			expect("Hello World").toMatchFuzzy("Hello Wrold");
 			expect("playwright testing").toMatchFuzzy("playwright testing");
 			expect("completely different text").not.toMatchFuzzy("hello world");
 		});
 
-		test("both setups are independent — matchers from each are available on native expect", () => {
-			// expectly matcher registered by setupExpectly
+		test("both matcher sets are available together on the merged expect", () => {
+			// expectly matcher
 			expect("playwright").toStartWith("play");
-			// fuzzy matcher registered by setupExpectlyFuzzy
+			// fuzzy matcher
 			expect("playwright").toMatchFuzzy("playwrihgt");
 		});
 	});

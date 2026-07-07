@@ -46,37 +46,39 @@ expectlyFuzzy("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 70);
 expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
 ```
 
-### Option 2: Extend Playwright `expect` with `setupExpectlyFuzzy`
+### Option 2 (recommended): a single `tests/support` module
 
-`setupExpectlyFuzzy()` extends Playwright's `expect` in the current process.
-
-In some Playwright versions or project setups, calling it from `playwright.config.ts` may appear to work. However, config-time setup is not guaranteed across worker boundaries.
-
-The reliable approach is to call it in the same worker context that imports and uses Playwright's `expect`, typically from a shared fixtures module.
+Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
-// Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, test as base } from "@playwright/test";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 
-setupExpectlyFuzzy();
+// MUST capture the return value — never call `.extend()` and discard it.
+export const expect = baseExpect.extend(expectlyFuzzyMatchers);
+export const test = base;
 ```
 
-Recommended worker-side setup:
+Combining with `@cerios/playwright-expectly` (or your own matchers) via `mergeExpects()` — recommended when composing 2+ matcher sources:
 
 ```typescript
-// tests/fixtures.ts
-import { expect, test } from "@playwright/test";
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 
-setupExpectlyFuzzy();
+const expectlyExpect = baseExpect.extend(expectlyMatchers);
+const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);
 
-export { expect, test };
+export const expect = mergeExpects(baseExpect, expectlyExpect, fuzzyExpect);
+export const test = base;
 ```
 
 Then use `expect` as usual in your tests:
 
 ```typescript
-import { expect, test } from "./fixtures";
+import { expect, test } from "./support/expect";
 
 test("AI content validation", async ({ page }) => {
 	expect("Hello Wrold").toMatchFuzzy("Hello World");
@@ -84,50 +86,7 @@ test("AI content validation", async ({ page }) => {
 });
 ```
 
-Use alongside `setupExpectly()` from the core package to get all matchers:
-
-```typescript
-// tests/fixtures.ts
-import { expect, test } from "@playwright/test";
-import { setupExpectly } from "@cerios/playwright-expectly";
-import { setupExpectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
-
-setupExpectly();
-setupExpectlyFuzzy();
-
-export { expect, test };
-```
-
-Idempotency note: calling `setupExpectlyFuzzy()` more than once is safe; repeated calls are ignored.
-
-### Option 3: Manual `expect.extend`
-
-For explicit control, extend `expect` in a shared fixtures file and re-export it:
-
-```typescript
-// tests/fixtures.ts
-import { expect, test as base } from "@playwright/test";
-import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
-
-expect.extend(expectlyFuzzyMatchers);
-
-export { expect };
-export const test = base;
-```
-
-Then import `expect` from your fixtures file in each test:
-
-```typescript
-import { expect, test } from "./fixtures";
-
-test("chatbot reply", async ({ page }) => {
-	expect("Hello Wrold").toMatchFuzzy("Hello World");
-	await expect(page.locator("[data-testid='bot-reply']")).toMatchFuzzy(
-		"Your order has been shipped and will arrive in 3 to 5 business days",
-		70,
-	);
-});
-```
+> **Note:** You may see a `setupExpectlyFuzzy()` function in older docs or code — it is **deprecated**. It still works for `toMatchFuzzy` (which doesn't collide with any Playwright built-in), but the `tests/support` pattern above is the recommended replacement: it correctly captures the return value of `expect.extend()`/`mergeExpects()`, which `setupExpectlyFuzzy()` does not.
 
 ## Available Matchers
 

@@ -1,11 +1,5 @@
 import { defineConfig } from "@playwright/test";
 
-import { setupExpectlyFuzzy } from "./packages/playwright-expectly-fuzzy/src/playwright-setup";
-import { setupExpectly } from "./packages/playwright-expectly/src/playwright-setup";
-
-setupExpectly();
-setupExpectlyFuzzy();
-
 export default defineConfig({
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,

@@ -1,54 +1,43 @@
 // Import matcher-types to activate the global PlaywrightTest.Matchers augmentation
 import "./types/matcher-types";
 
-import { PollOptions } from "@cerios/playwright-expectly-core";
-import { expect, ExpectMatcherState, Locator, MatcherReturnType } from "@playwright/test";
+import { expect } from "@playwright/test";
 
-import { expectlyFuzzyLocatorMatchers } from "./expectly-fuzzy-locator";
-import { expectlyFuzzyStringMatchers } from "./expectly-fuzzy-string";
+import { expectlyFuzzyMatchers } from "./expectly-fuzzy";
 
 let isExpectlyFuzzySetup = false;
 
-const expectlyFuzzyMatchers = {
-	...expectlyFuzzyStringMatchers,
-	...expectlyFuzzyLocatorMatchers,
-	toMatchFuzzy(
-		this: ExpectMatcherState,
-		received: string | Locator,
-		expected: string,
-		threshold?: number,
-		options?: PollOptions,
-	): MatcherReturnType | Promise<MatcherReturnType> {
-		if (received && typeof received === "object" && "innerText" in received) {
-			return expectlyFuzzyLocatorMatchers.toMatchFuzzy.call(this, received, expected, threshold, options);
-		}
-		return expectlyFuzzyStringMatchers.toMatchFuzzy.call(this, received, expected, threshold);
-	},
-};
-
 /**
  * Sets up Expectly Fuzzy by extending Playwright's expect with the fuzzy matchers.
- * This function extends Playwright's expect in the current process.
  *
- * In some Playwright versions or project setups, calling this from `playwright.config.ts`
- * may appear to work. However, config-time setup is not guaranteed to affect the `expect`
- * instance used inside test workers.
+ * @deprecated Prefer building your own `tests/support/expect.ts` in your project that extends
+ * Playwright's `expect` and captures the return value, e.g.
+ * `export const expect = baseExpect.extend(expectlyFuzzyMatchers)`, instead of calling this
+ * function.
  *
- * The reliable approach is to call this in the same worker context that imports and uses
- * Playwright's expect, typically from a shared test fixtures module that re-exports `expect`
- * and `test`.
+ * Playwright's `expect.extend()` only mutates the *original* `expect` object in place for
+ * matcher names that don't collide with a Playwright built-in, so relying on this function's
+ * discarded return value can silently fail to apply certain overrides regardless of where it's
+ * called (see `@cerios/playwright-expectly`'s `setupExpectly()` deprecation notice for the full
+ * explanation). `toMatchFuzzy` doesn't collide with any Playwright built-in, so this function
+ * continues to work correctly — it is deprecated for consistency and to steer everyone toward
+ * the single reliable pattern of capturing `.extend()`'s return value yourself.
  *
  * Importing this module also augments Playwright's `Matchers` interface,
  * providing full type support for `toMatchFuzzy` on the native `expect`.
  *
  * @example
- * // Sometimes seen in playwright.config.ts, but not guaranteed across worker boundaries
- * import { setupExpectlyFuzzy } from '@cerios/playwright-expectly-fuzzy';
+ * // Recommended instead:
+ * // tests/support/expect.ts
+ * import { expect as baseExpect, test as base } from '@playwright/test';
+ * import { expectlyFuzzyMatchers } from '@cerios/playwright-expectly-fuzzy';
  *
- * setupExpectlyFuzzy();
+ * export const expect = baseExpect.extend(expectlyFuzzyMatchers);
+ * export const test = base;
  *
  * @example
- * // In tests/fixtures.ts
+ * // Legacy usage (deprecated)
+ * // tests/fixtures.ts
  * import { expect, test } from '@playwright/test';
  * import { setupExpectlyFuzzy } from '@cerios/playwright-expectly-fuzzy';
  *
