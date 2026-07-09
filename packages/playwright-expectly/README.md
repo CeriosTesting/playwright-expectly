@@ -77,6 +77,17 @@ export const expect = mergeExpects(baseExpect, expectlyExpect, fuzzyExpect);
 export const test = base;
 ```
 
+If you only need the standalone package exports, the shorter form is also valid:
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+
+export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
+export const test = base;
+```
+
 > **Note:** you may see a `setupExpectly()` function in older docs or code — it is **deprecated**. Playwright's `expect.extend()` only mutates the _original_ `expect` object in place for matcher names that don't collide with a Playwright built-in. `toBeCloseTo` collides with Playwright's own built-in numeric matcher, so `setupExpectly()` can never make the Date `toBeCloseTo` matcher work, regardless of where it's called. The `tests/support` pattern above always works correctly.
 
 ## Available Matchers

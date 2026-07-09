@@ -75,6 +75,17 @@ export const expect = mergeExpects(baseExpect, expectlyExpect, fuzzyExpect);
 export const test = base;
 ```
 
+If you only need the standalone package exports, the shorter form is also valid:
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+
+export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
+export const test = base;
+```
+
 Then use `expect` as usual in your tests:
 
 ```typescript

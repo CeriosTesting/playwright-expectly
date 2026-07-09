@@ -94,6 +94,17 @@ export const expect = mergeExpects(baseExpect, expectlyExpect, fuzzyExpect);
 export const test = base;
 ```
 
+If you only need the package-provided standalone expects, the shorter exported-expect form is also valid:
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+
+export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
+export const test = base;
+```
+
 **`.extend()` directly** — layer multiple matcher sets (or your own custom matchers) in one call:
 
 ```typescript
