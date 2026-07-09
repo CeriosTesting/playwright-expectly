@@ -712,6 +712,17 @@ test.describe("toEqualPartially", () => {
 		expect(error.message).toContain('"Bob"');
 	});
 
+	test("toEqualPartially preserves undefined properties in the received array output", () => {
+		const actual = [{ id: 1, middleName: undefined }];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }]);
+		});
+
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain('"middleName": undefined');
+	});
+
 	test("toEqualPartially truncates a large received array when no closest candidate is found", () => {
 		const actual = Array.from({ length: 50 }, (_, i) => ({ id: i, value: `Item ${i}` }));
 
@@ -722,7 +733,7 @@ test.describe("toEqualPartially", () => {
 		expect(error.message).toContain("No close match found.");
 		expect(error.message).toContain("Received array:");
 		expect(error.message).toContain('"Item 20"');
-		expect(error.message).toContain("more lines not shown");
+		expect(error.message).toContain("more items not shown");
 		expect(error.message).not.toContain('"Item 30"');
 	});
 });

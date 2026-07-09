@@ -4,6 +4,7 @@ import { expect as baseExpect } from "@playwright/test";
 import type { PartialMatchOptions } from "./types/matcher-types";
 
 const MAX_RECEIVED_ARRAY_LINES = 100;
+const MAX_RECEIVED_ARRAY_ITEMS = 25;
 
 /**
  * Expectly Custom matchers for any type validations.
@@ -1038,26 +1039,35 @@ function formatFailureRoute(route: Array<ArrayMatchReport>): string | undefined 
 	return lines.length > 0 ? lines.join("\n") : undefined;
 }
 
-function prettyPrintReceivedValue(matcherState: ExpectMatcherState, value: unknown): string {
-	try {
-		const printed = JSON.stringify(value, undefined, 2);
-		if (printed !== undefined) {
-			return printed;
-		}
-	} catch {
-		// Fall through to the compact printer for values JSON.stringify cannot handle.
-	}
-
-	return matcherState.utils.printReceived(value);
+function splitLines(text: string): string[] {
+	return text.split(/\r?\n/);
 }
 
-function truncateToMaxLines(text: string, maxLines: number): string {
-	const lines = text.split("\n");
-	if (lines.length <= maxLines) {
-		return text;
+function prettyPrintReceivedValue(matcherState: ExpectMatcherState, value: unknown): string {
+	return splitLines(matcherState.utils.printReceived(value)).join("\n");
+}
+
+function formatReceivedArrayPreview(matcherState: ExpectMatcherState, value: unknown[], maxLines: number): string {
+	const lines = ["["];
+	let nextIndex = 0;
+
+	for (; nextIndex < value.length && nextIndex < MAX_RECEIVED_ARRAY_ITEMS; nextIndex++) {
+		const itemLines = splitLines(prettyPrintReceivedValue(matcherState, value[nextIndex])).map((line) => `  ${line}`);
+		itemLines[itemLines.length - 1] += ",";
+		const reservedLines = 1 + (nextIndex < value.length - 1 ? 1 : 0);
+		if (lines.length + itemLines.length + reservedLines > maxLines) {
+			break;
+		}
+		lines.push(...itemLines);
 	}
 
-	return [...lines.slice(0, maxLines), `… (${lines.length - maxLines} more lines not shown)`].join("\n");
+	const omittedItemsCount = value.length - nextIndex;
+	if (omittedItemsCount > 0) {
+		lines.push(`  … (${omittedItemsCount} more items not shown)`);
+	}
+
+	lines.push("]");
+	return lines.join("\n");
 }
 
 function formatPrimaryArrayFailure(
@@ -1096,7 +1106,7 @@ function formatPrimaryArrayFailure(
 		sections.push(
 			formatArraySectionItem(
 				"Received array",
-				truncateToMaxLines(prettyPrintReceivedValue(matcherState, report.actual), MAX_RECEIVED_ARRAY_LINES),
+				formatReceivedArrayPreview(matcherState, report.actual, MAX_RECEIVED_ARRAY_LINES),
 			),
 		);
 	}
