@@ -736,6 +736,24 @@ test.describe("toEqualPartially", () => {
 		expect(error.message).toContain("more items not shown");
 		expect(error.message).not.toContain('"Item 30"');
 	});
+
+	test("toEqualPartially truncates large nested arrays in the received array preview", () => {
+		const actual = [
+			{
+				id: 1,
+				values: Array.from({ length: 50 }, (_, i) => ({ label: `Item ${i}` })),
+			},
+		];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }]);
+		});
+
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain('"Item 0"');
+		expect(error.message).toContain("…");
+		expect(error.message).not.toContain('"Item 30"');
+	});
 });
 
 test.describe("toEqualPartially array error rendering", () => {

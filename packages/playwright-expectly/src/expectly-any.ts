@@ -5,6 +5,8 @@ import type { PartialMatchOptions } from "./types/matcher-types";
 
 const MAX_RECEIVED_ARRAY_LINES = 100;
 const MAX_RECEIVED_ARRAY_ITEMS = 25;
+const MAX_RECEIVED_OBJECT_KEYS = 25;
+const MAX_RECEIVED_PREVIEW_DEPTH = 3;
 
 /**
  * Expectly Custom matchers for any type validations.
@@ -394,7 +396,12 @@ export const expectlyAny = baseExpect.extend(expectlyAnyMatchers);
  * For asymmetric matchers: returns actual as-is (let Playwright's toEqual handle the matching)
  */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value) && value.constructor === Object;
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
+
+	const prototype = Object.getPrototypeOf(value);
+	return prototype === Object.prototype || prototype === null;
 }
 
 function isStructuredValue(value: unknown): boolean {
@@ -1047,12 +1054,44 @@ function prettyPrintReceivedValue(matcherState: ExpectMatcherState, value: unkno
 	return splitLines(matcherState.utils.printReceived(value)).join("\n");
 }
 
+function buildReceivedPreviewValue(value: unknown, remainingDepth = MAX_RECEIVED_PREVIEW_DEPTH): unknown {
+	if (remainingDepth <= 0) {
+		return value;
+	}
+
+	if (Array.isArray(value)) {
+		const previewItems = value
+			.slice(0, MAX_RECEIVED_ARRAY_ITEMS)
+			.map((item) => buildReceivedPreviewValue(item, remainingDepth - 1));
+		const omittedItemsCount = value.length - previewItems.length;
+		if (omittedItemsCount > 0) {
+			previewItems.push(`… (${omittedItemsCount} more items not shown)`);
+		}
+		return previewItems;
+	}
+
+	if (isPlainObject(value)) {
+		const entries = Object.entries(value);
+		const previewEntries = entries
+			.slice(0, MAX_RECEIVED_OBJECT_KEYS)
+			.map(([key, itemValue]) => [key, buildReceivedPreviewValue(itemValue, remainingDepth - 1)]);
+		const omittedPropertiesCount = entries.length - previewEntries.length;
+		if (omittedPropertiesCount > 0) {
+			previewEntries.push(["…", `(${omittedPropertiesCount} more properties not shown)`]);
+		}
+		return Object.fromEntries(previewEntries);
+	}
+
+	return value;
+}
+
 function formatReceivedArrayPreview(matcherState: ExpectMatcherState, value: unknown[], maxLines: number): string {
 	const lines = ["["];
 	let nextIndex = 0;
 
 	for (; nextIndex < value.length && nextIndex < MAX_RECEIVED_ARRAY_ITEMS; nextIndex++) {
-		const itemLines = splitLines(prettyPrintReceivedValue(matcherState, value[nextIndex])).map((line) => `  ${line}`);
+		const previewItem = buildReceivedPreviewValue(value[nextIndex]);
+		const itemLines = splitLines(prettyPrintReceivedValue(matcherState, previewItem)).map((line) => `  ${line}`);
 		itemLines[itemLines.length - 1] += ",";
 		const reservedLines = 1 + (nextIndex < value.length - 1 ? 1 : 0);
 		if (lines.length + itemLines.length + reservedLines > maxLines) {
