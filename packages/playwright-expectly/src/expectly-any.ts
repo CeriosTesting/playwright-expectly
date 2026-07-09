@@ -3,6 +3,8 @@ import { expect as baseExpect } from "@playwright/test";
 
 import type { PartialMatchOptions } from "./types/matcher-types";
 
+const MAX_RECEIVED_ARRAY_LINES = 100;
+
 /**
  * Expectly Custom matchers for any type validations.
  */
@@ -413,6 +415,7 @@ type ArrayMatchReport = {
 	path: string;
 	mode: ArrayMatchMode;
 	expected: unknown[];
+	actual: unknown[];
 	matchedPairs: Array<{
 		expectedIndex: number;
 		actualIndex: number;
@@ -588,11 +591,17 @@ function mergeExtractionState(targetState: ExtractionState, sourceState: Extract
 	targetState.arrayReports.push(...sourceState.arrayReports);
 }
 
-function createArrayMatchReport(path: string, mode: ArrayMatchMode, expected: unknown[]): ArrayMatchReport {
+function createArrayMatchReport(
+	path: string,
+	mode: ArrayMatchMode,
+	expected: unknown[],
+	actual: unknown[],
+): ArrayMatchReport {
 	return {
 		path,
 		mode,
 		expected,
+		actual,
 		matchedPairs: [],
 		unmatchedExpectedItems: [],
 	};
@@ -1029,6 +1038,28 @@ function formatFailureRoute(route: Array<ArrayMatchReport>): string | undefined 
 	return lines.length > 0 ? lines.join("\n") : undefined;
 }
 
+function prettyPrintReceivedValue(matcherState: ExpectMatcherState, value: unknown): string {
+	try {
+		const printed = JSON.stringify(value, undefined, 2);
+		if (printed !== undefined) {
+			return printed;
+		}
+	} catch {
+		// Fall through to the compact printer for values JSON.stringify cannot handle.
+	}
+
+	return matcherState.utils.printReceived(value);
+}
+
+function truncateToMaxLines(text: string, maxLines: number): string {
+	const lines = text.split("\n");
+	if (lines.length <= maxLines) {
+		return text;
+	}
+
+	return [...lines.slice(0, maxLines), `… (${lines.length - maxLines} more lines not shown)`].join("\n");
+}
+
 function formatPrimaryArrayFailure(
 	matcherState: ExpectMatcherState,
 	report: ArrayMatchReport,
@@ -1038,7 +1069,10 @@ function formatPrimaryArrayFailure(
 ): string {
 	const failingItemPath = mismatchPath;
 	const route = buildFailureRoute(state, report.path);
-	const sections = [`First failing path: ${failingItemPath}`, `Failing array: ${report.path} (${report.mode})`];
+	const sections = [
+		`First failing path: ${failingItemPath}`,
+		`Failing array: ${report.path} (ArrayMatchMode: ${report.mode})`,
+	];
 
 	const routeText = formatFailureRoute(route);
 	if (routeText) {
@@ -1058,6 +1092,13 @@ function formatPrimaryArrayFailure(
 		sections.push(`Failure continues at: ${item.nestedMismatchPath}`);
 	} else {
 		sections.push("No close match found.");
+		sections.push(formatArraySectionItem("Expected partial", matcherState.utils.printExpected(item.expectedItem)));
+		sections.push(
+			formatArraySectionItem(
+				"Received array",
+				truncateToMaxLines(prettyPrintReceivedValue(matcherState, report.actual), MAX_RECEIVED_ARRAY_LINES),
+			),
+		);
 	}
 
 	return sections.join("\n\n");
@@ -1131,7 +1172,7 @@ function buildExactOrderArraySubset(
 	path: string,
 ): unknown[] {
 	const result: unknown[] = [];
-	const report = createArrayMatchReport(path, state.arrayMode, expectedArray);
+	const report = createArrayMatchReport(path, state.arrayMode, expectedArray, actualArray);
 	state.arrayReports.push(report);
 
 	for (let index = 0; index < expectedArray.length; index++) {
@@ -1281,7 +1322,7 @@ function buildSubsetModeArraySubset(
 	state: ExtractionState,
 	path: string,
 ): unknown[] {
-	const report = createArrayMatchReport(path, state.arrayMode, expectedArray);
+	const report = createArrayMatchReport(path, state.arrayMode, expectedArray, actualArray);
 	state.arrayReports.push(report);
 	const { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual, scoreByExpectedAndActual } =
 		buildPairCandidates(actualArray, expectedArray, state, path);
