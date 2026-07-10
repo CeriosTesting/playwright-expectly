@@ -7,6 +7,7 @@ const MAX_RECEIVED_ARRAY_LINES = 100;
 const MAX_RECEIVED_ARRAY_ITEMS = 25;
 const MAX_RECEIVED_OBJECT_KEYS = 25;
 const MAX_RECEIVED_PREVIEW_DEPTH = 3;
+const MAX_RECEIVED_STRING_LENGTH = 500;
 
 /**
  * Expectly Custom matchers for any type validations.
@@ -1057,6 +1058,10 @@ function prettyPrintReceivedValue(matcherState: ExpectMatcherState, value: unkno
 function buildReceivedPreviewValue(value: unknown, remainingDepth = MAX_RECEIVED_PREVIEW_DEPTH): unknown {
 	if (remainingDepth <= 0) {
 		return value;
+	}
+
+	if (typeof value === "string" && value.length > MAX_RECEIVED_STRING_LENGTH) {
+		return `${value.slice(0, MAX_RECEIVED_STRING_LENGTH)}… (${value.length - MAX_RECEIVED_STRING_LENGTH} more characters not shown)`;
 	}
 
 	if (Array.isArray(value)) {
