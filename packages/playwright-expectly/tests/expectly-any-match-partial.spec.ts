@@ -387,7 +387,7 @@ test.describe("toEqualPartially", () => {
 		});
 
 		expect(error.message).toContain("First failing path: $[0].id");
-		expect(error.message).toContain("Failing array: $ (exactOrder)");
+		expect(error.message).toContain("Failing array: $ (ArrayMatchMode: exactOrder)");
 		expect(error.message).toContain("Expected partial");
 		expect(error.message).toContain("Closest candidate");
 		expect(error.message).toMatch(/Closest actual\[0\] \(\d+% match\)/);
@@ -449,7 +449,7 @@ test.describe("toEqualPartially", () => {
 		});
 
 		expect(error.message).toContain("First failing path: $.projects[0].id");
-		expect(error.message).toContain("Failing array: $.projects (exactOrder)");
+		expect(error.message).toContain("Failing array: $.projects (ArrayMatchMode: exactOrder)");
 		expect(error.message).toContain(
 			"projects expected[0] did not fully match; failure continues at $.projects[0].tasks.",
 		);
@@ -643,55 +643,129 @@ test.describe("toEqualPartially", () => {
 			}),
 		});
 	});
-});
 
-test("toEqualPartially shows the closest matching array item as a focused diff", () => {
-	const actual = [
-		{
-			id: 1,
-			name: "Alice",
-			email: "alice@example.com",
-			addresses: [
-				{ street: "123 Main St", city: "Wonderland" },
-				{ street: "456 Office Rd", city: "Metropolis" },
-			],
-		},
-		{
-			id: 2,
-			name: "Bob",
-			email: "bob@example.com",
-			addresses: [
-				{ street: "789 Elm St", city: "Gotham" },
-				{ street: "101 Maple Ave", city: "Star City" },
-			],
-		},
-	];
-
-	const error = getRejectedErrorSync(() => {
-		expectlyAny(actual).toEqualPartially([
+	test("toEqualPartially shows the closest matching array item as a focused diff", () => {
+		const actual = [
 			{
-				addresses: [{ street: "456 Office Rd", city: "Metroplis" }],
+				id: 1,
+				name: "Alice",
+				email: "alice@example.com",
+				addresses: [
+					{ street: "123 Main St", city: "Wonderland" },
+					{ street: "456 Office Rd", city: "Metropolis" },
+				],
 			},
-		]);
+			{
+				id: 2,
+				name: "Bob",
+				email: "bob@example.com",
+				addresses: [
+					{ street: "789 Elm St", city: "Gotham" },
+					{ street: "101 Maple Ave", city: "Star City" },
+				],
+			},
+		];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([
+				{
+					addresses: [{ street: "456 Office Rd", city: "Metroplis" }],
+				},
+			]);
+		});
+
+		expect(error.message).toContain("First failing path: $[0].addresses[0].city");
+		expect(error.message).toContain("Failing array: $[0].addresses (ArrayMatchMode: subset)");
+		expect(error.message).not.toContain("Match route");
+		expect(error.message).toContain("Expected partial");
+		expect(error.message).toContain("Closest candidate");
+		expect(error.message).toMatch(/Closest actual\[1\] \(\d+% match\)/);
+		expect(error.message).toContain("456 Office Rd");
+		expect(error.message).toContain("Metropolis");
+		expect(error.message).toContain("Metroplis");
+		expect(error.message).toContain("Call log:");
+		expect(error.message).toContain("addresses expected[0] did not fully match; closest candidate was actual[1].");
+		expect(error.message).not.toContain("Failure details:");
+		expect(error.message).not.toContain("Unmatched expected index 0 at $[0].addresses[0]");
+		expect(error.message).not.toContain("Extra actual items");
+		expect(error.message).not.toContain("Array path:");
+		expect(error.message.match(/Closest actual\[/g) ?? []).toHaveLength(1);
+		expect(error.message.indexOf("First failing path:")).toBeLessThan(error.message.indexOf("Closest actual[1]"));
 	});
 
-	expect(error.message).toContain("First failing path: $[0].addresses[0].city");
-	expect(error.message).toContain("Failing array: $[0].addresses (subset)");
-	expect(error.message).not.toContain("Match route");
-	expect(error.message).toContain("Expected partial");
-	expect(error.message).toContain("Closest candidate");
-	expect(error.message).toMatch(/Closest actual\[1\] \(\d+% match\)/);
-	expect(error.message).toContain("456 Office Rd");
-	expect(error.message).toContain("Metropolis");
-	expect(error.message).toContain("Metroplis");
-	expect(error.message).toContain("Call log:");
-	expect(error.message).toContain("addresses expected[0] did not fully match; closest candidate was actual[1].");
-	expect(error.message).not.toContain("Failure details:");
-	expect(error.message).not.toContain("Unmatched expected index 0 at $[0].addresses[0]");
-	expect(error.message).not.toContain("Extra actual items");
-	expect(error.message).not.toContain("Array path:");
-	expect(error.message.match(/Closest actual\[/g) ?? []).toHaveLength(1);
-	expect(error.message.indexOf("First failing path:")).toBeLessThan(error.message.indexOf("Closest actual[1]"));
+	test("toEqualPartially shows top level array when no closest candidate is found", () => {
+		const actual = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 3, name: "Charlie" }]);
+		});
+
+		expect(error.message).toContain("First failing path: $[0]");
+		expect(error.message).toContain("No close match found.");
+		expect(error.message).toContain("Expected partial:");
+		expect(error.message).toContain('"Charlie"');
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain('"Alice"');
+		expect(error.message).toContain('"Bob"');
+	});
+
+	test("toEqualPartially preserves undefined properties in the received array output", () => {
+		const actual = [{ id: 1, middleName: undefined }];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }]);
+		});
+
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain('"middleName": undefined');
+	});
+
+	test("toEqualPartially truncates a large received array when no closest candidate is found", () => {
+		const actual = Array.from({ length: 50 }, (_, i) => ({ id: i, value: `Item ${i}` }));
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 99, value: "Missing" }]);
+		});
+
+		expect(error.message).toContain("No close match found.");
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain('"Item 20"');
+		expect(error.message).toContain("more items not shown");
+		expect(error.message).not.toContain('"Item 30"');
+	});
+
+	test("toEqualPartially truncates large nested arrays in the received array preview", () => {
+		const actual = [
+			{
+				id: 1,
+				values: Array.from({ length: 50 }, (_, i) => ({ label: `Item ${i}` })),
+			},
+		];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }]);
+		});
+
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain('"Item 0"');
+		expect(error.message).toContain("…");
+		expect(error.message).not.toContain('"Item 30"');
+	});
+
+	test("toEqualPartially truncates large strings in the received array preview before printing", () => {
+		const actual = [{ id: 1, value: "x".repeat(2_000) }];
+
+		const error = getRejectedErrorSync(() => {
+			expectlyAny(actual).toEqualPartially([{ id: 2 }]);
+		});
+
+		expect(error.message).toContain("Received array:");
+		expect(error.message).toContain("more characters not shown");
+		expect(error.message).not.toContain("x".repeat(1_000));
+	});
 });
 
 test.describe("toEqualPartially array error rendering", () => {
@@ -842,7 +916,7 @@ test.describe("toEqualPartially array error rendering", () => {
 		});
 
 		expect(error.message).toContain("First failing path: $.organizations[0].name");
-		expect(error.message).toContain("Failing array: $.organizations (subset)");
+		expect(error.message).toContain("Failing array: $.organizations (ArrayMatchMode: subset)");
 		expect(error.message).not.toContain("Match route");
 		expect(error.message).toMatch(/Closest actual\[0\] \(\d+% match\)/);
 		expect(error.message).toContain("Expected partial");
