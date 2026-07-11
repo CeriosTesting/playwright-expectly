@@ -31,30 +31,14 @@ npm install @cerios/playwright-expectly-fuzzy --save-dev
 
 ## Quick Start
 
-### Option 1: Use `expectly` directly
-
-```typescript
-import { expectly } from "@cerios/playwright-expectly";
-
-// String validation
-expectly("user@example.com").toBeValidEmail();
-
-// Number array validation
-expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
-
-// Date validation
-expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
-
-// Locator validation
-await expectly(page.locator(".username")).toBeAlphanumeric();
-```
-
-### Option 2 (recommended): a single `tests/support` module for native `expect`
+### Recommended: a single `tests/support` module for native `expect`
 
 Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file in your project imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
 // tests/support/expect.ts
+import "@cerios/playwright-expectly";
+
 import { expect as baseExpect, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 
@@ -70,8 +54,24 @@ import { expect, test } from "./support/expect"; // or wherever your support mod
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
 	expect([1, 2, 3, 4]).toHaveAscendingOrder();
+	expect(new Date("2025-01-02")).toBeCloseTo(new Date("2025-01-01"), { days: 1 });
 	await expect(page.locator(".username")).toBeAlphanumeric();
 });
+```
+
+This returned-value pattern is the important part. Playwright only mutates the original `expect` in place for matcher names that do not collide with built-ins. The Date matcher `toBeCloseTo` collides with Playwright's native numeric `toBeCloseTo`, so the Date version only exists on the value returned by `.extend(...)`.
+
+### Standalone `expectly`
+
+Use `expectly` directly when you do not want to re-export Playwright's `expect`:
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+
+expectly("user@example.com").toBeValidEmail();
+expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
+expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
+await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
 #### Combining multiple matcher sources
@@ -287,11 +287,12 @@ test("validate form elements", async ({ page }) => {
 Use this when you want all tests to use the extra matchers without importing `expectly` everywhere.
 
 ```typescript
-// e.g. tests/fixtures.ts or a shared setup module imported by your tests
-import { expect } from "@playwright/test";
+// e.g. tests/support/expect.ts
+import { expect as baseExpect, test } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 
-expect.extend(expectlyMatchers);
+export const expect = baseExpect.extend(expectlyMatchers);
+export { test };
 ```
 
 ### Exported matcher objects
@@ -299,13 +300,14 @@ expect.extend(expectlyMatchers);
 All matcher objects are exported, so you can extend `expect` with everything or only specific families.
 
 ```typescript
+import { expect as baseExpect } from "@playwright/test";
 import { expectlyDateMatchers, expectlyMatchers, expectlyStringMatchers } from "@cerios/playwright-expectly";
 
 // All matchers
-expect.extend(expectlyMatchers);
+const expect = baseExpect.extend(expectlyMatchers);
 
 // Or only selected matcher families
-expect.extend({
+const expectStringsAndDates = baseExpect.extend({
 	...expectlyStringMatchers,
 	...expectlyDateMatchers,
 });

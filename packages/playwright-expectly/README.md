@@ -27,23 +27,14 @@ npm install @cerios/playwright-expectly --save-dev
 
 ## Quick Start
 
-### Option 1: Use `expectly` directly
-
-```typescript
-import { expectly } from "@cerios/playwright-expectly";
-
-expectly("user@example.com").toBeValidEmail();
-expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
-expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
-await expectly(page.locator(".username")).toBeAlphanumeric();
-```
-
-### Option 2 (recommended): a single `tests/support` module for native `expect`
+### Recommended: a single `tests/support` module for native `expect`
 
 Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
 // tests/support/expect.ts
+import "@cerios/playwright-expectly";
+
 import { expect as baseExpect, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 
@@ -58,8 +49,22 @@ import { expect, test } from "./support/expect";
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
 	expect([1, 2, 3, 4]).toHaveAscendingOrder();
+	expect(new Date("2025-01-02")).toBeCloseTo(new Date("2025-01-01"), { days: 1 });
 	await expect(page.locator(".username")).toBeAlphanumeric();
 });
+```
+
+Capturing the return value is the key detail. Playwright only mutates the original `expect` in place for matcher names that do not collide with built-ins. The Date matcher `toBeCloseTo` collides with Playwright's native numeric `toBeCloseTo`, so the Date version only exists on the value returned by `.extend(...)`.
+
+### Standalone `expectly`
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+
+expectly("user@example.com").toBeValidEmail();
+expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
+expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
+await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
 Combining with `@cerios/playwright-expectly-fuzzy`, or your own matchers, via `mergeExpects()`:

@@ -26,32 +26,14 @@ npm install @cerios/playwright-expectly-fuzzy --save-dev
 
 ## Quick Start
 
-### Option 1: `expectlyFuzzy` (standalone)
-
-Use `expectlyFuzzy` directly without modifying Playwright's `expect`:
-
-```typescript
-import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
-
-// Passes — minor typo tolerated (default threshold 80)
-expectlyFuzzy("Hello Wrold").toMatchFuzzy("Hello World");
-
-// Word-order-insensitive — scores 100
-expectlyFuzzy("world hello").toMatchFuzzy("hello world");
-
-// Custom threshold for more lenient matching
-expectlyFuzzy("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 70);
-
-// With negation
-expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
-```
-
-### Option 2 (recommended): a single `tests/support` module
+### Recommended: a single `tests/support` module
 
 Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
 // tests/support/expect.ts
+import "@cerios/playwright-expectly-fuzzy";
+
 import { expect as baseExpect, test as base } from "@playwright/test";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 
@@ -97,6 +79,28 @@ test("AI content validation", async ({ page }) => {
 });
 ```
 
+Capturing the return value keeps your setup aligned with Playwright's extended-`expect` model and composes cleanly when you merge multiple matcher sources. The most visible collision today is in the base package, where the Date `toBeCloseTo` only exists on the value returned by `.extend(...)`, so using the same returned-value pattern here keeps the combined setup consistent.
+
+### Standalone `expectlyFuzzy`
+
+Use `expectlyFuzzy` directly without modifying Playwright's `expect`:
+
+```typescript
+import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+
+// Passes — minor typo tolerated (default threshold 80)
+expectlyFuzzy("Hello Wrold").toMatchFuzzy("Hello World");
+
+// Word-order-insensitive — scores 100
+expectlyFuzzy("world hello").toMatchFuzzy("hello world");
+
+// Custom threshold for more lenient matching
+expectlyFuzzy("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 70);
+
+// With negation
+expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
+```
+
 > **Note:** You may see a `setupExpectlyFuzzy()` function in older docs or code — it is **deprecated**. It still works for `toMatchFuzzy` (which doesn't collide with any Playwright built-in), but the `tests/support` pattern above is the recommended replacement: it correctly captures the return value of `expect.extend()`/`mergeExpects()`, which `setupExpectlyFuzzy()` does not.
 
 ## Available Matchers
@@ -137,7 +141,7 @@ expectlyFuzzy("completely different text").not.toMatchFuzzy("hello world");
 | Export                         | Description                                                  |
 | ------------------------------ | ------------------------------------------------------------ |
 | `expectlyFuzzy`                | `expect` extended with all fuzzy matchers                    |
-| `expectlyFuzzyMatchers`        | Matcher object — pass to `expect.extend()`                   |
+| `expectlyFuzzyMatchers`        | Matcher object — pass to `baseExpect.extend()`               |
 | `expectlyFuzzyString`          | `expect` extended with string-only fuzzy matchers            |
 | `expectlyFuzzyStringMatchers`  | String fuzzy matcher object                                  |
 | `expectlyFuzzyLocator`         | `expect` extended with locator-only fuzzy matchers           |
