@@ -3,6 +3,12 @@ import { expect as baseExpect } from "@playwright/test";
 
 import type { PartialMatchOptions } from "./types/matcher-types";
 
+const MAX_RECEIVED_ARRAY_LINES = 100;
+const MAX_RECEIVED_ARRAY_ITEMS = 25;
+const MAX_RECEIVED_OBJECT_KEYS = 25;
+const MAX_RECEIVED_PREVIEW_DEPTH = 3;
+const MAX_RECEIVED_STRING_LENGTH = 500;
+
 /**
  * Expectly Custom matchers for any type validations.
  */
@@ -391,7 +397,12 @@ export const expectlyAny = baseExpect.extend(expectlyAnyMatchers);
  * For asymmetric matchers: returns actual as-is (let Playwright's toEqual handle the matching)
  */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value) && value.constructor === Object;
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
+
+	const prototype = Object.getPrototypeOf(value);
+	return prototype === Object.prototype || prototype === null;
 }
 
 function isStructuredValue(value: unknown): boolean {
@@ -413,6 +424,7 @@ type ArrayMatchReport = {
 	path: string;
 	mode: ArrayMatchMode;
 	expected: unknown[];
+	actual: unknown[];
 	matchedPairs: Array<{
 		expectedIndex: number;
 		actualIndex: number;
@@ -588,11 +600,17 @@ function mergeExtractionState(targetState: ExtractionState, sourceState: Extract
 	targetState.arrayReports.push(...sourceState.arrayReports);
 }
 
-function createArrayMatchReport(path: string, mode: ArrayMatchMode, expected: unknown[]): ArrayMatchReport {
+function createArrayMatchReport(
+	path: string,
+	mode: ArrayMatchMode,
+	expected: unknown[],
+	actual: unknown[],
+): ArrayMatchReport {
 	return {
 		path,
 		mode,
 		expected,
+		actual,
 		matchedPairs: [],
 		unmatchedExpectedItems: [],
 	};
@@ -1029,6 +1047,73 @@ function formatFailureRoute(route: Array<ArrayMatchReport>): string | undefined 
 	return lines.length > 0 ? lines.join("\n") : undefined;
 }
 
+function splitLines(text: string): string[] {
+	return text.split(/\r?\n/);
+}
+
+function prettyPrintReceivedValue(matcherState: ExpectMatcherState, value: unknown): string {
+	return splitLines(matcherState.utils.printReceived(value)).join("\n");
+}
+
+function buildReceivedPreviewValue(value: unknown, remainingDepth = MAX_RECEIVED_PREVIEW_DEPTH): unknown {
+	if (remainingDepth <= 0) {
+		return value;
+	}
+
+	if (typeof value === "string" && value.length > MAX_RECEIVED_STRING_LENGTH) {
+		return `${value.slice(0, MAX_RECEIVED_STRING_LENGTH)}… (${value.length - MAX_RECEIVED_STRING_LENGTH} more characters not shown)`;
+	}
+
+	if (Array.isArray(value)) {
+		const previewItems = value
+			.slice(0, MAX_RECEIVED_ARRAY_ITEMS)
+			.map((item) => buildReceivedPreviewValue(item, remainingDepth - 1));
+		const omittedItemsCount = value.length - previewItems.length;
+		if (omittedItemsCount > 0) {
+			previewItems.push(`… (${omittedItemsCount} more items not shown)`);
+		}
+		return previewItems;
+	}
+
+	if (isPlainObject(value)) {
+		const entries = Object.entries(value);
+		const previewEntries = entries
+			.slice(0, MAX_RECEIVED_OBJECT_KEYS)
+			.map(([key, itemValue]) => [key, buildReceivedPreviewValue(itemValue, remainingDepth - 1)]);
+		const omittedPropertiesCount = entries.length - previewEntries.length;
+		if (omittedPropertiesCount > 0) {
+			previewEntries.push(["…", `(${omittedPropertiesCount} more properties not shown)`]);
+		}
+		return Object.fromEntries(previewEntries);
+	}
+
+	return value;
+}
+
+function formatReceivedArrayPreview(matcherState: ExpectMatcherState, value: unknown[], maxLines: number): string {
+	const lines = ["["];
+	let nextIndex = 0;
+
+	for (; nextIndex < value.length && nextIndex < MAX_RECEIVED_ARRAY_ITEMS; nextIndex++) {
+		const previewItem = buildReceivedPreviewValue(value[nextIndex]);
+		const itemLines = splitLines(prettyPrintReceivedValue(matcherState, previewItem)).map((line) => `  ${line}`);
+		itemLines[itemLines.length - 1] += ",";
+		const reservedLines = 1 + (nextIndex < value.length - 1 ? 1 : 0);
+		if (lines.length + itemLines.length + reservedLines > maxLines) {
+			break;
+		}
+		lines.push(...itemLines);
+	}
+
+	const omittedItemsCount = value.length - nextIndex;
+	if (omittedItemsCount > 0) {
+		lines.push(`  … (${omittedItemsCount} more items not shown)`);
+	}
+
+	lines.push("]");
+	return lines.join("\n");
+}
+
 function formatPrimaryArrayFailure(
 	matcherState: ExpectMatcherState,
 	report: ArrayMatchReport,
@@ -1038,7 +1123,10 @@ function formatPrimaryArrayFailure(
 ): string {
 	const failingItemPath = mismatchPath;
 	const route = buildFailureRoute(state, report.path);
-	const sections = [`First failing path: ${failingItemPath}`, `Failing array: ${report.path} (${report.mode})`];
+	const sections = [
+		`First failing path: ${failingItemPath}`,
+		`Failing array: ${report.path} (ArrayMatchMode: ${report.mode})`,
+	];
 
 	const routeText = formatFailureRoute(route);
 	if (routeText) {
@@ -1058,6 +1146,13 @@ function formatPrimaryArrayFailure(
 		sections.push(`Failure continues at: ${item.nestedMismatchPath}`);
 	} else {
 		sections.push("No close match found.");
+		sections.push(formatArraySectionItem("Expected partial", matcherState.utils.printExpected(item.expectedItem)));
+		sections.push(
+			formatArraySectionItem(
+				"Received array",
+				formatReceivedArrayPreview(matcherState, report.actual, MAX_RECEIVED_ARRAY_LINES),
+			),
+		);
 	}
 
 	return sections.join("\n\n");
@@ -1131,7 +1226,7 @@ function buildExactOrderArraySubset(
 	path: string,
 ): unknown[] {
 	const result: unknown[] = [];
-	const report = createArrayMatchReport(path, state.arrayMode, expectedArray);
+	const report = createArrayMatchReport(path, state.arrayMode, expectedArray, actualArray);
 	state.arrayReports.push(report);
 
 	for (let index = 0; index < expectedArray.length; index++) {
@@ -1281,7 +1376,7 @@ function buildSubsetModeArraySubset(
 	state: ExtractionState,
 	path: string,
 ): unknown[] {
-	const report = createArrayMatchReport(path, state.arrayMode, expectedArray);
+	const report = createArrayMatchReport(path, state.arrayMode, expectedArray, actualArray);
 	state.arrayReports.push(report);
 	const { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual, scoreByExpectedAndActual } =
 		buildPairCandidates(actualArray, expectedArray, state, path);
