@@ -1,20 +1,11 @@
 import type { Expect } from "@playwright/test";
-import { mergeExpects } from "@playwright/test";
+import { expect as baseExpect } from "@playwright/test";
 
-import { expectlyLocatorAttributes, expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
-import { expectlyLocatorPositioning, expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";
-import { expectlyLocatorState, expectlyLocatorStateMatchers } from "./expectly-locator-state";
-import { expectlyLocatorText, expectlyLocatorTextMatchers } from "./expectly-locator-text";
-import { expectlyLocatorVisibility, expectlyLocatorVisibilityMatchers } from "./expectly-locator-visibility";
-
-// Extract matcher types from each module
-type ExtractMatchers<T> = T extends Expect<infer M> ? M : never;
-
-type ExpectlyLocatorMatchers = ExtractMatchers<typeof expectlyLocatorText> &
-	ExtractMatchers<typeof expectlyLocatorAttributes> &
-	ExtractMatchers<typeof expectlyLocatorPositioning> &
-	ExtractMatchers<typeof expectlyLocatorState> &
-	ExtractMatchers<typeof expectlyLocatorVisibility>;
+import { expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
+import { expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";
+import { expectlyLocatorStateMatchers } from "./expectly-locator-state";
+import { expectlyLocatorTextMatchers } from "./expectly-locator-text";
+import { expectlyLocatorVisibilityMatchers } from "./expectly-locator-visibility";
 
 /**
  * Combined raw matchers object for all locator matchers.
@@ -39,13 +30,7 @@ export const expectlyLocatorMatchers = {
  * This is the main export for locator matchers, providing all functionality
  * in one place while maintaining the modular structure internally.
  */
-export const expectlyLocator: Expect<ExpectlyLocatorMatchers> = mergeExpects(
-	expectlyLocatorText,
-	expectlyLocatorAttributes,
-	expectlyLocatorPositioning,
-	expectlyLocatorState,
-	expectlyLocatorVisibility,
-);
+export const expectlyLocator: Expect<{}> = baseExpect.extend<typeof expectlyLocatorMatchers>(expectlyLocatorMatchers);
 
 export { expectlyLocatorAttributes, expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
 export { expectlyLocatorPositioning, expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";

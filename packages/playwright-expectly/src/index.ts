@@ -5,6 +5,7 @@ import "./types/matcher-types";
 export { expectly, expectlyMatchers } from "./expectly";
 
 // Setup helper for extending Playwright's native expect (also provides type augmentation)
+// oxlint-disable-next-line typescript/no-deprecated
 export { setupExpectly } from "./playwright-setup";
 
 // Individual matcher exports for granular usage

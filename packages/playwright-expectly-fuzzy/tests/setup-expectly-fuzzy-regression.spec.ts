@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-deprecated
 import { expect, test } from "@playwright/test";
 
 import { setupExpectlyFuzzy } from "../src";
