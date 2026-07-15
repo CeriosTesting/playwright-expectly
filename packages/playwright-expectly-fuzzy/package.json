@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly-fuzzy",
-	"version": "0.1.2",
+	"version": "1.0.0",
 	"description": "Fuzzy string matching matchers for Playwright using fuzzball. Ideal for validating AI-generated text where wording may vary.",
 	"keywords": [
 		"ai-testing",
