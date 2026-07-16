@@ -1,12 +1,66 @@
 # Object Array Matchers
 
-Matchers for validating arrays of objects, including sorting and uniqueness checks.
+Matchers for validating arrays of objects, including containment, sorting and uniqueness checks.
 
 ## Available Matchers
 
+- [toContainObjectMatching()](#tocontainobjectmatching)
 - [toHaveOnlyUniqueObjects()](#tohaveonlyuniqueobjects)
 - [toHaveObjectsInAscendingOrderBy()](#tohaveobjectsinascendingorderby)
 - [toHaveObjectsInDescendingOrderBy()](#tohaveobjectsindescendingorderby)
+
+## toContainObjectMatching()
+
+Asserts that an array contains at least one object matching a given partial object.
+
+Uses `expect.objectContaining` internally, so matched objects may have additional properties beyond those specified.
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+
+// Basic usage — at least one object must match
+const users = [
+	{ id: 1, name: "Alice", role: "admin" },
+	{ id: 2, name: "Bob", role: "user" },
+];
+expectly(users).toContainObjectMatching({ id: 1 });
+expectly(users).toContainObjectMatching({ name: "Bob", role: "user" });
+
+// Negation — no object should match
+expectly(users).not.toContainObjectMatching({ id: 99 });
+
+// With typed objects — TypeScript validates the partial shape
+interface User {
+	id: number;
+	name: string;
+	role: "admin" | "user";
+}
+const typedUsers: User[] = [
+	{ id: 1, name: "Alice", role: "admin" },
+	{ id: 2, name: "Bob", role: "user" },
+];
+expectly(typedUsers).toContainObjectMatching({ role: "admin" });
+```
+
+### Options
+
+#### `allowMultiple` (default: `true`)
+
+When set to `false`, the assertion fails if more than one object in the array matches the expected partial.
+
+```typescript
+const rows = [
+	{ id: 1, status: "active", name: "Alice" },
+	{ id: 2, status: "inactive", name: "Bob" },
+	{ id: 3, status: "active", name: "Charlie" },
+];
+
+// Passes — exactly one row matches
+expectly(rows).toContainObjectMatching({ name: "Alice" }, { allowMultiple: false });
+
+// Fails — two rows have status "active"
+expectly(rows).toContainObjectMatching({ status: "active" }, { allowMultiple: false });
+```
 
 ## toHaveOnlyUniqueObjects()
 

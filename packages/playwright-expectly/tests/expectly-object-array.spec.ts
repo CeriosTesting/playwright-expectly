@@ -2,6 +2,154 @@ import { expect, test } from "@playwright/test";
 
 import { expectlyObjectArray } from "../src/expectly-object-array";
 
+test.describe("toContainObjectMatching", () => {
+	test("should pass when array contains an object matching the expected partial", () => {
+		const array = [
+			{ id: 1, name: "Alice", role: "admin" },
+			{ id: 2, name: "Bob", role: "user" },
+		];
+
+		expectlyObjectArray(array).toContainObjectMatching({ id: 1, name: "Alice" });
+	});
+
+	test("should pass when matching object has additional properties", () => {
+		const array = [{ id: 1, name: "Alice", role: "admin", active: true }];
+
+		expectlyObjectArray(array).toContainObjectMatching({ id: 1 });
+	});
+
+	test("should fail when no object in the array matches", () => {
+		const array = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		expect(() => {
+			expectlyObjectArray(array).toContainObjectMatching({ id: 99 });
+		}).toThrow(/Expected array to contain an object matching/);
+	});
+
+	test("should work with negation when no object matches", () => {
+		const array = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		expectlyObjectArray(array).not.toContainObjectMatching({ id: 99 });
+	});
+
+	test("should fail with negation when object is found", () => {
+		const array = [{ id: 1, name: "Alice" }];
+
+		expect(() => {
+			expectlyObjectArray(array).not.toContainObjectMatching({ id: 1 });
+		}).toThrow(/Expected to NOT contain an object matching/);
+	});
+
+	test("should pass for empty expected object (matches any object)", () => {
+		const array = [{ id: 1 }];
+
+		expectlyObjectArray(array).toContainObjectMatching({});
+	});
+
+	test("should pass with allowMultiple: false when exactly one object matches", () => {
+		const array = [
+			{ id: 1, name: "Alice" },
+			{ id: 2, name: "Bob" },
+		];
+
+		expectlyObjectArray(array).toContainObjectMatching({ id: 1 }, { allowMultiple: false });
+	});
+
+	test("should fail with allowMultiple: false when more than one object matches", () => {
+		const array = [
+			{ id: 1, name: "Alice", role: "admin" },
+			{ id: 2, name: "Bob", role: "admin" },
+		];
+
+		expect(() => {
+			expectlyObjectArray(array).toContainObjectMatching({ role: "admin" }, { allowMultiple: false });
+		}).toThrow(/Expected array to contain exactly 1 object matching/);
+	});
+
+	test("should pass with allowMultiple: true (default) when multiple objects match", () => {
+		const array = [
+			{ id: 1, role: "admin" },
+			{ id: 2, role: "admin" },
+		];
+
+		expectlyObjectArray(array).toContainObjectMatching({ role: "admin" });
+		expectlyObjectArray(array).toContainObjectMatching({ role: "admin" }, { allowMultiple: true });
+	});
+});
+
+test.describe("toContainObjectMatching (typed objects)", () => {
+	interface User {
+		id: number;
+		name: string;
+		role: "admin" | "user";
+		active: boolean;
+	}
+
+	const users: User[] = [
+		{ id: 1, name: "Alice", role: "admin", active: true },
+		{ id: 2, name: "Bob", role: "user", active: false },
+		{ id: 3, name: "Charlie", role: "admin", active: true },
+	];
+
+	test("should pass when matching on a single typed property", () => {
+		expectlyObjectArray(users).toContainObjectMatching({ id: 1 });
+	});
+
+	test("should pass when matching on multiple typed properties", () => {
+		expectlyObjectArray(users).toContainObjectMatching({ name: "Bob", role: "user" });
+	});
+
+	test("should fail when no typed object matches", () => {
+		expect(() => {
+			expectlyObjectArray(users).toContainObjectMatching({ id: 99 });
+		}).toThrow(/Expected array to contain an object matching/);
+	});
+
+	test("should work with negation for typed objects", () => {
+		expectlyObjectArray(users).not.toContainObjectMatching({ role: "admin", active: false });
+	});
+
+	test("should pass with allowMultiple: false when exactly one typed object matches", () => {
+		expectlyObjectArray(users).toContainObjectMatching({ name: "Alice" }, { allowMultiple: false });
+	});
+
+	test("should fail with allowMultiple: false when multiple typed objects match", () => {
+		expect(() => {
+			expectlyObjectArray(users).toContainObjectMatching({ role: "admin" }, { allowMultiple: false });
+		}).toThrow(/Expected array to contain exactly 1 object matching/);
+	});
+
+	test("should pass when using a typed object to match with", () => {
+		const expectedUser: Partial<User> = { id: 2, name: "Bob" };
+		expectlyObjectArray(users).toContainObjectMatching(expectedUser);
+	});
+
+	test("should pass when negation is used and a typed object does not match", () => {
+		const expectedUser: Partial<User> = { id: 99, name: "Nonexistent" };
+		expectlyObjectArray(users).not.toContainObjectMatching(expectedUser);
+	});
+
+	test("should fail when using a typed object that does not match", () => {
+		const expectedUser: Partial<User> = { id: 99, name: "Nonexistent" };
+		expect(() => {
+			expectlyObjectArray(users).toContainObjectMatching(expectedUser);
+		}).toThrow(/Expected array to contain an object matching/);
+	});
+
+	test("should fail when negation is used and a typed object matches", () => {
+		const expectedUser: Partial<User> = { id: 2, name: "Bob" };
+		expect(() => {
+			expectlyObjectArray(users).not.toContainObjectMatching(expectedUser);
+		}).toThrow(/Expected to NOT contain an object matching/);
+	});
+});
+
 test.describe("toHaveOnlyUniqueObjects", () => {
 	test("should pass when array contains only unique objects", () => {
 		const uniqueArray = [
