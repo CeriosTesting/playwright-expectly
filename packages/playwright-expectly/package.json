@@ -87,6 +87,6 @@
 		"typescript": "^7.0.2"
 	},
 	"peerDependencies": {
-		"@playwright/test": ">=1.63.0"
+		"@playwright/test": ">=1.40.0"
 	}
 }
