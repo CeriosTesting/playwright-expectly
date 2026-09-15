@@ -1,5 +1,11 @@
 # @cerios/playwright-expectly-core
 
+## 1.0.1
+
+### Patch Changes
+
+- 0b4b966: Raise the minimum supported Playwright version to `1.63.0` across all packages and update the development toolchain dependencies.
+
 ## 1.0.0
 
 ### Major Changes
