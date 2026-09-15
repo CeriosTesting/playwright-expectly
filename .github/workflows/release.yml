@@ -47,9 +47,9 @@ jobs:
         id: changesets
         uses: changesets/action@v2
         with:
-          version: npm run version-packages:prepare-release
-          publish: npm run release
-          commit: "chore(release): bump version"
-          title: "chore(release): bump version"
+          version-script: npm run version-packages:prepare-release
+          publish-script: npm run release
+          commit-message: "chore(release): bump version"
+          pr-title: "chore(release): bump version"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
