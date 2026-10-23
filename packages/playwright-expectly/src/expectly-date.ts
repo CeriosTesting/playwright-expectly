@@ -32,12 +32,12 @@ const DAY_NAMES = {
  * Expectly Custom matchers for date validations.
  */
 export const expectlyDateMatchers = withMatcherState({
-	toBeCloseTo(
+	toBeDateCloseTo(
 		actualDate: Date,
 		expectedDate: Date,
 		deviation: { seconds?: number; minutes?: number; hours?: number; days?: number },
 	) {
-		const assertionName = "toBeCloseTo";
+		const assertionName = "toBeDateCloseTo";
 
 		// Validate dates
 		validateDate(actualDate, "actual date");

@@ -49,12 +49,12 @@ import { expect, test } from "./support/expect";
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
 	expect([1, 2, 3, 4]).toHaveAscendingOrder();
-	expect(new Date("2025-01-02")).toBeCloseTo(new Date("2025-01-01"), { days: 1 });
+	expect(new Date("2025-01-02")).toBeDateCloseTo(new Date("2025-01-01"), { days: 1 });
 	await expect(page.locator(".username")).toBeAlphanumeric();
 });
 ```
 
-Capturing the return value is the key detail. Playwright only mutates the original `expect` in place for matcher names that do not collide with built-ins. The Date matcher `toBeCloseTo` collides with Playwright's native numeric `toBeCloseTo`, so the Date version only exists on the value returned by `.extend(...)`.
+Capturing the return value is the key detail: the value returned by `.extend(...)` is the fully typed `expect` that carries the Expectly matchers. Expectly never overrides a Playwright built-in matcher, so Playwright's own matchers (including numeric `toBeCloseTo`) keep working on it unchanged.
 
 ### Standalone `expectly`
 
@@ -93,13 +93,13 @@ export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
 export const test = base;
 ```
 
-> **Note:** you may see a `setupExpectly()` function in older docs or code — it is **deprecated**. Playwright's `expect.extend()` only mutates the _original_ `expect` object in place for matcher names that don't collide with a Playwright built-in. `toBeCloseTo` collides with Playwright's own built-in numeric matcher, so `setupExpectly()` can never make the Date `toBeCloseTo` matcher work, regardless of where it's called. The `tests/support` pattern above always works correctly.
+> **Upgrading from 1.x:** the Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, and the deprecated `setupExpectly()` is removed. Use the `tests/support` pattern above instead. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
 
 ## Available Matchers
 
 - **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toStartWith()`, `toEndWith()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
 - **Number Array** — `toHaveAscendingOrder()`, `toHaveAverage()`, `toBeAllPositive()`, `toBeMonotonic()`, and more — [📖 docs](../../docs/NUMBER_ARRAY_MATCHERS.md)
-- **Date** — `toBeCloseTo()`, `toBeInTheFuture()`, `toBeSameDay()`, `toBeInQuarter()`, and more — [📖 docs](../../docs/DATE_MATCHERS.md)
+- **Date** — `toBeDateCloseTo()`, `toBeInTheFuture()`, `toBeSameDay()`, `toBeInQuarter()`, and more — [📖 docs](../../docs/DATE_MATCHERS.md)
 - **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveHref()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
 - **Object Array** — `toHaveObjectsInAscendingOrderBy()`, `toHaveOnlyUniqueObjects()`, and more — [📖 docs](../../docs/OBJECT_ARRAY_MATCHERS.md)
 - **String Array** — `toHaveAscendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveUniqueValues()`, and more — [📖 docs](../../docs/STRING_ARRAY_MATCHERS.md)

@@ -5,5 +5,3 @@ const expect = mergeExpects(baseExpect, expectlyFuzzy);
 
 expect([1, 2, 3]).toHaveLength(3);
 expect("Hello Wrold").toMatchFuzzy("Hello World");
-
-export {};

@@ -107,8 +107,6 @@ test("fuzzy match via expect", async ({ page }) => {
 });
 ```
 
-> **Note:** You may see a `setupExpectlyFuzzy()` function in older docs or code — it is **deprecated**. It works for `toMatchFuzzy` (which doesn't collide with any Playwright built-in), but it relies on discarding the return value of `expect.extend()`, which is unsafe in general (see the root README's "Why not just call a setup function?" section) and no longer the recommended pattern.
-
 #### TypeScript type augmentation
 
 Importing `@cerios/playwright-expectly-fuzzy` automatically augments Playwright's `Matchers` interface. If your config is not included in your `tsconfig.json`, add one ambient import in a shared `.d.ts` or test file:

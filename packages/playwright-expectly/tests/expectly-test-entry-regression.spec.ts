@@ -1,31 +1,50 @@
 import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
+import { expectly } from "../src/expectly";
 
 import { expect, test } from "./fixtures";
 
 /**
- * Regression coverage for GitHub issue #41: `toBeCloseTo` collides with Playwright's own
- * built-in numeric matcher. `expect.extend()` only mutates the *original* `expect` object in
- * place for matcher names that don't collide with a built-in, so the override for `toBeCloseTo`
- * only exists on the value returned by `.extend()`. `./fixtures` captures that return value
- * correctly (unlike the deprecated `setupExpectly()`), so importing `expect` from here must
- * make the Date `toBeCloseTo` matcher work with zero manual setup.
+ * Regression coverage for the Date/numeric `toBeCloseTo` collision: the Date matcher used to be
+ * registered as `toBeCloseTo`, which replaced Playwright's built-in numeric `toBeCloseTo` on every
+ * `expect` extended with `expectlyMatchers`. The Date matcher is now `toBeDateCloseTo`, so both
+ * must work side by side on the extended `expect` from `./fixtures` and on the standalone `expectly`.
  */
-test.describe("expect from tests/fixtures.ts (issue #41 regression)", () => {
-	test("Date toBeCloseTo works on the native expect with no manual setup call", () => {
+test.describe("expect from tests/fixtures.ts (toBeCloseTo collision regression)", () => {
+	test("Date toBeDateCloseTo works on the extended expect", () => {
 		const now = new Date();
-		expect(now).toBeCloseTo(new Date(now.getTime() + 1000), { seconds: 5 });
+		expect(now).toBeDateCloseTo(new Date(now.getTime() + 1000), { seconds: 5 });
 	});
 
-	test("Date toBeCloseTo still fails correctly when dates are outside the allowed deviation", () => {
+	test("Date toBeDateCloseTo fails when dates are outside the allowed deviation", () => {
 		const now = new Date();
 
 		const error = getRejectedErrorSync(() => {
-			expect(now).toBeCloseTo(new Date(now.getTime() + 60_000), { seconds: 5 });
+			expect(now).toBeDateCloseTo(new Date(now.getTime() + 60_000), { seconds: 5 });
 		});
-		expect(error.message).toContain("toBeCloseTo");
+		expect(error.message).toContain("toBeDateCloseTo");
 	});
 
-	test("other expectly matchers keep working alongside the Date toBeCloseTo override", () => {
+	test("numeric toBeCloseTo keeps Playwright's built-in behavior on the extended expect", async () => {
+		expect(0.1 + 0.2).toBeCloseTo(0.3);
+		expect(0.1 + 0.2).toBeCloseTo(0.3, 5);
+		expect(0.1).not.toBeCloseTo(0.2);
+		await expect.poll(() => 0.1 + 0.2).toBeCloseTo(0.3, 5);
+	});
+
+	test("numeric toBeCloseTo keeps Playwright's built-in behavior on the standalone expectly", () => {
+		expectly(0.1 + 0.2).toBeCloseTo(0.3, 5);
+		expectly(0.1).not.toBeCloseTo(0.2);
+	});
+
+	test("numeric toBeCloseTo still fails with Playwright's own message", () => {
+		const error = getRejectedErrorSync(() => {
+			expect(0.1).toBeCloseTo(0.2, 5);
+		});
+		expect(error.message).toContain("toBeCloseTo");
+		expect(error.message).not.toContain("Invalid actual date");
+	});
+
+	test("other expectly matchers keep working on the extended expect", () => {
 		expect(null).toBeNullish();
 		expect("hello@example.com").toBeValidEmail();
 		expect([1, 2, 3]).toHaveAscendingOrder();

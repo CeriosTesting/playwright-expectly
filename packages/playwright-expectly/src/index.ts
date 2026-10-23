@@ -4,10 +4,6 @@ import "./types/matcher-types";
 // Main export - the merged expect with all custom matchers
 export { expectly, expectlyMatchers } from "./expectly";
 
-// Setup helper for extending Playwright's native expect (also provides type augmentation)
-// oxlint-disable-next-line typescript/no-deprecated
-export { setupExpectly } from "./playwright-setup";
-
 // Individual matcher exports for granular usage
 export { expectlyAny, expectlyAnyMatchers } from "./expectly-any";
 export { expectlyDate, expectlyDateMatchers } from "./expectly-date";

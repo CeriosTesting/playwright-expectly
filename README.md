@@ -54,12 +54,12 @@ import { expect, test } from "./support/expect"; // or wherever your support mod
 test("extended expect example", async ({ page }) => {
 	expect("john@example.com").toBeValidEmail();
 	expect([1, 2, 3, 4]).toHaveAscendingOrder();
-	expect(new Date("2025-01-02")).toBeCloseTo(new Date("2025-01-01"), { days: 1 });
+	expect(new Date("2025-01-02")).toBeDateCloseTo(new Date("2025-01-01"), { days: 1 });
 	await expect(page.locator(".username")).toBeAlphanumeric();
 });
 ```
 
-This returned-value pattern is the important part. Playwright only mutates the original `expect` in place for matcher names that do not collide with built-ins. The Date matcher `toBeCloseTo` collides with Playwright's native numeric `toBeCloseTo`, so the Date version only exists on the value returned by `.extend(...)`.
+This returned-value pattern is the important part: the value returned by `.extend(...)` is the fully typed `expect` that carries the Expectly matchers, and it composes cleanly with `mergeExpects()`. Expectly never overrides a Playwright built-in matcher, so Playwright's own matchers (including numeric `toBeCloseTo`) keep working on it unchanged.
 
 ### Standalone `expectly`
 
@@ -148,9 +148,37 @@ If your `playwright.config` is JavaScript or is not included in your `tsconfig.j
 import "@cerios/playwright-expectly";
 ```
 
-#### Why not just call a setup function?
+## Upgrading from 1.x
 
-You may see a `setupExpectly()`/`setupExpectlyFuzzy()` function in older docs or code. **These are deprecated.** Playwright's `expect.extend()` only mutates the _original_ `expect` object in place for matcher names that don't collide with a Playwright built-in. `toBeCloseTo` collides with Playwright's own built-in numeric matcher, so `setupExpectly()` (which discards the return value of `.extend()`) can never make the Date `toBeCloseTo` matcher work — regardless of where you call it, including `playwright.config.ts` or a worker fixtures file. The `tests/support` pattern above always works because it captures the return value of `.extend()`/`mergeExpects()` correctly.
+Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzzy` contains two breaking changes:
+
+1. **The Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`.** The old name replaced Playwright's built-in numeric `toBeCloseTo` on every extended `expect`, so numeric assertions such as `expect(0.1 + 0.2).toBeCloseTo(0.3, 5)` failed with `Invalid actual date`. Playwright's numeric `toBeCloseTo` now works untouched next to the Date matcher.
+
+   ```typescript
+   // Before (1.x)
+   expect(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
+
+   // After (2.x)
+   expect(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
+   ```
+
+2. **`setupExpectly()` and `setupExpectlyFuzzy()` are removed.** They were deprecated in 1.x. Replace them with a `tests/support/expect.ts` module as shown in [Quick Start](#quick-start):
+
+   ```typescript
+   // Before (1.x)
+   import { expect, test } from "@playwright/test";
+   import { setupExpectly } from "@cerios/playwright-expectly";
+
+   setupExpectly();
+   export { expect, test };
+
+   // After (2.x)
+   import { expect as baseExpect, test } from "@playwright/test";
+   import { expectlyMatchers } from "@cerios/playwright-expectly";
+
+   export const expect = baseExpect.extend(expectlyMatchers);
+   export { test };
+   ```
 
 ## Available Matchers
 
@@ -179,7 +207,7 @@ You may see a `setupExpectly()`/`setupExpectlyFuzzy()` function in older docs or
 
 ### Date Matchers
 
-- `toBeCloseTo(date, deviation)` - Within time deviation
+- `toBeDateCloseTo(date, deviation)` - Within time deviation
 - `toBeInTheFuture(refDate?)` / `toBeInThePast(refDate?)` - Temporal validation
 - `toBeSameDay(date)` / `toBeSameMonth(date)` / `toBeSameYear(date)` - Date comparison
 - `toBeInQuarter(quarter)` - Quarter validation
@@ -266,7 +294,7 @@ test("validate dates", async () => {
 	const tomorrow = new Date(now.getTime() + 86400000);
 
 	expectly(tomorrow).toBeInTheFuture(now);
-	expectly(tomorrow).toBeCloseTo(now, { hours: 24 });
+	expectly(tomorrow).toBeDateCloseTo(now, { hours: 24 });
 });
 ```
 

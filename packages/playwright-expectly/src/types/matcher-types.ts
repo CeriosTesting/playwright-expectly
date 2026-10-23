@@ -258,9 +258,9 @@ declare global {
 			 * @param deviation - Object specifying allowed time difference
 			 *
 			 * @example
-			 * expect(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
+			 * expect(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
 			 */
-			toBeCloseTo(expectedDate: Date, deviation: DateDeviationOptions): R;
+			toBeDateCloseTo(expectedDate: Date, deviation: DateDeviationOptions): R;
 
 			/**
 			 * Asserts that an array of dates is in ascending (earliest to latest) order.
