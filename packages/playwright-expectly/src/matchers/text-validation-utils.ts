@@ -2,6 +2,11 @@
  * Shared validation patterns and utilities for text-based matchers
  */
 
+/** Assertions always test from the start without consuming the caller's RegExp. */
+export function matchesPattern(text: string, pattern: RegExp): boolean {
+	return new RegExp(pattern.source, pattern.flags).test(text);
+}
+
 // Email validation pattern
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

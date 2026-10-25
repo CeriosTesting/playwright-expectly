@@ -1,4 +1,7 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 /**
@@ -113,111 +116,19 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 	},
 });
 
-export const expectlyObjectArray = baseExpect.extend(expectlyObjectArrayMatchers);
+export const expectlyObjectArray: Expect<typeof expectlyObjectArrayMatchers> =
+	baseExpect.extend(expectlyObjectArrayMatchers);
 
-// Cache for memoizing safeStringify results
-const stringifyCache = new WeakMap<object, string>();
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-/**
- * Safely serializes an object to a string for comparison.
- * Handles circular references by tracking them during traversal.
- * Uses memoization to cache results for better performance.
- */
-function safeStringify(obj: unknown): string {
-	// Check cache first for non-primitive values
-	if (obj !== null && typeof obj === "object") {
-		const cached = stringifyCache.get(obj);
-		if (cached !== undefined) {
-			return cached;
-		}
-	}
-
-	try {
-		const seen = new WeakMap<object, number>();
-		let counter = 0;
-
-		const normalize = (value: unknown): unknown => {
-			if (value === null || value === undefined) {
-				return value;
-			}
-
-			if (typeof value !== "object") {
-				return value;
-			}
-
-			// Check for circular reference
-			if (seen.has(value)) {
-				return `[Circular:${seen.get(value)}]`;
-			}
-
-			// Track this object
-			const id = counter++;
-			seen.set(value, id);
-
-			if (Array.isArray(value)) {
-				return value.map((item) => normalize(item));
-			}
-
-			if (isRecord(value)) {
-				const sortedKeys = Object.keys(value).sort();
-				const normalized: Record<string, unknown> = {};
-				for (const key of sortedKeys) {
-					normalized[key] = normalize(value[key]);
-				}
-				return normalized;
-			}
-
-			return value;
-		};
-
-		const result = JSON.stringify(normalize(obj)) ?? "undefined";
-
-		// Cache the result for objects
-		if (obj !== null && typeof obj === "object") {
-			stringifyCache.set(obj, result);
-		}
-
-		return result;
-	} catch (error) {
-		// Fallback for any other serialization errors
-		const result = `[Unserializable: ${error instanceof Error ? error.message : String(error)}]`;
-		if (obj !== null && typeof obj === "object") {
-			stringifyCache.set(obj, result);
-		}
-		return result;
-	}
-}
-
+// Compare live values, including Dates, Maps, Sets, bigint and cycles. No cross-call cache.
 function getDuplicateObjects(arr: object[]): object[] {
-	const seen = new Map<string, boolean>();
-	const duplicateSet = new Set<string>();
-
-	// First pass: identify all duplicate serialized values
-	for (let i = 0; i < arr.length; i++) {
-		const serialized = safeStringify(arr[i]);
-		if (seen.has(serialized)) {
-			duplicateSet.add(serialized);
-		} else {
-			seen.set(serialized, true);
-		}
+	const representatives: object[] = [];
+	const duplicates = new Set<object>();
+	for (const value of arr) {
+		const existing = representatives.find((candidate) => isDeepStrictEqual(candidate, value));
+		if (existing !== undefined) duplicates.add(existing);
+		else representatives.push(value);
 	}
-
-	// Second pass: collect unique duplicate objects
-	const duplicateObjects: object[] = [];
-	const addedDuplicates = new Set<string>();
-	for (let i = 0; i < arr.length; i++) {
-		const serialized = safeStringify(arr[i]);
-		if (duplicateSet.has(serialized) && !addedDuplicates.has(serialized)) {
-			duplicateObjects.push(arr[i]);
-			addedDuplicates.add(serialized);
-		}
-	}
-
-	return duplicateObjects;
+	return [...duplicates];
 }
 
 interface SortOrderValidation {

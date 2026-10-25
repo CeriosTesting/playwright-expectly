@@ -34,8 +34,8 @@ Create ONE shared module in your own project that extends Playwright's `expect` 
 // tests/support/expect.ts
 import "@cerios/playwright-expectly-fuzzy";
 
-import { expect as baseExpect, test as base } from "@playwright/test";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect, test as base } from "@playwright/test";
 
 // MUST capture the return value — never call `.extend()` and discard it.
 export const expect = baseExpect.extend(expectlyFuzzyMatchers);
@@ -45,10 +45,10 @@ export const test = base;
 Combining with `@cerios/playwright-expectly` (or your own matchers) via `mergeExpects()` — recommended when composing 2+ matcher sources:
 
 ```typescript
-// tests/support/expect.ts
-import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 const expectlyExpect = baseExpect.extend(expectlyMatchers);
 const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);

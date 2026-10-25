@@ -1,5 +1,6 @@
 import { runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 import * as fuzz from "fuzzball";
 
@@ -72,4 +73,5 @@ export const expectlyFuzzyLocatorMatchers = withMatcherState({
 	},
 });
 
-export const expectlyFuzzyLocator = baseExpect.extend(expectlyFuzzyLocatorMatchers);
+export const expectlyFuzzyLocator: Expect<typeof expectlyFuzzyLocatorMatchers> =
+	baseExpect.extend(expectlyFuzzyLocatorMatchers);

@@ -18,8 +18,8 @@
 - **`setupExpectly()` and `setupExpectlyFuzzy()` are removed.** Both were deprecated in 1.x. Extend Playwright's `expect` yourself and capture the return value, e.g. in `tests/support/expect.ts`:
 
   ```typescript
-  import { expect as baseExpect, test } from "@playwright/test";
   import { expectlyMatchers } from "@cerios/playwright-expectly";
+  import { expect as baseExpect, test } from "@playwright/test";
 
   export const expect = baseExpect.extend(expectlyMatchers);
   export { test };

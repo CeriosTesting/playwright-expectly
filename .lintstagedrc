@@ -3,5 +3,5 @@
 		"oxlint -c .oxlintrc.json --fix --type-aware --no-error-on-unmatched-pattern",
 		"oxfmt --config .oxfmtrc.json --no-error-on-unmatched-pattern"
 	],
-	"**/*.{json,jsonc}": ["oxfmt --config .oxfmtrc.json --no-error-on-unmatched-pattern"]
+	"**/*.{json,jsonc,md}": ["oxfmt --config .oxfmtrc.json --no-error-on-unmatched-pattern"]
 }

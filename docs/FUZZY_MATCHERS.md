@@ -72,9 +72,9 @@ test("chatbot response is on topic", async ({ page }) => {
 Create ONE shared module in your own project that extends Playwright's `expect` and captures the return value, then re-exports it. Every fixture file and spec file imports `test`/`expect` from this module — never straight from `@playwright/test`.
 
 ```typescript
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 // tests/support/expect.ts
 import { expect as baseExpect, test as base } from "@playwright/test";
-import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
 
 // MUST capture the return value — never call `.extend()` and discard it.
 export const expect = baseExpect.extend(expectlyFuzzyMatchers);
@@ -84,10 +84,10 @@ export const test = base;
 Combining with `@cerios/playwright-expectly` (or your own matchers) via `mergeExpects()`:
 
 ```typescript
-// tests/support/expect.ts
-import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 const expectlyExpect = baseExpect.extend(expectlyMatchers);
 const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);

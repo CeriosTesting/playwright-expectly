@@ -1,4 +1,5 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import {
@@ -7,6 +8,7 @@ import {
 	findStrictAscendingViolation,
 	findStrictDescendingViolation,
 	sortedExpected,
+	validateFiniteNumbers,
 } from "./matchers/common-utils";
 
 /**
@@ -178,6 +180,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 		};
 	},
 	toBeMonotonic(actual: string[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeMonotonic";
 
 		if (actual.length <= 1) {
@@ -266,4 +269,5 @@ export const expectlyStringArrayMatchers = withMatcherState({
 	},
 });
 
-export const expectlyStringArray = baseExpect.extend(expectlyStringArrayMatchers);
+export const expectlyStringArray: Expect<typeof expectlyStringArrayMatchers> =
+	baseExpect.extend(expectlyStringArrayMatchers);

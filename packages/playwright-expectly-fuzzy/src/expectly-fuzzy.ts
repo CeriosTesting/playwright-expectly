@@ -1,6 +1,7 @@
+import type { MatcherReturnType } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
-import { expect as baseExpect, ExpectMatcherState, Locator, MatcherReturnType } from "@playwright/test";
+import { expect as baseExpect, ExpectMatcherState, Locator } from "@playwright/test";
 
 import { expectlyFuzzyLocatorMatchers } from "./expectly-fuzzy-locator";
 import { expectlyFuzzyStringMatchers } from "./expectly-fuzzy-string";

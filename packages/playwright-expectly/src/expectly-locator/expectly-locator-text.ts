@@ -1,7 +1,9 @@
 import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import { matchesPattern } from "../matchers/text-validation-utils";
 import {
 	getUUIDFormatDescription,
 	isAlphanumeric,
@@ -141,7 +143,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 		pass = await runPolledMatcher(this, options, async () => {
 			try {
 				actual = await locator.innerText();
-				return pattern.test(actual);
+				return matchesPattern(actual, pattern);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -665,4 +667,5 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 });
 
-export const expectlyLocatorText = baseExpect.extend(expectlyLocatorTextMatchers);
+export const expectlyLocatorText: Expect<typeof expectlyLocatorTextMatchers> =
+	baseExpect.extend(expectlyLocatorTextMatchers);

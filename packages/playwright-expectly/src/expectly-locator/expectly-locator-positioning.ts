@@ -1,5 +1,6 @@
 import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
 /**
@@ -257,4 +258,6 @@ export const expectlyLocatorPositioningMatchers = withMatcherState({
 	},
 });
 
-export const expectlyLocatorPositioning = baseExpect.extend(expectlyLocatorPositioningMatchers);
+export const expectlyLocatorPositioning: Expect<typeof expectlyLocatorPositioningMatchers> = baseExpect.extend(
+	expectlyLocatorPositioningMatchers,
+);

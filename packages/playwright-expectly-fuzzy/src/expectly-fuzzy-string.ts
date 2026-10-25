@@ -1,4 +1,5 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 import * as fuzz from "fuzzball";
 
@@ -55,4 +56,5 @@ export const expectlyFuzzyStringMatchers = withMatcherState({
 	},
 });
 
-export const expectlyFuzzyString = baseExpect.extend(expectlyFuzzyStringMatchers);
+export const expectlyFuzzyString: Expect<typeof expectlyFuzzyStringMatchers> =
+	baseExpect.extend(expectlyFuzzyStringMatchers);

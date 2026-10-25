@@ -1,6 +1,9 @@
 import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
+
+import { matchesPattern } from "../matchers/text-validation-utils";
 
 /**
  * Element attribute matchers for Playwright locators.
@@ -19,7 +22,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -75,7 +78,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -131,7 +134,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -187,7 +190,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -247,7 +250,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -319,7 +322,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -375,7 +378,7 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 				if (typeof expected === "string") {
 					return actual === expected;
 				}
-				return actual !== null && expected.test(actual);
+				return actual !== null && matchesPattern(actual, expected);
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -505,4 +508,6 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 	},
 });
 
-export const expectlyLocatorAttributes = baseExpect.extend(expectlyLocatorAttributesMatchers);
+export const expectlyLocatorAttributes: Expect<typeof expectlyLocatorAttributesMatchers> = baseExpect.extend(
+	expectlyLocatorAttributesMatchers,
+);

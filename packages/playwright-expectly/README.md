@@ -35,8 +35,8 @@ Create ONE shared module in your own project that extends Playwright's `expect` 
 // tests/support/expect.ts
 import "@cerios/playwright-expectly";
 
-import { expect as baseExpect, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expect as baseExpect, test as base } from "@playwright/test";
 
 // MUST capture the return value — never call `.extend()` and discard it.
 export const expect = baseExpect.extend(expectlyMatchers);
@@ -70,10 +70,10 @@ await expectly(page.locator(".username")).toBeAlphanumeric();
 Combining with `@cerios/playwright-expectly-fuzzy`, or your own matchers, via `mergeExpects()`:
 
 ```typescript
-// tests/support/expect.ts
-import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 const expectlyExpect = baseExpect.extend(expectlyMatchers);
 const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);
@@ -114,3 +114,52 @@ export const test = base;
 ## License
 
 MIT © Cerios
+
+## Returning values from retrying assertions
+
+`expectly.pollAndReturn()` returns the value that satisfied the matcher. `expectly(callback).toPassAndReturn()` returns the result of the first callback attempt that completes without throwing. Both support synchronous and asynchronous callbacks without calling them again after success.
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+
+const order = await expectly
+	.pollAndReturn(() => fetchOrder(), { timeout: 5_000, intervals: [100, 250] })
+	.toMatchObject({ status: "COMPLETED" });
+
+const readyOrder = await expectly(async () => {
+	const current = await fetchOrder();
+	expectly(current.status).toBe("COMPLETED");
+	return current;
+}).toPassAndReturn({ timeout: 5_000, intervals: [100, 250] });
+```
+
+Here, `fetchOrder()` is your application helper. Polling supports `.not` and registered custom matchers. Retry options and custom messages follow the corresponding Playwright APIs; `toPassAndReturn()` uses native `toPass()` timeout behavior, so provide an explicit timeout when you need a bound.
+
+For your own configured or extended expect instance, apply `withReturn()` after composing matcher sources:
+
+```typescript
+import { expectlyMatchers, withReturn } from "@cerios/playwright-expectly";
+import { expect as baseExpect } from "@playwright/test";
+
+export const expect = withReturn(baseExpect.extend(expectlyMatchers));
+const uuid = await expect.pollAndReturn(() => fetchUuid()).toBeUUID(4);
+```
+
+Subsequent `.configure()` and `.extend()` calls preserve the return-aware methods and custom matcher types. When using `mergeExpects()`, wrap its result with `withReturn()`.
+
+**Failure behavior:** return-aware assertions always throw on failure, including when the wrapped expect uses `soft: true`. This prevents returning a value that did not pass, or `undefined` when no callback succeeded. Regular assertions retain their configured behavior. Inside `toPassAndReturn()` callbacks, use throwing assertions for conditions that must trigger retries; soft assertions do not throw.
+
+**Failure locations:** return-aware assertions appear as boxed Playwright steps. The assertion step and reported failure point to the line where your test invokes the matcher, including detached matcher calls. Native retry steps remain nested underneath for diagnostics and may show internal implementation locations when expanded. Caught errors also point to the invocation while retaining their original message, matcher details, and cause. Regular assertions keep their native reporting.
+
+Ordinary Expectly matchers also report thrown validation and locator API errors at your assertion call site. Their original error type, message, cause, and metadata are preserved. Expanded native equality, polling, and browser API steps can still show implementation locations.
+
+### Edge-case behavior
+
+- Object uniqueness compares current values using Node's deep strict equality, including Dates, Maps, Sets, bigint, and cycles. There is no cache across assertions. Property order does not matter; prototypes and explicit `undefined` properties do. This comparison can take quadratic time for large arrays.
+- Regex assertions test from index zero without modifying the supplied expression's `lastIndex`, including global and sticky expressions.
+- Partial matching supports shared references but rejects circular plain objects and arrays in either input with a clear error, including under `.not`.
+- Numeric comparisons reject `NaN` and infinities. Sum, average and median use an absolute tolerance of `Number.EPSILON` near zero and a relative tolerance of `Number.EPSILON` at larger magnitudes. Empty-array behavior remains unchanged.
+- Consecutive months compare calendar months, independent of the day of month. ISO validation checks calendar and clock components; it accepts the existing timestamp format with optional milliseconds and optional `Z`.
+- A `pollAndReturn()` assertion object can be reused or invoked concurrently; each matcher invocation captures its own successful value.
+
+CI tests packaged libraries against the minimum supported Playwright version, 1.40, as well as the project's current version. The minimum-version declaration check uses TypeScript 5.9 because TypeScript 7 rejects legacy syntax in Playwright 1.40's own declarations.
