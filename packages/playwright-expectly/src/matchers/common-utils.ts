@@ -30,55 +30,6 @@ export function sortedExpected<T extends number | string>(actual: T[], order: "a
 }
 
 /**
- * Validates if a date is a valid Date object
- * @param date - Date to validate
- * @returns True if valid, false otherwise
- */
-export function isValidDate(date: Date): boolean {
-	return date instanceof Date && !Number.isNaN(date.getTime());
-}
-
-/**
- * Validates a date and throws an error if invalid
- * @param date - Date to validate
- * @param paramName - Parameter name for error message
- * @throws Error if date is invalid
- */
-export function validateDate(date: Date, paramName: string): void {
-	if (!isValidDate(date)) {
-		throw new Error(`Invalid ${paramName}: ${String(date)}`);
-	}
-}
-
-/**
- * Formats an array of dates for display
- * @param dates - Array of dates to format
- * @returns Array of ISO string representations
- */
-export function formatDatesForDisplay(dates: Date[]): string[] {
-	return dates.map((date) => date.toISOString());
-}
-
-/**
- * Sorts an array of dates in ascending or descending order
- * @param actual - Array of dates to sort
- * @param order - Sort order: "ascending" or "descending"
- * @returns Sorted copy of the array
- */
-export function sortedDates(actual: Date[], order: "ascending" | "descending"): Date[] {
-	const copy = [...actual];
-	// Validate all dates
-	for (const date of copy) {
-		if (!isValidDate(date)) {
-			throw new Error(`Invalid date in array: ${String(date)}`);
-		}
-	}
-	return order === "ascending"
-		? copy.sort((a, b) => a.getTime() - b.getTime())
-		: copy.sort((a, b) => b.getTime() - a.getTime());
-}
-
-/**
  * Checks if an array is in strictly ascending order (each element > previous)
  * @param actual - Array to check
  * @returns Index of first violation, or -1 if all valid

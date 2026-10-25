@@ -143,9 +143,9 @@ test.describe("toBeDateCloseTo", () => {
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 2 });
 		});
-		expect(error.message).toContain("300.000 seconds");
+		expect(error.message).toContain("Difference:        5 minutes (later)");
 		expect(error.message).toContain("later");
-		expect(error.message).toContain("120.000 seconds");
+		expect(error.message).toContain("Allowed deviation: ±2 minutes");
 	});
 });
 
@@ -780,7 +780,7 @@ test.describe("toHaveDateRange", () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-11")];
 		expect(() => {
 			expectlyDate(dates).toHaveDateRange({ days: 20 });
-		}).toThrow(/Expected date range to match/);
+		}).toThrow(/Expected date range to span exactly 20 days/);
 	});
 
 	test("should throw for empty array", () => {
@@ -873,7 +873,7 @@ test.describe("toHaveUniqueDates", () => {
 			new Date("2023-01-02T12:00:00Z"),
 			new Date("2023-01-03T18:00:00Z"),
 		];
-		expectlyDate(dates).toHaveUniqueDates(true);
+		expectlyDate(dates).toHaveUniqueDates({ ignoreTime: true });
 	});
 
 	test("should fail when dates have duplicates", () => {
@@ -889,13 +889,13 @@ test.describe("toHaveUniqueDates", () => {
 	test("should fail when same day but different times with ignoreTime", () => {
 		const dates = [new Date("2023-01-01T08:00:00Z"), new Date("2023-01-01T12:00:00Z")];
 		expect(() => {
-			expectlyDate(dates).toHaveUniqueDates(true);
+			expectlyDate(dates).toHaveUniqueDates({ ignoreTime: true });
 		}).toThrow();
 	});
 
 	test("should pass when same day but different times without ignoreTime", () => {
 		const dates = [new Date("2023-01-01T08:00:00Z"), new Date("2023-01-01T12:00:00Z")];
-		expectlyDate(dates).toHaveUniqueDates(false);
+		expectlyDate(dates).toHaveUniqueDates({ ignoreTime: false });
 	});
 
 	test("should throw for empty array", () => {
@@ -906,115 +906,45 @@ test.describe("toHaveUniqueDates", () => {
 });
 
 test.describe("toBeValidISODate", () => {
-	test("should pass for valid ISO date with milliseconds", () => {
-		expectlyDate("2023-01-15T12:30:45.123Z").toBeValidISODate();
+	test("should pass for strict calendar dates", () => {
+		expectlyDate("2023-01-15").toBeValidISODate();
+		expectlyDate("2024-02-29").toBeValidISODate();
+		expectlyDate("0000-02-29").toBeValidISODate();
 	});
 
-	test("should pass for valid ISO date without milliseconds", () => {
-		expectlyDate("2023-01-15T12:30:45Z").toBeValidISODate();
-	});
-
-	test("should pass for valid ISO date without Z", () => {
-		expectlyDate("2023-01-15T12:30:45").toBeValidISODate();
-	});
-
-	test("should fail for invalid ISO format", () => {
+	test("should fail for datetimes, which belong to toBeValidISODateTime", () => {
 		expect(() => {
-			expectlyDate("2023-01-15").toBeValidISODate();
-		}).toThrow(/Expected string to be a valid ISO 8601 date/);
+			expectlyDate("2023-01-15T12:30:45.123Z").toBeValidISODate();
+		}).toThrow(/Expected value to be a valid ISO 8601 calendar date/);
 	});
 
-	test("should fail for invalid date values", () => {
-		expect(() => {
-			expectlyDate("2023-13-45T99:99:99Z").toBeValidISODate();
-		}).toThrow();
+	test("should fail for impossible dates with the reason", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2023-02-29").toBeValidISODate();
+		});
+		expect(error.message).toContain("Problem:");
+		expect(error.message).toContain("2023-02-29");
 	});
 
-	test("should fail for non-ISO format", () => {
-		expect(() => {
-			expectlyDate("01/15/2023").toBeValidISODate();
-		}).toThrow();
-	});
-
-	test("should work with .not for invalid format", () => {
-		expectlyDate("not-a-date").not.toBeValidISODate();
+	test("should fail for non-ISO formats and non-strings", () => {
+		for (const invalid of [
+			"01/15/2023",
+			"2023-1-15",
+			"20230115",
+			"2023-13-01",
+			"2023-00-10",
+			" 2023-01-15",
+			null,
+			20230115,
+		]) {
+			expectlyDate(invalid).not.toBeValidISODate();
+		}
 	});
 
 	test("should fail with .not for valid ISO date", () => {
 		expect(() => {
-			expectlyDate("2023-01-15T12:30:45.123Z").not.toBeValidISODate();
-		}).toThrow(/Expected string to not be a valid ISO 8601 date/);
-	});
-});
-
-test.describe("toMatchTimeZone", () => {
-	test("should pass when date matches timezone offset (numeric)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		// Date objects always use the local timezone of the machine running the test
-		expectlyDate(date).toMatchTimeZone(-date.getTimezoneOffset());
-	});
-
-	test("should pass with UTC string when in UTC timezone", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		if (localOffset === 0) {
-			expectlyDate(date).toMatchTimeZone("UTC");
-		} else {
-			// Skip if not in UTC - dates always use local timezone
-			expectlyDate(date).not.toMatchTimeZone("UTC");
-		}
-	});
-
-	test("should pass with positive offset string matching local", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const offsetMinutes = -date.getTimezoneOffset();
-		const sign = offsetMinutes >= 0 ? "+" : "-";
-		const absOffset = Math.abs(offsetMinutes);
-		const hours = Math.floor(absOffset / 60);
-		const minutes = absOffset % 60;
-		const offsetString = `${sign}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-		expectlyDate(date).toMatchTimeZone(offsetString);
-	});
-
-	test("should fail when date does not match timezone offset (numeric)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		// Test with an offset that's definitely different from local
-		const wrongOffset = localOffset === 330 ? 0 : 330;
-		expect(() => {
-			expectlyDate(date).toMatchTimeZone(wrongOffset);
-		}).toThrow(/Expected date to match timezone offset/);
-	});
-
-	test("should fail with wrong string offset", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		// Test with an offset that's different from local
-		const wrongOffset = localOffset === 330 ? "+00:00" : "+05:30";
-		expect(() => {
-			expectlyDate(date).toMatchTimeZone(wrongOffset);
-		}).toThrow(/Expected date to match timezone offset/);
-	});
-
-	test("should work with negation (numeric)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		const wrongOffset = localOffset === 330 ? 0 : 330;
-		expectlyDate(date).not.toMatchTimeZone(wrongOffset);
-	});
-
-	test("should work with negation (string)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		const wrongOffset = localOffset === 330 ? "+00:00" : "+05:30";
-		expectlyDate(date).not.toMatchTimeZone(wrongOffset);
-	});
-
-	test("should throw for invalid offset format", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		expect(() => {
-			expectlyDate(date).toMatchTimeZone("invalid");
-		}).toThrow(/Invalid timezone offset format/);
+			expectlyDate("2023-01-15").not.toBeValidISODate();
+		}).toThrow(/Expected value to not be a valid ISO 8601 calendar date/);
 	});
 });
 

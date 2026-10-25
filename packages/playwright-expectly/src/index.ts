@@ -35,3 +35,6 @@ export { expectlyNumberArray, expectlyNumberArrayMatchers } from "./expectly-num
 export { expectlyObjectArray, expectlyObjectArrayMatchers } from "./expectly-object-array";
 export { expectlyString, expectlyStringMatchers } from "./expectly-string";
 export { expectlyStringArray, expectlyStringArrayMatchers } from "./expectly-string-array";
+
+// Date/time parsing, type guards and public date/time types
+export * from "./date-time/index";

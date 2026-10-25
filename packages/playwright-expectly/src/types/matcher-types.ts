@@ -1,21 +1,28 @@
 import type { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Locator } from "@playwright/test";
 
+import type {
+	DateInput,
+	DateTimeInput,
+	DurationCompareOptions,
+	DurationInput,
+	DurationRange,
+	EndOfDayOptions,
+	ISODateTimeValidationOptions,
+	InstantInput,
+	RelativeTimeOptions,
+	TimeInput,
+	TimeOfDayOptions,
+	TimeZoneOptions,
+	TruncationUnit,
+	UniqueDatesOptions,
+} from "../date-time/types";
+
 export type StabilityOptions = Pick<PollOptions, "timeout"> & {
 	stabilityDuration?: number;
 	checkInterval?: number;
 };
 
-export type DateDeviationOptions = { seconds?: number; minutes?: number; hours?: number; days?: number };
-export type DateGapOptions = {
-	seconds?: number;
-	minutes?: number;
-	hours?: number;
-	days?: number;
-	months?: number;
-	years?: number;
-};
-export type DateRangeOptions = { days?: number; months?: number; years?: number };
 export type PartialMatchOptions = {
 	requireExplicitUndefinedKeyPresence?: boolean;
 	arrayMode?: "subset" | "exactLength" | "exactOrder";
@@ -250,118 +257,125 @@ declare global {
 			toBeUUID(version?: 1 | 3 | 4 | 5, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
-			 * Asserts that a date is close to another date within a specified deviation.
+			 * Asserts that a date is within an elapsed-time deviation of another date (inclusive).
 			 *
-			 * The deviation can be specified in days, hours, minutes, and/or seconds.
+			 * Days count as 24 hours; years, months and weeks are rejected. Nanosecond precision is preserved.
 			 *
-			 * @param expectedDate - The expected date to compare against
-			 * @param deviation - Object specifying allowed time difference
+			 * @param expectedDate - The date to compare against
+			 * @param deviation - Allowed difference, e.g. `{ seconds: 30 }`, a Temporal.Duration or `"PT30S"`
+			 * @param options - `timeZone` to compare local values with absolute timestamps
 			 *
 			 * @example
 			 * expect(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
 			 */
-			toBeDateCloseTo(expectedDate: Date, deviation: DateDeviationOptions): R;
+			toBeDateCloseTo(expectedDate: DateInput, deviation: DurationInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that an array of dates is in ascending (earliest to latest) order.
+			 * Asserts that an array of dates is in ascending (earliest to latest) order. Equal values are allowed.
 			 *
 			 * @example
-			 * expect([new Date('2024-01-01'), new Date('2024-01-02')]).toHaveDatesAscendingOrder();
+			 * expect(["2026-01-01", "2026-01-02"]).toHaveDatesAscendingOrder();
 			 */
-			toHaveDatesAscendingOrder(): R;
+			toHaveDatesAscendingOrder(options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that an array of dates is in descending (latest to earliest) order.
+			 * Asserts that an array of dates is in descending (latest to earliest) order. Equal values are allowed.
 			 *
 			 * @example
-			 * expect([new Date('2024-12-31'), new Date('2024-01-01')]).toHaveDatesDescendingOrder();
+			 * expect([new Date("2026-12-31"), new Date("2026-01-01")]).toHaveDatesDescendingOrder();
 			 */
-			toHaveDatesDescendingOrder(): R;
+			toHaveDatesDescendingOrder(options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that a date is before another date.
+			 * Asserts that a date is strictly before another date.
 			 *
-			 * @param expectedDate - The date that should come after
+			 * Absolute timestamps compare as instants; calendar dates and local datetimes compare with
+			 * values of the same kind. Mixing kinds requires `timeZone`.
 			 *
 			 * @example
 			 * expect(startDate).toBeBefore(endDate);
+			 * expect("2026-10-20").toBeBefore("2026-10-25");
 			 */
-			toBeBefore(expectedDate: Date): R;
+			toBeBefore(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that a date is after another date.
-			 *
-			 * @param expectedDate - The date that should come before
+			 * Asserts that a date is strictly after another date.
 			 *
 			 * @example
 			 * expect(expiryDate).toBeAfter(new Date());
+			 * expect("2026-10-25").toBeAfter("2026-10-20");
 			 */
-			toBeAfter(expectedDate: Date): R;
+			toBeAfter(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date falls between two dates (inclusive).
 			 *
-			 * @param startDate - The start of the range
-			 * @param endDate - The end of the range
-			 *
 			 * @example
-			 * expect(eventDate).toBeBetween(new Date('2024-01-01'), new Date('2024-12-31'));
+			 * expect(eventDate).toBeBetween("2026-01-01", "2026-12-31");
 			 */
-			toBeBetween(startDate: Date, endDate: Date): R;
+			toBeBetween(startDate: DateInput, endDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that two dates are on the same calendar day (ignoring time).
+			 * Asserts that two absolute timestamps denote exactly the same instant, regardless of offset or
+			 * time zone. Nanosecond precision, no tolerance. Local dates and datetimes are rejected.
 			 *
-			 * @param expectedDate - The expected date to compare
+			 * @example
+			 * expect("2026-10-25T12:00:00Z").toBeSameInstant("2026-10-25T13:00:00+01:00");
+			 */
+			toBeSameInstant(expectedDate: InstantInput): R;
+
+			/**
+			 * Asserts that two dates are on the same calendar day.
+			 *
+			 * Absolute timestamps are placed in one zone: `timeZone`, else a ZonedDateTime's zone, else an
+			 * ISO string's offset, else the machine zone.
 			 *
 			 * @example
 			 * expect(eventDate).toBeSameDay(new Date());
+			 * expect("2026-10-25T23:30:00Z").toBeSameDay("2026-10-26", { timeZone: "Europe/Amsterdam" });
 			 */
-			toBeSameDay(expectedDate: Date): R;
+			toBeSameDay(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that two dates are in the same month and year.
 			 *
-			 * @param expectedDate - The expected date to compare
-			 *
 			 * @example
-			 * expect(new Date('2024-01-15')).toBeSameMonth(new Date('2024-01-20'));
+			 * expect("2026-10-25").toBeSameMonth("2026-10-01");
 			 */
-			toBeSameMonth(expectedDate: Date): R;
+			toBeSameMonth(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that two dates are in the same year.
 			 *
-			 * @param expectedDate - The expected date to compare
-			 *
 			 * @example
-			 * expect(new Date('2024-01-01')).toBeSameYear(new Date('2024-12-31'));
+			 * expect("2026-01-01").toBeSameYear("2026-12-31");
 			 */
-			toBeSameYear(expectedDate: Date): R;
+			toBeSameYear(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that a date is today (current calendar day).
+			 * Asserts that a date is today. "Now" is captured once (`now` option, else `Date.now()`).
 			 *
 			 * @example
 			 * expect(new Date()).toBeToday();
+			 * expect(order.createdAt).toBeToday({ timeZone: "Europe/Amsterdam" });
 			 */
-			toBeToday(): R;
+			toBeToday(options?: RelativeTimeOptions): R;
 
 			/**
-			 * Asserts that a date is yesterday.
+			 * Asserts that a date is yesterday (calendar-aware, DST-safe).
 			 *
 			 * @example
 			 * expect(lastLogin).toBeYesterday();
 			 */
-			toBeYesterday(): R;
+			toBeYesterday(options?: RelativeTimeOptions): R;
 
 			/**
-			 * Asserts that a date is tomorrow.
+			 * Asserts that a date is tomorrow (calendar-aware, DST-safe).
 			 *
 			 * @example
 			 * expect(scheduledDate).toBeTomorrow();
 			 */
-			toBeTomorrow(): R;
+			toBeTomorrow(options?: RelativeTimeOptions): R;
 
 			/**
 			 * Asserts that a date falls on a weekday (Monday through Friday).
@@ -369,7 +383,7 @@ declare global {
 			 * @example
 			 * expect(deliveryDate).toBeWeekday();
 			 */
-			toBeWeekday(): R;
+			toBeWeekday(options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date falls on a weekend (Saturday or Sunday).
@@ -377,143 +391,280 @@ declare global {
 			 * @example
 			 * expect(event.date).toBeWeekend();
 			 */
-			toBeWeekend(): R;
+			toBeWeekend(options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that a date is in the past (before the current moment).
+			 * Asserts that a timestamp is in the past. Local values require `timeZone`.
 			 *
 			 * @example
 			 * expect(user.createdAt).toBeInThePast();
 			 */
-			toBeInThePast(): R;
+			toBeInThePast(options?: RelativeTimeOptions): R;
 
 			/**
-			 * Asserts that a date is in the future (after the current moment).
+			 * Asserts that a timestamp is in the future. Local values require `timeZone`.
 			 *
 			 * @example
 			 * expect(subscription.expiresAt).toBeInTheFuture();
 			 */
-			toBeInTheFuture(): R;
+			toBeInTheFuture(options?: RelativeTimeOptions): R;
+
+			/**
+			 * Asserts that a timestamp lies within the given elapsed time before now (inclusive).
+			 * Future timestamps fail. "Now" is captured once (`now` option, else `Date.now()`).
+			 *
+			 * @example
+			 * expect(order.createdAt).toBeWithinLast({ minutes: 5 });
+			 */
+			toBeWithinLast(duration: DurationInput, options?: RelativeTimeOptions): R;
+
+			/**
+			 * Asserts that a timestamp lies within the given elapsed time after now (inclusive).
+			 * Past timestamps fail.
+			 *
+			 * @example
+			 * expect(token.expiresAt).toBeWithinNext({ minutes: 30 });
+			 */
+			toBeWithinNext(duration: DurationInput, options?: RelativeTimeOptions): R;
+
+			/**
+			 * Asserts that an event happened after `start`, within a maximum elapsed time or a
+			 * `{ min, max }` window (inclusive). Elapsed time, never calendar approximations.
+			 *
+			 * @example
+			 * expect(order.completedAt).toBeWithinDurationAfter(order.createdAt, { seconds: 15 });
+			 * expect(payment.processedAt).toBeWithinDurationAfter(payment.createdAt, {
+			 *   min: { seconds: 1 },
+			 *   max: { seconds: 10 },
+			 * });
+			 */
+			toBeWithinDurationAfter(start: DateInput, limit: DurationInput | DurationRange, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that two datetimes fall in the same clock hour (not merely within 60 minutes).
+			 * Repeated DST hours are distinguished by their offset.
+			 *
+			 * @example
+			 * expect("2026-10-25T12:30:45Z").toBeSameHour("2026-10-25T12:59:59Z");
+			 */
+			toBeSameHour(expectedDate: DateTimeInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that two datetimes fall in the same clock minute.
+			 *
+			 * @example
+			 * expect("2026-10-25T12:30:45Z").toBeSameMinute("2026-10-25T12:30:10Z");
+			 */
+			toBeSameMinute(expectedDate: DateTimeInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that two datetimes fall in the same clock second.
+			 *
+			 * @example
+			 * expect("2026-10-25T12:30:45.123Z").toBeSameSecond("2026-10-25T12:30:45Z");
+			 */
+			toBeSameSecond(expectedDate: DateTimeInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a time of day lies within a window (inclusive). `start` after `end` is an
+			 * overnight window, e.g. `"22:00"` to `"06:00"`.
+			 *
+			 * @example
+			 * expect(appointment.scheduledAt).toBeWithinTimeOfDay("09:00", "17:00", { timeZone: "Europe/Amsterdam" });
+			 */
+			toBeWithinTimeOfDay(start: TimeInput, end: TimeInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a value has no components below `unit` (checks the value, not its formatting).
+			 *
+			 * @example
+			 * expect("2026-10-25T12:30:45.000Z").toBeTruncatedTo("second");
+			 * expect("2026-10-25T12:30:00Z").toBeTruncatedTo("minute");
+			 */
+			toBeTruncatedTo(unit: TruncationUnit, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a ZonedDateTime (value or ISO string with `[Zone]`) has an IANA time zone.
+			 * Offsets are rejected; use `toHaveOffset()` for those.
+			 *
+			 * @example
+			 * expect(zonedDateTime).toHaveTimeZone("Europe/Amsterdam");
+			 */
+			toHaveTimeZone(expectedTimeZone: string): R;
+
+			/**
+			 * Asserts the explicitly represented UTC offset of an ISO string or ZonedDateTime.
+			 * The offset is never inferred from a Date or Instant.
+			 *
+			 * @example
+			 * expect("2026-10-25T12:00:00+01:00").toHaveOffset("+01:00");
+			 * expect("2026-10-25T12:00:00Z").toHaveOffset("Z");
+			 */
+			toHaveOffset(expectedOffset: string): R;
+
+			/**
+			 * Asserts that a string is a strictly valid ISO 8601 datetime: local, with offset, or with an
+			 * IANA zone annotation. Shares its validation with `isISODateTime()` and `parseISODateTime()`.
+			 *
+			 * @example
+			 * expect("2026-10-25T12:30:45Z").toBeValidISODateTime();
+			 * expect("2026-10-25T12:30:45+01:00").toBeValidISODateTime({ requireOffset: true });
+			 */
+			toBeValidISODateTime(options?: ISODateTimeValidationOptions): R;
+
+			/**
+			 * Asserts that a timestamp is exactly at the start of its day, which is not always 00:00 on
+			 * DST transition days.
+			 *
+			 * @example
+			 * expect(timestamp).toBeAtStartOfDay({ timeZone: "Europe/Amsterdam" });
+			 */
+			toBeAtStartOfDay(options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a timestamp is the last moment of its day at the given precision
+			 * (default millisecond). Days are never assumed to last 24 hours.
+			 *
+			 * @example
+			 * expect(timestamp).toBeAtEndOfDay({ timeZone: "Europe/Amsterdam", precision: "millisecond" });
+			 */
+			toBeAtEndOfDay(options?: EndOfDayOptions): R;
+
+			/**
+			 * Asserts that two values have the same wall-clock time, ignoring the calendar date.
+			 *
+			 * @example
+			 * expect("2026-10-25T09:30:00").toBeSameTimeOfDay("2026-11-10T09:30:00");
+			 */
+			toBeSameTimeOfDay(expected: DateTimeInput | TimeInput, options?: TimeOfDayOptions): R;
+
+			/**
+			 * Asserts that consecutive values (in input order) are at most `maxGap` apart.
+			 *
+			 * @example
+			 * expect([event1.timestamp, event2.timestamp, event3.timestamp]).toHaveMaximumDateGap({ minutes: 5 });
+			 */
+			toHaveMaximumDateGap(maxGap: DurationInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a duration is strictly shorter than `limit`. Years, months and weeks require `relativeTo`.
+			 *
+			 * @example
+			 * expect(Temporal.Duration.from({ seconds: 5 })).toBeShorterThan({ seconds: 10 });
+			 */
+			toBeShorterThan(limit: DurationInput, options?: DurationCompareOptions): R;
+
+			/**
+			 * Asserts that a duration is strictly longer than `limit`. Years, months and weeks require `relativeTo`.
+			 *
+			 * @example
+			 * expect("PT2H").toBeLongerThan({ minutes: 90 });
+			 */
+			toBeLongerThan(limit: DurationInput, options?: DurationCompareOptions): R;
+
+			/**
+			 * Asserts that a duration lies between `min` and `max` (inclusive).
+			 *
+			 * @example
+			 * expect({ days: 31 }).toBeDurationBetween({ months: 1 }, { days: 31 }, { relativeTo: "2026-01-01" });
+			 */
+			toBeDurationBetween(min: DurationInput, max: DurationInput, options?: DurationCompareOptions): R;
 
 			/**
 			 * Asserts that a date's year is a leap year.
 			 *
 			 * @example
-			 * expect(new Date('2024-06-15')).toBeLeapYear();
-			 * expect(new Date('2023-06-15')).not.toBeLeapYear();
+			 * expect("2024-06-15").toBeLeapYear();
+			 * expect("2023-06-15").not.toBeLeapYear();
 			 */
-			toBeLeapYear(): R;
+			toBeLeapYear(options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that an array of dates spans approximately the expected range.
-			 *
-			 * @param expectedRange - Object specifying expected time span
+			 * Asserts that an array of dates spans exactly the given duration from its earliest to its
+			 * latest value. Calendar units are calendar-exact; no tolerance is applied.
 			 *
 			 * @example
-			 * expect(reportDates).toHaveDateRange({ days: 30 });
+			 * expect(["2026-01-01", "2026-01-15", "2026-01-31"]).toHaveDateRange({ days: 30 });
+			 * expect(["2026-01-31", "2026-02-28"]).toHaveDateRange({ months: 1 });
 			 */
-			toHaveDateRange(expectedRange: DateRangeOptions): R;
+			toHaveDateRange(expectedRange: DurationInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that an array of dates are consecutive by the specified unit.
-			 *
-			 * @param unit - The unit of time to check ('day', 'month', or 'year')
+			 * Asserts that an array of dates is consecutive by the specified unit (sorted first).
 			 *
 			 * @example
-			 * expect(['2024-01-01', '2024-01-02', '2024-01-03']).toHaveConsecutiveDates('day');
+			 * expect(["2026-01-01", "2026-01-02", "2026-01-03"]).toHaveConsecutiveDates("day");
 			 */
-			toHaveConsecutiveDates(unit: "day" | "month" | "year"): R;
+			toHaveConsecutiveDates(unit: "day" | "month" | "year", options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that all dates in an array fall within a specified range.
-			 *
-			 * @param startDate - The start of the acceptable range
-			 * @param endDate - The end of the acceptable range
+			 * Asserts that all dates in an array fall within a range (inclusive).
 			 *
 			 * @example
-			 * expect(transactions).toHaveDatesWithinRange(new Date('2024-01-01'), new Date('2024-03-31'));
+			 * expect(transactions).toHaveDatesWithinRange("2026-01-01", "2026-03-31");
 			 */
-			toHaveDatesWithinRange(startDate: Date, endDate: Date): R;
+			toHaveDatesWithinRange(startDate: DateInput, endDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that all dates in an array are unique.
-			 *
-			 * @param ignoreTime - If true, only compares dates (ignores time)
+			 * Asserts that all dates in an array are unique (nanosecond identity, or calendar date with `ignoreTime`).
 			 *
 			 * @example
 			 * expect(eventTimestamps).toHaveUniqueDates();
-			 * expect(dailyRecords).toHaveUniqueDates(true);
+			 * expect(dailyRecords).toHaveUniqueDates({ ignoreTime: true });
 			 */
-			toHaveUniqueDates(ignoreTime?: boolean): R;
+			toHaveUniqueDates(options?: UniqueDatesOptions): R;
 
 			/**
-			 * Asserts that a string is a valid ISO 8601 date format.
-			 *
-			 * Expected format: YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ssZ
+			 * Asserts that a value is a strictly valid ISO 8601 calendar date (`YYYY-MM-DD`).
+			 * Shares its validation with `isISODate()` and `parseISODate()`.
 			 *
 			 * @example
-			 * expect('2024-01-01T12:00:00.000Z').toBeValidISODate();
+			 * expect("2026-10-25").toBeValidISODate();
+			 * expect("2026-02-30").not.toBeValidISODate();
 			 */
 			toBeValidISODate(): R;
-
-			/**
-			 * Asserts that a date matches a specific timezone offset.
-			 *
-			 * @param expectedOffset - Expected timezone offset as minutes (e.g., -300), string format (e.g., '+05:00'), or 'UTC'
-			 *
-			 * @example
-			 * expect(timestamp).toMatchTimeZone('UTC');
-			 * expect(date).toMatchTimeZone('-05:00');
-			 */
-			toMatchTimeZone(expectedOffset: number | string): R;
 
 			/**
 			 * Asserts that a date is the first day of the month.
 			 *
 			 * @example
-			 * expect(new Date('2024-01-01')).toBeStartOfMonth();
+			 * expect("2026-01-01").toBeStartOfMonth();
 			 */
-			toBeStartOfMonth(): R;
+			toBeStartOfMonth(options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date is the last day of the month.
 			 *
 			 * @example
-			 * expect(new Date('2024-01-31')).toBeEndOfMonth();
+			 * expect("2026-01-31").toBeEndOfMonth();
 			 */
-			toBeEndOfMonth(): R;
+			toBeEndOfMonth(options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that an array of dates has gaps larger than the specified duration.
-			 *
-			 * @param minGap - Minimum gap duration to check for
+			 * Asserts that a sorted array of dates has at least one gap larger than `minGap`.
 			 *
 			 * @example
 			 * expect(activityDates).toHaveDateGapsLargerThan({ days: 7 });
 			 */
-			toHaveDateGapsLargerThan(minGap: DateGapOptions): R;
+			toHaveDateGapsLargerThan(minGap: DurationInput, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date falls within a specific quarter of the year.
 			 *
-			 * @param expectedQuarter - Quarter number (1-4)
-			 *
 			 * @example
 			 * expect(date).toBeInQuarter(1); // Jan-Mar
-			 * expect(yearEndReport).toBeInQuarter(4); // Oct-Dec
 			 */
-			toBeInQuarter(expectedQuarter: 1 | 2 | 3 | 4): R;
+			toBeInQuarter(expectedQuarter: 1 | 2 | 3 | 4, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date falls on a specific day of the week.
 			 *
-			 * @param expectedDay - Day name or number (0=Sunday, 1=Monday, etc.)
+			 * @param expectedDay - Day name or number (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
 			 *
 			 * @example
-			 * expect(meetingDate).toBeSpecificDayOfWeek('Monday');
-			 * expect(meetingDate).toBeSpecificDayOfWeek(1);
+			 * expect(meetingDate).toBeSpecificDayOfWeek("Monday");
 			 */
-			toBeSpecificDayOfWeek(expectedDay: DayOfWeek | number): R;
+			toBeSpecificDayOfWeek(expectedDay: DayOfWeek | number, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date falls within a specific month.
@@ -521,10 +672,9 @@ declare global {
 			 * @param expectedMonth - Month name or number (1-12)
 			 *
 			 * @example
-			 * expect(date).toBeInMonth('January');
-			 * expect(date).toBeInMonth(1);
+			 * expect(date).toBeInMonth("January");
 			 */
-			toBeInMonth(expectedMonth: MonthName | number): R;
+			toBeInMonth(expectedMonth: MonthName | number, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that an array of numbers is in ascending order (smallest to largest).

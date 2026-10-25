@@ -10,7 +10,7 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 - 🎯 **50+ Custom Matchers** — extensive validation for all data types
 - 🔤 **String Validation** — email, URL, UUID, alphanumeric, and more
 - 🔢 **Number Arrays** — sorting, statistics, ranges, and patterns
-- 📅 **Date Operations** — comparisons, ranges, quarters, and business logic
+- 📅 **Date & Time** — `Date`, ISO strings and Temporal; time zones, DST, nanosecond precision, durations
 - 🎨 **Locator Assertions** — DOM element validation and text formatting
 - 📦 **Object Arrays** — sorting, uniqueness, and property validation
 - 🤖 **Fuzzy Matching** — AI-generated text validation (separate [`@cerios/playwright-expectly-fuzzy`](https://www.npmjs.com/package/@cerios/playwright-expectly-fuzzy) package)
@@ -63,7 +63,7 @@ import { expectly } from "@cerios/playwright-expectly";
 
 expectly("user@example.com").toBeValidEmail();
 expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
-expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
+expectly(subscription.expiresAt).toBeInTheFuture();
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
@@ -93,13 +93,13 @@ export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
 export const test = base;
 ```
 
-> **Upgrading from 1.x:** the Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, and the deprecated `setupExpectly()` is removed. Use the `tests/support` pattern above instead. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
+> **Upgrading from 1.x:** the Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, the deprecated `setupExpectly()` is removed (use the `tests/support` pattern above instead), and the date matchers are rebuilt on Temporal with exact calendar semantics: `toBeValidISODate()` now validates `YYYY-MM-DD` and `toMatchTimeZone()` is replaced by `toHaveOffset()` / `toHaveTimeZone()`. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
 
 ## Available Matchers
 
 - **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toStartWith()`, `toEndWith()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
 - **Number Array** — `toHaveAscendingOrder()`, `toHaveAverage()`, `toBeAllPositive()`, `toBeMonotonic()`, and more — [📖 docs](../../docs/NUMBER_ARRAY_MATCHERS.md)
-- **Date** — `toBeDateCloseTo()`, `toBeInTheFuture()`, `toBeSameDay()`, `toBeInQuarter()`, and more — [📖 docs](../../docs/DATE_MATCHERS.md)
+- **Date & Time** — `Date`, ISO strings and Temporal values: `toBeWithinLast()`, `toBeWithinDurationAfter()`, `toBeSameInstant()`, `toBeSameDay()`, `toBeWithinTimeOfDay()`, `toHaveOffset()`, duration matchers, plus `parseISO*()` / `isISO*()` and typed ISO strings — [📖 docs](../../docs/DATE_MATCHERS.md)
 - **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveHref()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
 - **Object Array** — `toHaveObjectsInAscendingOrderBy()`, `toHaveOnlyUniqueObjects()`, and more — [📖 docs](../../docs/OBJECT_ARRAY_MATCHERS.md)
 - **String Array** — `toHaveAscendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveUniqueValues()`, and more — [📖 docs](../../docs/STRING_ARRAY_MATCHERS.md)
