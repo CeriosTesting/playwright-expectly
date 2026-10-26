@@ -389,7 +389,62 @@ export const expectlyAnyMatchers = withMatcherState({
 			actual: actualSubset,
 		};
 	},
+	toSatisfy(this: ExpectMatcherState, received: unknown, predicate: (value: unknown) => unknown): MatcherReturnType {
+		const assertionName = "toSatisfy";
+		if (typeof predicate !== "function") throw new TypeError(`${assertionName}: predicate must be a function`);
+		const pass = Boolean(predicate(received));
+		return {
+			message: () =>
+				`${this.utils.matcherHint(assertionName, undefined, "predicate", { isNot: this.isNot })}\n\n` +
+				`Expected value to ${this.isNot ? "not " : ""}satisfy the predicate${predicate.name ? ` ${predicate.name}` : ""}\n` +
+				`Received: ${this.utils.printReceived(received)}`,
+			pass,
+			name: assertionName,
+			actual: received,
+		};
+	},
+	toBeEven(this: ExpectMatcherState, received: unknown): MatcherReturnType {
+		return parityResult(this, "toBeEven", received, "even");
+	},
+	toBeOdd(this: ExpectMatcherState, received: unknown): MatcherReturnType {
+		return parityResult(this, "toBeOdd", received, "odd");
+	},
+	toBeFinite(this: ExpectMatcherState, received: unknown): MatcherReturnType {
+		const assertionName = "toBeFinite";
+		const pass = typeof received === "number" && Number.isFinite(received);
+		return {
+			message: () =>
+				`${this.utils.matcherHint(assertionName, undefined, "", { isNot: this.isNot })}\n\n` +
+				`Expected value to ${this.isNot ? "not " : ""}be a finite number (not NaN or ±Infinity)\n` +
+				`Received: ${this.utils.printReceived(received)}`,
+			pass,
+			name: assertionName,
+			actual: received,
+		};
+	},
 });
+
+/** Integers (numbers or BigInts) that are even or odd; other values never match either. */
+function parityResult(
+	state: ExpectMatcherState,
+	assertionName: string,
+	received: unknown,
+	parity: "even" | "odd",
+): MatcherReturnType {
+	let remainder: number | undefined;
+	if (typeof received === "bigint") remainder = Number(received % 2n);
+	else if (typeof received === "number" && Number.isInteger(received)) remainder = Math.abs(received % 2);
+	const pass = remainder !== undefined && (parity === "even" ? remainder === 0 : remainder !== 0);
+	return {
+		message: () =>
+			`${state.utils.matcherHint(assertionName, undefined, "", { isNot: state.isNot })}\n\n` +
+			`Expected value to ${state.isNot ? "not " : ""}be an ${parity} integer\n` +
+			`Received: ${state.utils.printReceived(received)}`,
+		pass,
+		name: assertionName,
+		actual: received,
+	};
+}
 
 export const expectlyAny: Expect<typeof expectlyAnyMatchers> = baseExpect.extend(expectlyAnyMatchers);
 

@@ -8,7 +8,8 @@ export default defineConfig({
 	clean: true,
 	outDir: "dist",
 	deps: {
-		neverBundle: ["@playwright/test", "playwright", "playwright-core"],
+		// Subpaths too: declarations may reference "playwright/types/test", which must stay an import.
+		neverBundle: [/^@playwright\/test(?:\/|$)/, /^playwright(?:\/|$)/, /^playwright-core(?:\/|$)/],
 		onlyBundle: false,
 	},
 });

@@ -1,8 +1,9 @@
-import type { MatcherReturnType } from "@cerios/playwright-expectly-core";
 import { locatorNotFoundMessage, pollLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
+
+import type { ExpectlyMatcherResult } from "../matchers/matcher-result";
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -31,7 +32,7 @@ async function positionMatcher(
 	locator: Locator,
 	otherLocator: Locator,
 	options: PollOptions | undefined,
-): Promise<MatcherReturnType> {
+): Promise<ExpectlyMatcherResult> {
 	let hiddenIndex: number | undefined;
 	let edges: readonly [number, number] | undefined;
 

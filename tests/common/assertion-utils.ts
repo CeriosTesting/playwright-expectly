@@ -21,3 +21,9 @@ export async function getRejectedError(assertion: Promise<unknown>): Promise<Err
 		return new Error(String(error));
 	}
 }
+
+/** Removes the terminal colors that matcher messages add around printed values. */
+export function stripAnsi(text: string): string {
+	// oxlint-disable-next-line no-control-regex
+	return text.replace(/\u001b\[\d+m/g, "");
+}

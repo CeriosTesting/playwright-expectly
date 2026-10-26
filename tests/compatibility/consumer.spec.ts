@@ -40,6 +40,21 @@ test("browser matchers and locator failures", async ({ page }) => {
 	expect((error as Error).stack).not.toMatch(/[/\\](?:src|dist)[/\\]/);
 });
 
+test("locator polling, counts, ordering, styles and page state", async ({ page }) => {
+	await page.setContent("<ul><li style='color: rgb(255, 0, 0)'>a</li><li>b</li></ul>");
+	await expectly(page.locator("li")).toHaveCountBetween(1, 2);
+	await expectly(page.locator("li")).toHaveTextsInAscendingOrder();
+	await expectly(page.locator("li").first()).toHaveStyles({ color: "rgb(255, 0, 0)" });
+	// A missing element fails both forms, as Playwright's own locator assertions do.
+	await expect(expectly(page.locator("#absent")).not.toHaveHref("/x", { timeout: 100 })).rejects.toThrow(
+		"element(s) not found",
+	);
+	await page.context().addCookies([{ name: "consent", value: "granted", url: "https://example.com" }]);
+	await expectly(page).toHaveCookie("consent", "granted");
+	expectly([1, 2, 3]).toIncludeSameMembers([3, 2, 1]);
+	expectly([2, 4]).toSatisfyAll((value) => value % 2 === 0);
+});
+
 test("date and time matchers, ISO types and the Temporal polyfill", () => {
 	const day = "2026-10-25" satisfies ISODateString;
 	const createdAt: unknown = "2026-10-25T12:00:00Z";

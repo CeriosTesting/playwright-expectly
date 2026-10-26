@@ -4,10 +4,14 @@ import type { ExpectMatcherState, Locator } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import { expectlyAnyMatchers } from "./expectly-any";
+import { expectlyCollectionMatchers } from "./expectly-collection";
 import { expectlyDateMatchers } from "./expectly-date";
+import { expectlyFunctionMatchers } from "./expectly-function";
 import { expectlyLocatorMatchers, expectlyLocatorTextMatchers } from "./expectly-locator";
 import { expectlyNumberArrayMatchers } from "./expectly-number-array";
 import { expectlyObjectArrayMatchers } from "./expectly-object-array";
+import { expectlyPageMatchers } from "./expectly-page";
+import type { ExpectWithReturn } from "./expectly-return";
 import { withReturn } from "./expectly-return";
 import { expectlyStringMatchers } from "./expectly-string";
 import { expectlyStringArrayMatchers } from "./expectly-string-array";
@@ -163,19 +167,25 @@ type OverlappingArrayMatcherNames = keyof typeof expectlyArrayOrderMatchers;
  */
 export const expectlyMatchers = {
 	...expectlyAnyMatchers,
+	...expectlyCollectionMatchers,
 	...expectlyDateMatchers,
+	...expectlyFunctionMatchers,
 	...expectlyLocatorMatchers,
 	...expectlyNumberArrayMatchers,
 	...expectlyObjectArrayMatchers,
+	...expectlyPageMatchers,
 	...expectlyStringMatchers,
 	...expectlyStringArrayMatchers,
 	...expectlyTextMatchers,
 	...expectlyArrayOrderMatchers,
 } as typeof expectlyAnyMatchers &
+	typeof expectlyCollectionMatchers &
 	typeof expectlyDateMatchers &
+	typeof expectlyFunctionMatchers &
 	Omit<typeof expectlyLocatorMatchers, OverlappingTextMatcherNames> &
 	Omit<typeof expectlyNumberArrayMatchers, OverlappingArrayMatcherNames> &
 	typeof expectlyObjectArrayMatchers &
+	typeof expectlyPageMatchers &
 	Omit<typeof expectlyStringMatchers, OverlappingTextMatcherNames> &
 	Omit<typeof expectlyStringArrayMatchers, OverlappingArrayMatcherNames> &
 	typeof expectlyTextMatchers &
@@ -199,4 +209,6 @@ export const expectlyMatchers = {
  *
  * Made with love by Ronald Veth from Cerios
  */
-export const expectly = withReturn(baseExpect.extend<typeof expectlyMatchers>(expectlyMatchers));
+export const expectly: ExpectWithReturn<typeof expectlyMatchers> = withReturn(
+	baseExpect.extend<typeof expectlyMatchers>(expectlyMatchers),
+);

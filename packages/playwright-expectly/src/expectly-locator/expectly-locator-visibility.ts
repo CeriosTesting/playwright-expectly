@@ -3,6 +3,18 @@ import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+/** Counts the matching elements that Playwright considers visible, without waiting for any of them. */
+export async function countVisibleElements(locator: Locator): Promise<number> {
+	const handles = await locator.elementHandles();
+	try {
+		const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
+		return visArr.filter(Boolean).length;
+	} finally {
+		// Dispose every handle, even when visibility checks fail or the page closes.
+		await Promise.allSettled(handles.map((h) => h.dispose()));
+	}
+}
+
 /**
  * Visibility validation matchers for Playwright locators.
  */
@@ -20,15 +32,8 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 
 		pass = await runPolledMatcher(this, options, async () => {
 			try {
-				const handles = await locator.elementHandles();
-				try {
-					const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
-					visibleCount = visArr.filter(Boolean).length;
-					return visibleCount === count;
-				} finally {
-					// Dispose every handle, even when visibility checks fail or the page closes.
-					await Promise.allSettled(handles.map((h) => h.dispose()));
-				}
+				visibleCount = await countVisibleElements(locator);
+				return visibleCount === count;
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;

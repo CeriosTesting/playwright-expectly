@@ -1,9 +1,10 @@
-import type { LocatorSnapshot, MatcherReturnType } from "@cerios/playwright-expectly-core";
+import type { LocatorSnapshot } from "@cerios/playwright-expectly-core";
 import { locatorNotFoundMessage, pollLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import type { ExpectlyMatcherResult } from "../matchers/matcher-result";
 import { matchesPattern } from "../matchers/text-validation-utils";
 
 function attributeMatches(actual: string | null, expected: string | RegExp): boolean {
@@ -26,7 +27,7 @@ async function attributeMatcher(
 	locator: Locator,
 	expected: string | RegExp,
 	options: PollOptions | undefined,
-): Promise<MatcherReturnType> {
+): Promise<ExpectlyMatcherResult> {
 	const { pass, snapshot } = await pollLocators(
 		state,
 		options,
@@ -80,7 +81,7 @@ async function booleanAttributeMatcher(
 	attribute: string,
 	locator: Locator,
 	options: PollOptions | undefined,
-): Promise<MatcherReturnType> {
+): Promise<ExpectlyMatcherResult> {
 	const { pass, snapshot } = await pollLocators(
 		state,
 		options,
@@ -112,6 +113,20 @@ async function booleanAttributeMatcher(
 		pass,
 		name: assertionName,
 	};
+}
+
+export type StylesOptions = PollOptions & {
+	/** Read the styles of the `::before` or `::after` pseudo-element. */
+	pseudo?: "::before" | "::after";
+};
+
+function styleMatches(actual: string, expected: string | RegExp): boolean {
+	return typeof expected === "string" ? actual === expected : matchesPattern(actual, expected);
+}
+
+/** Expected properties whose computed value differs. */
+function styleMismatches(actual: Record<string, string>, expected: Record<string, string | RegExp>): string[] {
+	return Object.keys(expected).filter((name) => !styleMatches(actual[name] ?? "", expected[name]));
 }
 
 /**
@@ -207,6 +222,55 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 	},
 	async toBeReadOnly(locator: Locator, options?: PollOptions) {
 		return booleanAttributeMatcher(this, "toBeReadOnly", "readonly", locator, options);
+	},
+	async toHaveStyles(locator: Locator, expected: Record<string, string | RegExp>, options?: StylesOptions) {
+		const assertionName = "toHaveStyles";
+		if (typeof expected !== "object" || expected === null || Object.keys(expected).length === 0) {
+			throw new TypeError(`${assertionName}: expected a non-empty object of CSS properties`);
+		}
+		const names = Object.keys(expected);
+		const pseudo = options?.pseudo ?? null;
+
+		const { pass, snapshot } = await pollLocators(
+			this,
+			options && { timeout: options.timeout, intervals: options.intervals },
+			[locator],
+			(actionOptions) =>
+				locator.evaluate(
+					(element, [properties, pseudoElement]) => {
+						const style = getComputedStyle(element, pseudoElement);
+						// getPropertyValue also reads custom properties (`--brand-color`), unlike style[name].
+						return Object.fromEntries(properties.map((name) => [name, style.getPropertyValue(name).trim()]));
+					},
+					[names, pseudo] as const,
+					actionOptions,
+				),
+			// `.not` passes when at least one property differs.
+			(actual) => styleMismatches(actual, expected).length === 0,
+		);
+		const actual = snapshot?.found ? snapshot.value : {};
+
+		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, snapshot);
+			if (notFound) return notFound;
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, { isNot: this.isNot });
+			if (this.isNot) {
+				return `${hint}\n\nExpected element to not have all of these styles: ${this.utils.printExpected(expected)}\nReceived: ${this.utils.printReceived(actual)}`;
+			}
+			const lines = styleMismatches(actual, expected).map(
+				(name) =>
+					`  ${name}: expected ${this.utils.printExpected(expected[name])}, received ${this.utils.printReceived(actual[name] ?? "")}`,
+			);
+			return `${hint}\n\nExpected element${pseudo ? ` ${pseudo}` : ""} to have styles\n${lines.join("\n")}`;
+		};
+
+		return {
+			message,
+			pass,
+			name: assertionName,
+			expected,
+			actual,
+		};
 	},
 });
 

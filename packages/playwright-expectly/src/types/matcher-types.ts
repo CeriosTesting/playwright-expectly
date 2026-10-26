@@ -18,6 +18,10 @@ import type {
 	TruncationUnit,
 	UniqueDatesOptions,
 } from "../date-time/types";
+import type { StylesOptions } from "../expectly-locator/expectly-locator-attributes";
+import type { CountOptions } from "../expectly-locator/expectly-locator-count";
+import type { TextOrderOptions } from "../expectly-locator/expectly-locator-order";
+import type { CookieOptions } from "../expectly-page";
 import type { NumericToleranceOptions, StringOrderOptions } from "../matchers/common-utils";
 import type { UrlValidationOptions, UUIDVersion } from "../matchers/text-validation-utils";
 
@@ -1163,6 +1167,296 @@ declare global {
 			 * await expect(page.locator('tbody tr')).toHaveCountVisible(5, { timeout: 5000 });
 			 */
 			toHaveCountVisible(count: number, options?: PollOptions): Promise<R>;
+
+			/**
+			 * Asserts that the locator matches more than `count` elements, retrying until it does.
+			 *
+			 * @param options - `visible: true` counts only visible elements; plus polling configuration
+			 *
+			 * @example
+			 * await expect(page.locator('.search-result')).toHaveCountGreaterThan(0);
+			 */
+			toHaveCountGreaterThan(count: number, options?: CountOptions): Promise<R>;
+
+			/**
+			 * Asserts that the locator matches at least `count` elements, retrying until it does.
+			 *
+			 * @example
+			 * await expect(page.locator('tbody tr')).toHaveCountGreaterThanOrEqual(10, { visible: true });
+			 */
+			toHaveCountGreaterThanOrEqual(count: number, options?: CountOptions): Promise<R>;
+
+			/**
+			 * Asserts that the locator matches fewer than `count` elements, retrying until it does.
+			 *
+			 * @example
+			 * await expect(page.locator('.toast')).toHaveCountLessThan(3);
+			 */
+			toHaveCountLessThan(count: number, options?: CountOptions): Promise<R>;
+
+			/**
+			 * Asserts that the locator matches at most `count` elements, retrying until it does.
+			 *
+			 * @example
+			 * await expect(page.locator('.error')).toHaveCountLessThanOrEqual(1);
+			 */
+			toHaveCountLessThanOrEqual(count: number, options?: CountOptions): Promise<R>;
+
+			/**
+			 * Asserts that the locator matches between `min` and `max` elements (inclusive), retrying until it does.
+			 *
+			 * @example
+			 * await expect(page.locator('.page-item')).toHaveCountBetween(1, 10);
+			 */
+			toHaveCountBetween(min: number, max: number, options?: CountOptions): Promise<R>;
+
+			/**
+			 * Asserts that the texts of all elements the locator matches are in ascending order, retrying until they
+			 * are, so it can follow a click on a sort button directly. Texts are trimmed; zero elements fail.
+			 *
+			 * @param options - `numeric`, `locale`, `ignoreCase`, `strict`, `parse` (convert each text, e.g. a price),
+			 *   `useInnerText`, plus polling configuration
+			 *
+			 * @example
+			 * await page.getByRole('button', { name: 'Sort by name' }).click();
+			 * await expect(page.locator('td.name')).toHaveTextsInAscendingOrder({ ignoreCase: true });
+			 * await expect(page.locator('td.price')).toHaveTextsInAscendingOrder({ parse: (t) => Number(t.replace(/[^\d.]/g, '')) });
+			 */
+			toHaveTextsInAscendingOrder(options?: TextOrderOptions): Promise<R>;
+
+			/**
+			 * Asserts that the texts of all elements the locator matches are in descending order, retrying until they are.
+			 *
+			 * @example
+			 * await expect(page.locator('td.date')).toHaveTextsInDescendingOrder();
+			 */
+			toHaveTextsInDescendingOrder(options?: TextOrderOptions): Promise<R>;
+
+			/**
+			 * Asserts several computed CSS properties at once, including custom properties (`--brand-color`).
+			 * Values are compared with the computed value as the browser reports it (e.g. `rgb(255, 0, 0)`).
+			 *
+			 * @param styles - Property names mapped to an exact string or a RegExp
+			 * @param options - `pseudo: "::before" | "::after"`, plus polling configuration
+			 *
+			 * @example
+			 * await expect(page.locator('.alert')).toHaveStyles({ color: 'rgb(255, 0, 0)', 'font-weight': '700' });
+			 * await expect(page.locator('.badge')).toHaveStyles({ content: '"New"' }, { pseudo: '::before' });
+			 */
+			toHaveStyles(styles: Record<string, string | RegExp>, options?: StylesOptions): Promise<R>;
+
+			/**
+			 * Asserts that a page's browser context (or a BrowserContext) has a cookie, retrying until it does.
+			 *
+			 * @param name - The cookie name
+			 * @param value - Optional exact value or RegExp
+			 * @param options - `domain` and `path` filters, plus polling configuration
+			 *
+			 * @example
+			 * await page.getByRole('button', { name: 'Accept' }).click();
+			 * await expect(page).toHaveCookie('consent', 'granted');
+			 */
+			toHaveCookie(name: string, value?: string | RegExp, options?: CookieOptions): Promise<R>;
+
+			/**
+			 * Asserts that the page's `localStorage` has an item, retrying until it does.
+			 *
+			 * @example
+			 * await expect(page).toHaveLocalStorageItem('theme', 'dark');
+			 */
+			toHaveLocalStorageItem(key: string, value?: string | RegExp, options?: PollOptions): Promise<R>;
+
+			/**
+			 * Asserts that the page's `sessionStorage` has an item, retrying until it does.
+			 *
+			 * @example
+			 * await expect(page).toHaveSessionStorageItem('cart-id', /^[0-9a-f-]{36}$/);
+			 */
+			toHaveSessionStorageItem(key: string, value?: string | RegExp, options?: PollOptions): Promise<R>;
+
+			/**
+			 * Asserts that the received value satisfies a predicate.
+			 *
+			 * @example
+			 * expect(order.total).toSatisfy((total) => total > 0 && total < 1000);
+			 */
+			toSatisfy(predicate: (value: T) => unknown): R;
+
+			/**
+			 * Asserts that every element of an array satisfies a predicate.
+			 *
+			 * @example
+			 * expect(users).toSatisfyAll((user) => user.active);
+			 */
+			toSatisfyAll(predicate: (value: T extends readonly (infer E)[] ? E : unknown, index: number) => unknown): R;
+
+			/**
+			 * Asserts that at least one element of an array satisfies a predicate.
+			 *
+			 * @example
+			 * expect(roles).toSatisfyAny((role) => role.name === 'admin');
+			 */
+			toSatisfyAny(predicate: (value: T extends readonly (infer E)[] ? E : unknown, index: number) => unknown): R;
+
+			/**
+			 * Asserts that an array has exactly the same members as `expected`, in any order (duplicates must match
+			 * in number). Members are compared with `toEqual` semantics, so asymmetric matchers work.
+			 *
+			 * @example
+			 * expect(tags).toIncludeSameMembers(['b', 'a', 'c']);
+			 */
+			toIncludeSameMembers(expected: readonly unknown[]): R;
+
+			/**
+			 * Asserts that an array includes all of the given members, in any order.
+			 *
+			 * @example
+			 * expect(permissions).toIncludeAllMembers(['read', 'write']);
+			 */
+			toIncludeAllMembers(expected: readonly unknown[]): R;
+
+			/**
+			 * Asserts that an array includes at least one of the given members.
+			 *
+			 * @example
+			 * expect(statuses).toIncludeAnyMembers(['failed', 'error']);
+			 */
+			toIncludeAnyMembers(expected: readonly unknown[]): R;
+
+			/**
+			 * Asserts that an object has an own key.
+			 *
+			 * @example
+			 * expect(response).toContainKey('id');
+			 */
+			toContainKey(key: PropertyKey): R;
+
+			/**
+			 * Asserts that an object has all of the given own keys (it may have others).
+			 *
+			 * @example
+			 * expect(user).toContainKeys(['id', 'email']);
+			 */
+			toContainKeys(keys: readonly PropertyKey[]): R;
+
+			/**
+			 * Asserts that an object has exactly the given own enumerable keys, in any order.
+			 *
+			 * @example
+			 * expect(payload).toContainAllKeys(['id', 'name', 'createdAt']);
+			 */
+			toContainAllKeys(keys: readonly PropertyKey[]): R;
+
+			/**
+			 * Asserts that an object has an own entry with an equal value (`toEqual` semantics).
+			 *
+			 * @example
+			 * expect(config).toContainEntry(['mode', 'production']);
+			 */
+			toContainEntry(entry: readonly [PropertyKey, unknown]): R;
+
+			/**
+			 * Asserts that an object has all of the given own entries.
+			 *
+			 * @example
+			 * expect(user).toContainEntries([['role', 'admin'], ['active', true]]);
+			 */
+			toContainEntries(entries: readonly (readonly [PropertyKey, unknown])[]): R;
+
+			/**
+			 * Asserts that the received value is an object (not an array) without own enumerable keys.
+			 *
+			 * @example
+			 * expect(response.errors).toBeEmptyObject();
+			 */
+			toBeEmptyObject(): R;
+
+			/**
+			 * Asserts that a string equals another, ignoring letter case (Unicode case folding, locale-independent).
+			 *
+			 * @example
+			 * expect('Hello World').toEqualCaseInsensitive('hello world');
+			 */
+			toEqualCaseInsensitive(expected: string): R;
+
+			/**
+			 * Asserts that a string equals another after removing all whitespace.
+			 *
+			 * @example
+			 * expect('1 234 567').toEqualIgnoringWhitespace('1234567');
+			 */
+			toEqualIgnoringWhitespace(expected: string): R;
+
+			/**
+			 * Asserts that a string is hexadecimal (case-insensitive). The `0x` prefix is allowed by default.
+			 *
+			 * @param options - `prefix: "allowed" | "required" | "forbidden"`
+			 *
+			 * @example
+			 * expect('0x1f').toBeHexadecimal();
+			 * expect('deadBEEF').toBeHexadecimal({ prefix: 'forbidden' });
+			 */
+			toBeHexadecimal(options?: { prefix?: "allowed" | "required" | "forbidden" }): R;
+
+			/**
+			 * Asserts that the received value is an even integer (number or BigInt).
+			 *
+			 * @example
+			 * expect(pageCount).toBeEven();
+			 */
+			toBeEven(): R;
+
+			/**
+			 * Asserts that the received value is an odd integer (number or BigInt).
+			 *
+			 * @example
+			 * expect(3).toBeOdd();
+			 */
+			toBeOdd(): R;
+
+			/**
+			 * Asserts that the received value is a finite number (not NaN or ±Infinity).
+			 *
+			 * @example
+			 * expect(ratio).toBeFinite();
+			 */
+			toBeFinite(): R;
+
+			/**
+			 * Asserts that a promise (or a function returning one) resolves.
+			 *
+			 * @example
+			 * await expect(api.health()).toResolve();
+			 * await expect(() => api.deleteUser(id)).not.toResolve();
+			 */
+			toResolve(): Promise<R>;
+
+			/**
+			 * Asserts that a promise (or a function returning one) rejects.
+			 *
+			 * @example
+			 * await expect(api.login('wrong')).toReject();
+			 */
+			toReject(): Promise<R>;
+
+			/**
+			 * Asserts that a function throws an error of the given type with the given message (exact string or
+			 * RegExp). A function returning a promise is awaited, and the assertion then returns a promise.
+			 *
+			 * @example
+			 * expect(() => parse('')).toThrowWithMessage(TypeError, 'Input must not be empty');
+			 * await expect(async () => api.call()).toThrowWithMessage(Error, /timeout/);
+			 */
+			toThrowWithMessage(
+				type: abstract new (...args: never[]) => Error,
+				message: string | RegExp,
+			): T extends (...args: never[]) => infer Returned
+				? [Returned] extends [never]
+					? R
+					: Returned extends PromiseLike<unknown>
+						? Promise<R>
+						: R
+				: R;
 		}
 	}
 }
