@@ -62,9 +62,9 @@
 		"fuzzball": "^2.2.6"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.63.0",
-		"@types/node": "^26.2.0",
-		"tsdown": "^0.23.0",
+		"@playwright/test": "^1.64.1",
+		"@types/node": "^26.6.5",
+		"tsdown": "^0.23.1",
 		"typescript": "^7.0.2"
 	},
 	"peerDependencies": {

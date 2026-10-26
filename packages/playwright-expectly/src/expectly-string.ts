@@ -1,6 +1,8 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import { matchesPattern } from "./matchers/text-validation-utils";
 import {
 	getUUIDFormatDescription,
 	isAlphanumeric,
@@ -101,7 +103,7 @@ export const expectlyStringMatchers = withMatcherState({
 	toMatchPattern(matcher: string, pattern: RegExp) {
 		const assertionName = "toMatchPattern";
 		const actual = matcher;
-		const pass = pattern.test(matcher);
+		const pass = matchesPattern(matcher, pattern);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -322,4 +324,4 @@ export const expectlyStringMatchers = withMatcherState({
 	},
 });
 
-export const expectlyString = baseExpect.extend(expectlyStringMatchers);
+export const expectlyString: Expect<typeof expectlyStringMatchers> = baseExpect.extend(expectlyStringMatchers);

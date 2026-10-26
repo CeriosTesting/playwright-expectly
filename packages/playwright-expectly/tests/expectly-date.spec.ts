@@ -3,40 +3,40 @@ import { expect, test } from "@playwright/test";
 import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
 import { expectlyDate } from "../src/expectly-date";
 
-test.describe("toBeCloseTo", () => {
+test.describe("toBeDateCloseTo", () => {
 	test("should pass when dates are exactly the same", () => {
 		const date = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(date).toBeCloseTo(date, { seconds: 0 });
+		expectlyDate(date).toBeDateCloseTo(date, { seconds: 0 });
 	});
 
 	test("should pass when dates are within seconds deviation", () => {
 		const actual = new Date("2023-01-01T12:00:05Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { seconds: 10 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { seconds: 10 });
 	});
 
 	test("should pass when dates are within minutes deviation", () => {
 		const actual = new Date("2023-01-01T12:03:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { minutes: 5 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 5 });
 	});
 
 	test("should pass when dates are within hours deviation", () => {
 		const actual = new Date("2023-01-01T14:00:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { hours: 3 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { hours: 3 });
 	});
 
 	test("should pass when dates are within days deviation", () => {
 		const actual = new Date("2023-01-03T12:00:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { days: 2 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { days: 2 });
 	});
 
 	test("should pass when dates are within combined deviation", () => {
 		const actual = new Date("2023-01-02T13:05:30Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, {
+		expectlyDate(actual).toBeDateCloseTo(expected, {
 			days: 1,
 			hours: 2,
 			minutes: 10,
@@ -47,13 +47,13 @@ test.describe("toBeCloseTo", () => {
 	test("should pass when actual is earlier than expected within deviation", () => {
 		const actual = new Date("2023-01-01T11:55:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { minutes: 10 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 10 });
 	});
 
 	test("should pass when actual is later than expected within deviation", () => {
 		const actual = new Date("2023-01-01T12:05:00Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { minutes: 10 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 10 });
 	});
 
 	test("should fail when dates are outside seconds deviation", () => {
@@ -61,9 +61,9 @@ test.describe("toBeCloseTo", () => {
 		const expected = new Date("2023-01-01T12:00:00Z");
 
 		const error = getRejectedErrorSync(() => {
-			expectlyDate(actual).toBeCloseTo(expected, { seconds: 10 });
+			expectlyDate(actual).toBeDateCloseTo(expected, { seconds: 10 });
 		});
-		expect(error.message).toContain("toBeCloseTo");
+		expect(error.message).toContain("toBeDateCloseTo");
 		expect(error.message).toContain("Difference");
 		expect(error.message).toContain("Allowed deviation");
 	});
@@ -73,8 +73,8 @@ test.describe("toBeCloseTo", () => {
 		const expected = new Date("2023-01-01T12:00:00Z");
 
 		expect(() => {
-			expectlyDate(actual).toBeCloseTo(expected, { minutes: 5 });
-		}).toThrow(/toBeCloseTo/);
+			expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 5 });
+		}).toThrow(/toBeDateCloseTo/);
 	});
 
 	test("should fail when dates are outside hours deviation", () => {
@@ -82,8 +82,8 @@ test.describe("toBeCloseTo", () => {
 		const expected = new Date("2023-01-01T12:00:00Z");
 
 		expect(() => {
-			expectlyDate(actual).toBeCloseTo(expected, { hours: 3 });
-		}).toThrow(/toBeCloseTo/);
+			expectlyDate(actual).toBeDateCloseTo(expected, { hours: 3 });
+		}).toThrow(/toBeDateCloseTo/);
 	});
 
 	test("should fail when dates are outside days deviation", () => {
@@ -91,14 +91,14 @@ test.describe("toBeCloseTo", () => {
 		const expected = new Date("2023-01-01T12:00:00Z");
 
 		expect(() => {
-			expectlyDate(actual).toBeCloseTo(expected, { days: 2 });
-		}).toThrow(/toBeCloseTo/);
+			expectlyDate(actual).toBeDateCloseTo(expected, { days: 2 });
+		}).toThrow(/toBeDateCloseTo/);
 	});
 
 	test("should work with .not for dates outside deviation", () => {
 		const actual = new Date("2023-01-01T12:00:15Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).not.toBeCloseTo(expected, { seconds: 10 });
+		expectlyDate(actual).not.toBeDateCloseTo(expected, { seconds: 10 });
 	});
 
 	test("should fail with .not for dates within deviation", () => {
@@ -106,34 +106,34 @@ test.describe("toBeCloseTo", () => {
 		const expected = new Date("2023-01-01T12:00:00Z");
 
 		expect(() => {
-			expectlyDate(actual).not.toBeCloseTo(expected, { seconds: 10 });
+			expectlyDate(actual).not.toBeDateCloseTo(expected, { seconds: 10 });
 		}).toThrow(/not/);
 	});
 
 	test("should handle millisecond precision", () => {
 		const actual = new Date("2023-01-01T12:00:00.500Z");
 		const expected = new Date("2023-01-01T12:00:00.000Z");
-		expectlyDate(actual).toBeCloseTo(expected, { seconds: 1 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { seconds: 1 });
 	});
 
 	test("should work with Date.now()", () => {
 		const now = Date.now();
 		const actual = new Date(now);
 		const expected = new Date(now - 1000);
-		expectlyDate(actual).toBeCloseTo(expected, { seconds: 2 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { seconds: 2 });
 	});
 
 	test("should handle dates in different time zones", () => {
 		// Both represent the same instant in time
 		const actual = new Date("2023-01-01T12:00:00+00:00");
 		const expected = new Date("2023-01-01T07:00:00-05:00");
-		expectlyDate(actual).toBeCloseTo(expected, { seconds: 1 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { seconds: 1 });
 	});
 
 	test("should pass when actual date is at the exact boundary of deviation", () => {
 		const actual = new Date("2023-01-01T12:00:10Z");
 		const expected = new Date("2023-01-01T12:00:00Z");
-		expectlyDate(actual).toBeCloseTo(expected, { seconds: 10 });
+		expectlyDate(actual).toBeDateCloseTo(expected, { seconds: 10 });
 	});
 
 	test("should show clear error message with time difference", () => {
@@ -141,7 +141,7 @@ test.describe("toBeCloseTo", () => {
 		const expected = new Date("2023-01-01T12:00:00Z");
 
 		const error = getRejectedErrorSync(() => {
-			expectlyDate(actual).toBeCloseTo(expected, { minutes: 2 });
+			expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 2 });
 		});
 		expect(error.message).toContain("300.000 seconds");
 		expect(error.message).toContain("later");

@@ -34,8 +34,8 @@ Create ONE shared module in your own project that extends Playwright's `expect` 
 // tests/support/expect.ts
 import "@cerios/playwright-expectly-fuzzy";
 
-import { expect as baseExpect, test as base } from "@playwright/test";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect, test as base } from "@playwright/test";
 
 // MUST capture the return value — never call `.extend()` and discard it.
 export const expect = baseExpect.extend(expectlyFuzzyMatchers);
@@ -45,10 +45,10 @@ export const test = base;
 Combining with `@cerios/playwright-expectly` (or your own matchers) via `mergeExpects()` — recommended when composing 2+ matcher sources:
 
 ```typescript
-// tests/support/expect.ts
-import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+// tests/support/expect.ts
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 const expectlyExpect = baseExpect.extend(expectlyMatchers);
 const fuzzyExpect = baseExpect.extend(expectlyFuzzyMatchers);
@@ -79,7 +79,7 @@ test("AI content validation", async ({ page }) => {
 });
 ```
 
-Capturing the return value keeps your setup aligned with Playwright's extended-`expect` model and composes cleanly when you merge multiple matcher sources. The most visible collision today is in the base package, where the Date `toBeCloseTo` only exists on the value returned by `.extend(...)`, so using the same returned-value pattern here keeps the combined setup consistent.
+Capturing the return value keeps your setup aligned with Playwright's extended-`expect` model and composes cleanly when you merge multiple matcher sources.
 
 ### Standalone `expectlyFuzzy`
 
@@ -101,7 +101,7 @@ expectlyFuzzy("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 70);
 expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
 ```
 
-> **Note:** You may see a `setupExpectlyFuzzy()` function in older docs or code — it is **deprecated**. It still works for `toMatchFuzzy` (which doesn't collide with any Playwright built-in), but the `tests/support` pattern above is the recommended replacement: it correctly captures the return value of `expect.extend()`/`mergeExpects()`, which `setupExpectlyFuzzy()` does not.
+> **Upgrading from 1.x:** the deprecated `setupExpectlyFuzzy()` is removed. Use the `tests/support` pattern above instead. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
 
 ## Available Matchers
 
@@ -138,15 +138,14 @@ expectlyFuzzy("completely different text").not.toMatchFuzzy("hello world");
 
 ## Exports
 
-| Export                         | Description                                                  |
-| ------------------------------ | ------------------------------------------------------------ |
-| `expectlyFuzzy`                | `expect` extended with all fuzzy matchers                    |
-| `expectlyFuzzyMatchers`        | Matcher object — pass to `baseExpect.extend()`               |
-| `expectlyFuzzyString`          | `expect` extended with string-only fuzzy matchers            |
-| `expectlyFuzzyStringMatchers`  | String fuzzy matcher object                                  |
-| `expectlyFuzzyLocator`         | `expect` extended with locator-only fuzzy matchers           |
-| `expectlyFuzzyLocatorMatchers` | Locator fuzzy matcher object                                 |
-| `setupExpectlyFuzzy`           | Registers all fuzzy matchers on Playwright's global `expect` |
+| Export                         | Description                                        |
+| ------------------------------ | -------------------------------------------------- |
+| `expectlyFuzzy`                | `expect` extended with all fuzzy matchers          |
+| `expectlyFuzzyMatchers`        | Matcher object — pass to `baseExpect.extend()`     |
+| `expectlyFuzzyString`          | `expect` extended with string-only fuzzy matchers  |
+| `expectlyFuzzyStringMatchers`  | String fuzzy matcher object                        |
+| `expectlyFuzzyLocator`         | `expect` extended with locator-only fuzzy matchers |
+| `expectlyFuzzyLocatorMatchers` | Locator fuzzy matcher object                       |
 
 ## Usage Examples
 

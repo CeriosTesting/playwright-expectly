@@ -64,3 +64,32 @@ jobs:
 
       - name: Run tests
         run: npm run test
+
+  minimum-playwright:
+    name: Published packages (Playwright 1.40)
+    runs-on: ubuntu-22.04
+    steps:
+      # The runner context is not available in job-level env, so derive the path inside a step.
+      - run: echo "CONSUMER=$RUNNER_TEMP/expectly-minimum-consumer" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
+      - name: Install release artifacts into an isolated consumer
+        run: |
+          mkdir -p "$CONSUMER"
+          npm pack --workspaces --pack-destination "$CONSUMER" --ignore-scripts
+          cp tests/compatibility/*.ts "$CONSUMER/"
+          npm install --prefix "$CONSUMER" --no-save --package-lock=false --ignore-scripts @playwright/test@1.40.0 typescript@5.9.3 @types/node@22 "$CONSUMER"/*.tgz
+      - name: Check published declarations without skipLibCheck
+        run: |
+          cd "$CONSUMER"
+          node node_modules/typescript/bin/tsc --noEmit --strict --target es2020 --types node --module commonjs consumer.spec.ts playwright.config.ts
+      - name: Test minimum-version runtime and browser matchers
+        run: |
+          cd "$CONSUMER"
+          node node_modules/playwright/cli.js install --with-deps chromium
+          node node_modules/playwright/cli.js test --config=playwright.config.ts

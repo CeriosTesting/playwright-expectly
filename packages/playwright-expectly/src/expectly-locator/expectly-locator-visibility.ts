@@ -1,5 +1,6 @@
 import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
 /**
@@ -15,9 +16,14 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 		pass = await runPolledMatcher(this, options, async () => {
 			try {
 				const handles = await locator.elementHandles();
-				const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
-				visibleCount = visArr.filter(Boolean).length;
-				return visibleCount === count;
+				try {
+					const visArr = await Promise.all(handles.map(async (h) => h.isVisible()));
+					visibleCount = visArr.filter(Boolean).length;
+					return visibleCount === count;
+				} finally {
+					// Dispose every handle, even when visibility checks fail or the page closes.
+					await Promise.allSettled(handles.map((h) => h.dispose()));
+				}
 			} catch (e: unknown) {
 				locatorError = e instanceof Error ? e : new Error(String(e));
 				throw e;
@@ -63,4 +69,6 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 	},
 });
 
-export const expectlyLocatorVisibility = baseExpect.extend(expectlyLocatorVisibilityMatchers);
+export const expectlyLocatorVisibility: Expect<typeof expectlyLocatorVisibilityMatchers> = baseExpect.extend(
+	expectlyLocatorVisibilityMatchers,
+);

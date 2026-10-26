@@ -1,4 +1,5 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import { formatDatesForDisplay, isValidDate, sortedDates, validateDate } from "./matchers/common-utils";
@@ -28,16 +29,25 @@ const DAY_NAMES = {
 	Saturday: 6,
 } as const;
 
+function isValidISODate(value: string): boolean {
+	const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{3})?Z?$/.exec(value);
+	if (!match) return false;
+	const [year, month, day, hour, minute, second] = match.slice(1).map(Number);
+	const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+	const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	return month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1] && hour < 24 && minute < 60 && second < 60;
+}
+
 /**
  * Expectly Custom matchers for date validations.
  */
 export const expectlyDateMatchers = withMatcherState({
-	toBeCloseTo(
+	toBeDateCloseTo(
 		actualDate: Date,
 		expectedDate: Date,
 		deviation: { seconds?: number; minutes?: number; hours?: number; days?: number },
 	) {
-		const assertionName = "toBeCloseTo";
+		const assertionName = "toBeDateCloseTo";
 
 		// Validate dates
 		validateDate(actualDate, "actual date");
@@ -889,9 +899,7 @@ export const expectlyDateMatchers = withMatcherState({
 					break;
 				}
 			} else if (unit === "month") {
-				const expected = new Date(prev);
-				expected.setMonth(expected.getMonth() + 1);
-				if (curr.getFullYear() !== expected.getFullYear() || curr.getMonth() !== expected.getMonth()) {
+				if (curr.getFullYear() * 12 + curr.getMonth() !== prev.getFullYear() * 12 + prev.getMonth() + 1) {
 					pass = false;
 					failIndex = i;
 					break;
@@ -1072,16 +1080,7 @@ export const expectlyDateMatchers = withMatcherState({
 	toBeValidISODate(actual: string) {
 		const assertionName = "toBeValidISODate";
 
-		const isoPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
-		const matchesPattern = isoPattern.test(actual);
-
-		let isValid = false;
-		if (matchesPattern) {
-			const date = new Date(actual);
-			isValid = isValidDate(date);
-		}
-
-		const pass = matchesPattern && isValid;
+		const pass = isValidISODate(actual);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -1548,4 +1547,4 @@ export const expectlyDateMatchers = withMatcherState({
 	},
 });
 
-export const expectlyDate = baseExpect.extend(expectlyDateMatchers);
+export const expectlyDate: Expect<typeof expectlyDateMatchers> = baseExpect.extend(expectlyDateMatchers);

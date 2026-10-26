@@ -1,3 +1,7 @@
+import { expectlyMatchers } from "@cerios/playwright-expectly";
+import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect } from "@playwright/test";
+
 import { expect, test } from "./support/expect";
 
 /**
@@ -8,9 +12,7 @@ import { expect, test } from "./support/expect";
  * fuzzy matchers from expectly-fuzzy — useful for AI-generated or dynamic text.
  *
  * `test`/`expect` come from `./support/expect`, a single canonical module that merges both
- * packages' matchers via `mergeExpects()` — see that file for the recommended pattern. This
- * works reliably regardless of process/worker boundaries, unlike the deprecated
- * `setupExpectly()`/`setupExpectlyFuzzy()` functions.
+ * packages' matchers via `mergeExpects()` — see that file for the recommended pattern.
  */
 test.describe("Integration: expectly + expectly-fuzzy", () => {
 	test.describe("setup verification", () => {
@@ -33,6 +35,24 @@ test.describe("Integration: expectly + expectly-fuzzy", () => {
 			expect("playwright").toStartWith("play");
 			// fuzzy matcher
 			expect("playwright").toMatchFuzzy("playwrihgt");
+		});
+
+		test("numeric toBeCloseTo and Date toBeDateCloseTo work side by side on the merged expect", async () => {
+			expect(0.1 + 0.2).toBeCloseTo(0.3);
+			expect(0.1 + 0.2).toBeCloseTo(0.3, 5);
+			expect(0.1).not.toBeCloseTo(0.2);
+			await expect.poll(() => 0.1 + 0.2).toBeCloseTo(0.3, 5);
+
+			const now = new Date();
+			expect(now).toBeDateCloseTo(new Date(now.getTime() + 1000), { seconds: 5 });
+		});
+
+		test("numeric toBeCloseTo works when chaining .extend() with both matcher sets", () => {
+			const chained = baseExpect.extend(expectlyMatchers).extend(expectlyFuzzyMatchers);
+
+			chained(0.1 + 0.2).toBeCloseTo(0.3, 5);
+			chained(new Date()).toBeDateCloseTo(new Date(), { seconds: 1 });
+			chained("playwright").toMatchFuzzy("playwrihgt");
 		});
 	});
 

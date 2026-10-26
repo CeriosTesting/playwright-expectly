@@ -1,4 +1,7 @@
-import type { ExpectMatcherState, MatcherReturnType } from "@playwright/test";
+import type { MatcherReturnType } from "@cerios/playwright-expectly-core";
+import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
+import type { ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import type { PartialMatchOptions } from "./types/matcher-types";
@@ -12,7 +15,7 @@ const MAX_RECEIVED_STRING_LENGTH = 500;
 /**
  * Expectly Custom matchers for any type validations.
  */
-export const expectlyAnyMatchers = {
+export const expectlyAnyMatchers = withMatcherState({
 	toBeAnyOf(this: ExpectMatcherState, received: unknown, ...possibilities: unknown[]): MatcherReturnType {
 		const assertionName = "toBeAnyOf";
 		const pass = possibilities.some((possibility) => {
@@ -338,6 +341,9 @@ export const expectlyAnyMatchers = {
 			};
 		}
 
+		assertAcyclicPartialInput(actual);
+		assertAcyclicPartialInput(expected);
+
 		// Extract only the expected fields from actual for comparison
 		const actualSubset = extractMatchingStructure(actual, expected, extractionState, "$");
 		const comparison = compareExtractedSubset(actualSubset, expected);
@@ -383,9 +389,9 @@ export const expectlyAnyMatchers = {
 			actual: actualSubset,
 		};
 	},
-};
+});
 
-export const expectlyAny = baseExpect.extend(expectlyAnyMatchers);
+export const expectlyAny: Expect<typeof expectlyAnyMatchers> = baseExpect.extend(expectlyAnyMatchers);
 
 /**
  * Extracts a subset of the actual value that matches the structure of expected.
@@ -1301,18 +1307,17 @@ function buildPairCandidates(
 	candidateActualIndexesByExpected: number[][];
 	extractedByPair: unknown[][];
 	pairStateByExpectedAndActual: Array<Array<ExtractionState | undefined>>;
-	scoreByExpectedAndActual: Array<Array<number | undefined>>;
 } {
 	const candidateActualIndexesByExpected: number[][] = expectedArray.map(() => []);
 	const extractedByPair: unknown[][] = expectedArray.map(() => []);
 	const pairStateByExpectedAndActual: Array<Array<ExtractionState | undefined>> = expectedArray.map(() => []);
-	const scoreByExpectedAndActual: Array<Array<number | undefined>> = expectedArray.map(() => []);
 
 	for (let expectedIndex = 0; expectedIndex < expectedArray.length; expectedIndex++) {
 		const expectedItem = expectedArray[expectedIndex];
 		for (let actualIndex = 0; actualIndex < actualArray.length; actualIndex++) {
 			const actualItem = actualArray[actualIndex];
-			scoreByExpectedAndActual[expectedIndex][actualIndex] = countDeepMatches(actualItem, expectedItem);
+			if (!isStructuredValue(actualItem) && !isStructuredValue(expectedItem) && !Object.is(actualItem, expectedItem))
+				continue;
 			try {
 				const pairState = createIsolatedExtractionState(state);
 				const extractedItem = extractMatchingStructure(
@@ -1334,7 +1339,7 @@ function buildPairCandidates(
 		}
 	}
 
-	return { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual, scoreByExpectedAndActual };
+	return { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual };
 }
 
 function assignExpectedToActual(candidateActualIndexesByExpected: number[][], actualLength: number): number[] {
@@ -1378,8 +1383,12 @@ function buildSubsetModeArraySubset(
 ): unknown[] {
 	const report = createArrayMatchReport(path, state.arrayMode, expectedArray, actualArray);
 	state.arrayReports.push(report);
-	const { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual, scoreByExpectedAndActual } =
-		buildPairCandidates(actualArray, expectedArray, state, path);
+	const { candidateActualIndexesByExpected, extractedByPair, pairStateByExpectedAndActual } = buildPairCandidates(
+		actualArray,
+		expectedArray,
+		state,
+		path,
+	);
 	const assignedActualByExpected = assignExpectedToActual(candidateActualIndexesByExpected, actualArray.length);
 	const usedActualIndexes = new Set<number>();
 
@@ -1403,7 +1412,7 @@ function buildSubsetModeArraySubset(
 			return extractedByPair[expectedIndex][assignedActualIndex];
 		}
 
-		const fallbackScores = scoreByExpectedAndActual[expectedIndex];
+		const fallbackScores = actualArray.map((actualItem) => countDeepMatches(actualItem, expectedItem));
 		const fallbackIndex =
 			findBestDiagnosticActualIndexByScore(fallbackScores, usedActualIndexes, true) ??
 			findBestDiagnosticActualIndexByScore(fallbackScores, usedActualIndexes, false) ??
@@ -1499,4 +1508,19 @@ function extractMatchingStructure(actual: unknown, expected: unknown, state: Ext
 
 	// For primitives and special objects, return as-is
 	return actual;
+}
+
+/** Cyclic partial structures are unsupported; shared non-cyclic references are valid. */
+function assertAcyclicPartialInput(
+	value: unknown,
+	active = new WeakSet<object>(),
+	checked = new WeakSet<object>(),
+): void {
+	if ((!Array.isArray(value) && !isPlainObject(value)) || (value && "$$typeof" in value)) return;
+	if (active.has(value)) throw new TypeError("toEqualPartially does not support circular objects or arrays.");
+	if (checked.has(value)) return;
+	active.add(value);
+	for (const child of Object.values(value)) assertAcyclicPartialInput(child, active, checked);
+	active.delete(value);
+	checked.add(value);
 }

@@ -4,7 +4,7 @@ Date comparison, validation, and temporal assertion matchers.
 
 ## Available Matchers
 
-- [toBeCloseTo()](#tobecloseto)
+- [toBeDateCloseTo()](#tobedatecloseto)
 - [toHaveDatesAscendingOrder() / toHaveDatesDescendingOrder()](#tohavedatesascendingorder--tohavedatesdescendingorder)
 - [toBeBefore() / toBeAfter()](#tobebefore--tobeafter)
 - [toBeBetween()](#tobebetween)
@@ -24,7 +24,7 @@ Date comparison, validation, and temporal assertion matchers.
 - [toBeInQuarter()](#tobeinquarter)
 - [toBeSpecificDayOfWeek() / toBeInMonth()](#tobespecificdayofweek--tobeinmonth)
 
-## toBeCloseTo()
+## toBeDateCloseTo()
 
 Asserts that a date is close to another date within a specified deviation.
 
@@ -32,14 +32,14 @@ Asserts that a date is close to another date within a specified deviation.
 import { expectly } from "@cerios/playwright-expectly";
 
 // Check if dates are within 30 seconds
-expectly(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
+expectly(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
 
 // Check if dates are within 1 hour
 const now = new Date();
-expectly(createdAt).toBeCloseTo(now, { hours: 1 });
+expectly(createdAt).toBeDateCloseTo(now, { hours: 1 });
 
 // Multiple deviation units
-expectly(timestamp).toBeCloseTo(new Date("2024-01-01T12:00:00Z"), {
+expectly(timestamp).toBeDateCloseTo(new Date("2024-01-01T12:00:00Z"), {
 	hours: 2,
 	minutes: 30,
 });
@@ -333,7 +333,7 @@ test("validate event timing", async () => {
 	expectly(event.startDate).toBeInTheFuture();
 	expectly(event.startDate).toBeBefore(event.endDate);
 	expectly(event.startDate).toBeWeekday();
-	expectly(event.startDate).toBeCloseTo(new Date("2024-06-01"), { days: 1 });
+	expectly(event.startDate).toBeDateCloseTo(new Date("2024-06-01"), { days: 1 });
 });
 ```
 

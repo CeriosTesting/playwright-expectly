@@ -1,8 +1,11 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
+import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import {
 	checkMonotonic,
+	numbersEqual,
+	validateFiniteNumbers,
 	findDuplicates,
 	findNonMatching,
 	findStrictAscendingViolation,
@@ -16,6 +19,7 @@ import {
  */
 export const expectlyNumberArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveAscendingOrder";
 		let pass: boolean;
 		let matcherResult: { actual?: unknown } | undefined;
@@ -60,6 +64,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveDescendingOrder(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveDescendingOrder";
 		let pass: boolean;
 		let matcherResult: { actual?: unknown } | undefined;
@@ -104,12 +109,14 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveSum(actual: number[], expected: number) {
+		validateFiniteNumbers([expected]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveSum";
 		let sum = 0;
 		for (let i = 0; i < actual.length; i++) {
 			sum += actual[i];
 		}
-		const pass = Math.abs(sum - expected) < Number.EPSILON;
+		const pass = numbersEqual(sum, expected);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -147,13 +154,15 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveAverage(actual: number[], expected: number) {
+		validateFiniteNumbers([expected]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveAverage";
 		let sum = 0;
 		for (let i = 0; i < actual.length; i++) {
 			sum += actual[i];
 		}
 		const average = actual.length > 0 ? sum / actual.length : 0;
-		const pass = Math.abs(average - expected) < Number.EPSILON;
+		const pass = numbersEqual(average, expected);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -191,6 +200,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveMedian(actual: number[], expected: number) {
+		validateFiniteNumbers([expected]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveMedian";
 		const sorted = [...actual].sort((a, b) => a - b);
 		const median =
@@ -199,7 +210,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 				: sorted.length % 2 === 0
 					? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
 					: sorted[Math.floor(sorted.length / 2)];
-		const pass = Math.abs(median - expected) < Number.EPSILON;
+		const pass = numbersEqual(median, expected);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -237,6 +248,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveMin(actual: number[], expected: number) {
+		validateFiniteNumbers([expected]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveMin";
 		const { min } = getMinMax(actual);
 		const pass = min === expected;
@@ -277,6 +290,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveMax(actual: number[], expected: number) {
+		validateFiniteNumbers([expected]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveMax";
 		const { max } = getMinMax(actual);
 		const pass = max === expected;
@@ -317,6 +332,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveRange(actual: number[], expected: number) {
+		validateFiniteNumbers([expected]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveRange";
 		const { min, max } = getMinMax(actual);
 		const range = max - min;
@@ -358,6 +375,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllBetween(actual: number[], min: number, max: number) {
+		validateFiniteNumbers([min, max]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllBetween";
 		const outOfRange = findNonMatching(actual, (val) => val >= min && val <= max);
 		const pass = outOfRange.length === 0;
@@ -397,6 +416,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllPositive(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllPositive";
 		const nonPositive = findNonMatching(actual, (val) => val > 0);
 		const pass = nonPositive.length === 0;
@@ -435,6 +455,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllNegative(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllNegative";
 		const nonNegative = findNonMatching(actual, (val) => val < 0);
 		const pass = nonNegative.length === 0;
@@ -473,6 +494,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllIntegers(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllIntegers";
 		const nonIntegers = findNonMatching(actual, (val) => Number.isInteger(val));
 		const pass = nonIntegers.length === 0;
@@ -506,6 +528,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllGreaterThan(actual: number[], value: number) {
+		validateFiniteNumbers([value]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllGreaterThan";
 		const notGreater = findNonMatching(actual, (val) => val > value);
 		const pass = notGreater.length === 0;
@@ -545,6 +569,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllLessThan(actual: number[], value: number) {
+		validateFiniteNumbers([value]);
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllLessThan";
 		const notLess = findNonMatching(actual, (val) => val < value);
 		const pass = notLess.length === 0;
@@ -584,6 +610,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveStrictlyAscendingOrder(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveStrictlyAscendingOrder";
 		const firstViolationIndex = findStrictAscendingViolation(actual);
 		const pass = firstViolationIndex === -1;
@@ -622,6 +649,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveStrictlyDescendingOrder(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveStrictlyDescendingOrder";
 		const firstViolationIndex = findStrictDescendingViolation(actual);
 		const pass = firstViolationIndex === -1;
@@ -660,6 +688,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeMonotonic(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toBeMonotonic";
 
 		if (actual.length <= 1) {
@@ -709,6 +738,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveUniqueValues(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveUniqueValues";
 		const duplicates = findDuplicates(actual);
 		const pass = duplicates.size === 0;
@@ -747,6 +777,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveConsecutiveIntegers(actual: number[]) {
+		validateFiniteNumbers(actual);
 		const assertionName = "toHaveConsecutiveIntegers";
 
 		if (actual.length === 0) {
@@ -829,4 +860,5 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 });
 
-export const expectlyNumberArray = baseExpect.extend(expectlyNumberArrayMatchers);
+export const expectlyNumberArray: Expect<typeof expectlyNumberArrayMatchers> =
+	baseExpect.extend(expectlyNumberArrayMatchers);

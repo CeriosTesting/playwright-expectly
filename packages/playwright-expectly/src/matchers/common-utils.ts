@@ -9,6 +9,7 @@
  * @returns Sorted copy of the array
  */
 export function sortedExpected<T extends number | string>(actual: T[], order: "ascending" | "descending"): T[] {
+	validateFiniteNumbers(actual);
 	return [...actual].sort((left, right) => {
 		if (typeof left === "number" && typeof right === "number") {
 			return order === "ascending" ? left - right : right - left;
@@ -83,8 +84,9 @@ export function sortedDates(actual: Date[], order: "ascending" | "descending"): 
  * @returns Index of first violation, or -1 if all valid
  */
 export function findStrictAscendingViolation<T>(actual: T[]): number {
+	validateFiniteNumbers(actual);
 	for (let i = 0; i < actual.length - 1; i++) {
-		if (actual[i] >= actual[i + 1]) {
+		if (!(actual[i] < actual[i + 1])) {
 			return i;
 		}
 	}
@@ -97,8 +99,9 @@ export function findStrictAscendingViolation<T>(actual: T[]): number {
  * @returns Index of first violation, or -1 if all valid
  */
 export function findStrictDescendingViolation<T>(actual: T[]): number {
+	validateFiniteNumbers(actual);
 	for (let i = 0; i < actual.length - 1; i++) {
-		if (actual[i] <= actual[i + 1]) {
+		if (!(actual[i] > actual[i + 1])) {
 			return i;
 		}
 	}
@@ -111,6 +114,7 @@ export function findStrictDescendingViolation<T>(actual: T[]): number {
  * @returns Object with isAscending and isDescending flags
  */
 export function checkMonotonic<T>(actual: T[]): { isAscending: boolean; isDescending: boolean } {
+	validateFiniteNumbers(actual);
 	if (actual.length <= 1) {
 		return { isAscending: true, isDescending: true };
 	}
@@ -127,6 +131,7 @@ export function checkMonotonic<T>(actual: T[]): { isAscending: boolean; isDescen
  * @returns Set of duplicate values
  */
 export function findDuplicates<T>(actual: T[]): Set<T> {
+	validateFiniteNumbers(actual);
 	const seen = new Set<T>();
 	const duplicates = new Set<T>();
 
@@ -156,6 +161,7 @@ export function findNonMatching<T>(actual: T[], predicate: (value: T) => boolean
  * @returns Object with min and max values, or NaN for empty arrays
  */
 export function getMinMax(actual: number[]): { min: number; max: number } {
+	validateFiniteNumbers(actual);
 	if (actual.length === 0) {
 		return { min: Number.NaN, max: Number.NaN };
 	}
@@ -166,4 +172,20 @@ export function getMinMax(actual: number[]): { min: number; max: number } {
 		if (actual[i] > max) max = actual[i];
 	}
 	return { min, max };
+}
+
+/** Reject unordered numeric values consistently, also in shared number/string matchers. */
+export function validateFiniteNumbers(values: readonly unknown[]): void {
+	if (values.some((value) => typeof value === "number" && !Number.isFinite(value))) {
+		throw new TypeError("Numeric matchers require finite numbers; NaN and Infinity are not supported.");
+	}
+}
+
+/** Small absolute tolerance near zero, relative tolerance for larger magnitudes. */
+export function numbersEqual(actual: number, expected: number): boolean {
+	validateFiniteNumbers([expected]);
+	return (
+		Number.isFinite(actual) &&
+		Math.abs(actual - expected) <= Number.EPSILON * Math.max(1, Math.abs(actual), Math.abs(expected))
+	);
 }
