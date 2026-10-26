@@ -1,7 +1,14 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
 
 import type { Point } from "../date-time/compare";
-import { alignPoints, comparePoints, pointDifference } from "../date-time/compare";
+import {
+	alignPoints,
+	assertRangeOrder,
+	comparePoints,
+	isInRange,
+	pointDifference,
+	rangeEnd,
+} from "../date-time/compare";
 import { elapsedLimit, formatElapsed } from "../date-time/durations";
 import type { AbsoluteDateTime } from "../date-time/inputs";
 import { normalize, normalizeAs } from "../date-time/inputs";
@@ -51,7 +58,15 @@ function fromNow(
 }
 
 function isDurationRange(limit: DurationInput | DurationRange): limit is DurationRange {
-	return typeof limit === "object" && limit !== null && ("min" in limit || "max" in limit);
+	if (typeof limit !== "object" || limit === null || !("min" in limit || "max" in limit)) return false;
+	// A range object must not also carry duration units, which would otherwise be silently dropped.
+	const extraKeys = Object.keys(limit).filter((key) => key !== "min" && key !== "max");
+	if (extraKeys.length > 0) {
+		throw new TypeError(
+			`Invalid duration range: use either { min, max } or duration units, not both (found ${extraKeys.join(", ")})`,
+		);
+	}
+	return true;
 }
 
 function durationBounds(limit: DurationInput | DurationRange): { min: bigint; max?: bigint } {
@@ -127,17 +142,16 @@ export const expectlyDateChronologyMatchers = withMatcherState({
 	},
 
 	toBeBetween(actual: DateInput, startDate: DateInput, endDate: DateInput, options?: TimeZoneOptions) {
+		const endValue = normalize(endDate, "end date");
 		const [received, start, end] = alignPoints(
-			[normalize(actual, "actual date"), normalize(startDate, "start date"), normalize(endDate, "end date")],
+			[normalize(actual, "actual date"), normalize(startDate, "start date"), endValue],
 			["actual date", "start date", "end date"],
 			options?.timeZone,
 		);
-		if (comparePoints(start, end) > 0) {
-			throw new TypeError(`Invalid range: start date ${start.display} is after end date ${end.display}`);
-		}
+		assertRangeOrder(start, end);
 		return dateMatcherResult(this, {
 			name: "toBeBetween",
-			pass: comparePoints(received, start) >= 0 && comparePoints(received, end) <= 0,
+			pass: isInRange(received, start, rangeEnd(end, endValue)),
 			expectation: "be between (inclusive)",
 			lines: () => [
 				["Start", start.display, "expected"],

@@ -45,8 +45,13 @@ export type MonthName =
 	| "October"
 	| "November"
 	| "December";
-/** A Temporal month code: `"M01"` … `"M13"`, with `L` for leap months (e.g. `"M05L"`, Hebrew Adar I). */
-export type MonthCode = `M${number}` | `M${number}L`;
+type MonthCodeDigits = `${"0" | "1"}${"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"}`;
+/**
+ * A Temporal month code: `"M01"` … `"M12"`, `"M13"` in Coptic and Ethiopic calendars, and `L` for leap months
+ * (`"M05L"` is Hebrew Adar I; Chinese and Korean calendars have `"M01L"` … `"M12L"`). Codes the calendar does
+ * not have throw.
+ */
+export type MonthCode = `M${MonthCodeDigits}` | `M${MonthCodeDigits}L`;
 
 declare global {
 	export namespace PlaywrightTest {
@@ -321,10 +326,14 @@ declare global {
 			toBeAfter(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
-			 * Asserts that a date falls between two dates (inclusive).
+			 * Asserts that a date falls between two dates (inclusive). Throws when the start is after the end.
+			 *
+			 * A calendar-date end bound covers that whole day: compared with timestamps (which needs `timeZone`),
+			 * the range ends just before the next day starts in that zone, not at the end date's midnight.
 			 *
 			 * @example
 			 * expect(eventDate).toBeBetween("2026-01-01", "2026-12-31");
+			 * expect("2026-12-31T18:00:00Z").toBeBetween("2026-01-01", "2026-12-31", { timeZone: "UTC" });
 			 */
 			toBeBetween(startDate: DateInput, endDate: DateInput, options?: TimeZoneOptions): R;
 
@@ -557,6 +566,9 @@ declare global {
 			/**
 			 * Asserts that consecutive values (in input order) are at most `maxGap` apart.
 			 *
+			 * Unlike elapsed-time matchers such as `toBeDateCloseTo`, `{ days: 1 }` is one calendar day in the comparison
+			 * zone (23 or 25 hours across DST); for `Date` values that zone is the machine's unless `timeZone` is given.
+			 *
 			 * @example
 			 * expect([event1.timestamp, event2.timestamp, event3.timestamp]).toHaveMaximumDateGap({ minutes: 5 });
 			 */
@@ -618,7 +630,8 @@ declare global {
 			toHaveConsecutiveDates(unit: "day" | "month" | "year", options?: CalendarFieldOptions): R;
 
 			/**
-			 * Asserts that all dates in an array fall within a range (inclusive).
+			 * Asserts that all dates in an array fall within a range (inclusive). Throws when the start is after the
+			 * end. A calendar-date end bound covers that whole day, as in `toBeBetween`.
 			 *
 			 * @example
 			 * expect(transactions).toHaveDatesWithinRange("2026-01-01", "2026-03-31");

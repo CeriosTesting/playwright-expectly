@@ -20,17 +20,51 @@ export function validateTimeZone(timeZone: unknown, label = "time zone"): string
 	}
 }
 
+function carriedZones(values: readonly NormalizedDateTime[]): string[] {
+	return [...new Set(values.flatMap((value) => (value.kind === "zoned" ? [value.value.timeZoneId] : [])))];
+}
+
+function carriedOffsets(values: readonly NormalizedDateTime[]): string[] {
+	return [...new Set(values.flatMap((value) => (value.kind === "instant" && value.offset ? [value.offset] : [])))];
+}
+
 /**
  * Resolves the one zone an assertion places absolute timestamps in:
- * explicit `timeZone` → a ZonedDateTime's own zone → an ISO string's explicit offset → the machine zone.
+ * explicit `timeZone` → the zone the ZonedDateTimes carry → the explicit offset of ISO strings → the machine zone.
+ * Values that carry different zones (or, without zones, different offsets) throw instead of letting the
+ * argument order decide which day or hour they fall on.
  */
 export function resolveTimeZone(timeZone: string | undefined, ...values: NormalizedDateTime[]): string {
 	if (timeZone !== undefined) return validateTimeZone(timeZone);
-	const zoned = values.find((value) => value.kind === "zoned");
-	if (zoned?.kind === "zoned") return zoned.value.timeZoneId;
-	const withOffset = values.find((value) => value.kind === "instant" && value.offset !== undefined);
-	if (withOffset?.kind === "instant" && withOffset.offset !== undefined) return withOffset.offset;
-	return systemTimeZone();
+	const zones = carriedZones(values);
+	if (zones.length > 1) {
+		throw new TypeError(
+			`Values are in different time zones (${zones.join(", ")}); pass { timeZone } to choose the zone they are compared in`,
+		);
+	}
+	if (zones.length === 1) return zones[0];
+	const offsets = carriedOffsets(values);
+	if (offsets.length > 1) {
+		throw new TypeError(
+			`Values have different UTC offsets (${offsets.join(", ")}); pass { timeZone } to choose the zone they are compared in`,
+		);
+	}
+	return offsets[0] ?? systemTimeZone();
+}
+
+/** The zone a value spells out (a ZonedDateTime's zone or an ISO string's offset), if any. */
+export function carriedTimeZone(value: NormalizedDateTime | undefined): string | undefined {
+	if (value?.kind === "zoned") return value.value.timeZoneId;
+	if (value?.kind === "instant") return value.offset;
+	return undefined;
+}
+
+/**
+ * The zone for calendar arithmetic on absolute timestamps when the assertion does not depend on which
+ * zone is chosen beyond DST-aware day lengths: the first carried zone or offset, else the machine zone.
+ */
+export function preferredTimeZone(...values: NormalizedDateTime[]): string {
+	return carriedZones(values)[0] ?? carriedOffsets(values)[0] ?? systemTimeZone();
 }
 
 /**
@@ -92,6 +126,8 @@ export function timeOfDay(value: NormalizedDateTime, timeZone: string, label: st
  * and nonexistent or repeated (DST) local times are rejected instead of guessed.
  */
 export function toInstant(value: NormalizedDateTime, label: string, timeZone?: string): Instant {
+	// Validate even when the value is absolute, so a typo in the zone is never silently ignored.
+	if (timeZone !== undefined) validateTimeZone(timeZone);
 	if (value.kind === "instant") return value.value;
 	if (value.kind === "zoned") return value.value.toInstant();
 	if (value.kind === "time") throw unsupported(value, label, "calendar date");

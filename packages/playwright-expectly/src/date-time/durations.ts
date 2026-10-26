@@ -1,7 +1,7 @@
 import { normalize } from "./inputs";
 import type { Duration, PlainDate, TemporalDurationLike, ZonedDateTime } from "./temporal";
 import { getTemporal, temporalKind, toActiveDuration } from "./temporal";
-import type { DateInput, DurationInput } from "./types";
+import type { DurationInput, RelativeToInput } from "./types";
 
 const DURATION_UNITS = [
 	"years",
@@ -50,13 +50,27 @@ function fromObject(input: object, label: string): Duration {
 	return getTemporal().Duration.from(fields as Record<DurationUnit, number>);
 }
 
+// [-]P[nY][nM][nW][nD][T[nH][nM][n[.fff]S]], with at least one component and a time part that is not empty.
+const STRICT_ISO_DURATION =
+	/^-?P(?=\d|T\d)(?:\d+Y)?(?:\d+M)?(?:\d+W)?(?:\d+D)?(?:T(?=\d)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d{1,9})?S)?)?$/;
+
 /**
  * Normalizes a duration object, Temporal.Duration (any implementation) or ISO 8601 duration string.
  * @throws TypeError for unknown units, fractional values or mixed signs.
  */
 export function normalizeDuration(input: DurationInput, label: string): Duration {
 	try {
-		if (typeof input === "string") return getTemporal().Duration.from(input);
+		if (typeof input === "string") {
+			// Temporal also accepts lowercase designators and comma or fractional-hour forms; keep strings as
+			// strict as ISO dates elsewhere in this library.
+			if (!STRICT_ISO_DURATION.test(input)) {
+				throw new TypeError(
+					`Invalid ${label}: ${JSON.stringify(input)} is not an ISO 8601 duration such as "P1DT2H" or "PT0.5S" ` +
+						"(uppercase designators; fractions only on seconds)",
+				);
+			}
+			return getTemporal().Duration.from(input);
+		}
 		if (temporalKind(input) === "Duration") return toActiveDuration(input as TemporalDurationLike);
 		if (typeof input === "object" && input !== null && temporalKind(input) === undefined) {
 			return fromObject(input, label);
@@ -138,7 +152,7 @@ export function formatDuration(duration: Duration): string {
 }
 
 /** A Temporal value keeps its own calendar, so `{ months: 1 }` relative to a Hebrew date is one Hebrew month. */
-function toRelativeTo(input: DateInput): PlainDate | ZonedDateTime {
+function toRelativeTo(input: RelativeToInput): PlainDate | ZonedDateTime {
 	const value = normalize(input, "relativeTo");
 	if (value.kind === "date") return value.calendar ? value.value.withCalendar(value.calendar) : value.value;
 	if (value.kind === "dateTime") {
@@ -157,7 +171,7 @@ function toRelativeTo(input: DateInput): PlainDate | ZonedDateTime {
  * Orders two durations. Years, months and weeks have no fixed length, so they require `relativeTo`;
  * without it, days count as 24 hours (Temporal semantics).
  */
-export function compareDurations(left: Duration, right: Duration, relativeTo: DateInput | undefined): number {
+export function compareDurations(left: Duration, right: Duration, relativeTo: RelativeToInput | undefined): number {
 	if (relativeTo === undefined) {
 		if (hasCalendarUnits(left) || hasCalendarUnits(right)) {
 			throw new TypeError(

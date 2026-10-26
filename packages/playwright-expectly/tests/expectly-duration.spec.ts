@@ -34,9 +34,10 @@ test.describe("toBeShorterThan / toBeLongerThan", () => {
 			{ hours: 24 },
 			{ relativeTo: "2026-10-25T00:00:00+02:00[Europe/Amsterdam]" },
 		);
-		expect(() => expectlyDate({ months: 1 }).toBeLongerThan({ days: 30 }, { relativeTo: new Date() })).toThrow(
-			/Invalid relativeTo/,
-		);
+		expect(() =>
+			// @ts-expect-error A Date has no calendar or time zone, so the type rejects it too.
+			expectlyDate({ months: 1 }).toBeLongerThan({ days: 30 }, { relativeTo: new Date() }),
+		).toThrow(/Invalid relativeTo/);
 	});
 
 	test("report both durations", () => {

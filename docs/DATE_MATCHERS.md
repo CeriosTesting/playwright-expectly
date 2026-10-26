@@ -156,12 +156,16 @@ Parse functions, guards, `toBeValidISODate()` and `toBeValidISODateTime()` all s
 3. otherwise the explicit offset of an ISO string (`Z` means UTC);
 4. otherwise the machine's time zone, used for `Date` and `Temporal.Instant` (as `Date` getters do).
 
+Values that carry different zones, or (without zones) different offsets, throw instead of letting the argument order decide: pass `{ timeZone }` to choose one. Chronology matchers compare instants and need no zone. A `timeZone` option that cannot apply (all values local) throws rather than being ignored.
+
+For `toBeToday`, `toBeYesterday` and `toBeTomorrow`, a local value is compared with today in the zone that `now` spells out, so `{ now: "2026-10-26T00:30:00+01:00[Europe/Amsterdam]" }` means 26 October.
+
 ```typescript
 expectly("2026-10-25T23:30:00Z").toBeSameDay("2026-10-25"); // UTC, from the string
 expectly("2026-10-25T23:30:00Z").toBeSameDay("2026-10-26", { timeZone: "Europe/Amsterdam" });
 ```
 
-**Interpreting a local value as an absolute timestamp** only happens with an explicit `timeZone`. A calendar date then means the start of that day. Nonexistent and repeated local times around DST transitions throw instead of being guessed. Comparing a calendar date with a local datetime without `timeZone` throws.
+**Interpreting a local value as an absolute timestamp** only happens with an explicit `timeZone`. A calendar date then means the start of that day, except as the end of a range (`toBeBetween`, `toHaveDatesWithinRange`), where it covers the whole day. Nonexistent and repeated local times around DST transitions throw instead of being guessed. Comparing a calendar date with a local datetime without `timeZone` throws.
 
 ```typescript
 expectly("2026-10-25T12:00:00").toBeBefore("2026-10-25T13:00:00Z"); // ✗ throws: no time zone
@@ -198,14 +202,14 @@ expectly("2027-02-10").toBeInMonth(6, { calendar: "hebrew" }); // the 6th month 
 expectly(["2027-02-08", "2027-03-10"]).toHaveDateRange({ months: 1 }, { calendar: "hebrew" }); // 1 Adar I → 1 Adar II
 ```
 
-- `toBeInMonth` takes a month number in that calendar (`1`–`13`), a month code (`"M01"` … `"M12"`, `"M05L"` for a leap month) or, for Gregorian-based calendars (`iso8601`, `gregory`, `japanese`, `buddhist`, `roc`), an English month name. Month numbers shift in leap years; month codes do not.
+- `toBeInMonth` takes a month number in that calendar (`1`–`12`, or `13` in Hebrew, Chinese, Korean, Coptic and Ethiopic calendars), a two-digit month code (`"M01"` … `"M12"`, `"M13"` in Coptic and Ethiopic, `"M05L"` for the Hebrew leap month) or, for Gregorian-based calendars (`iso8601`, `gregory`, `japanese`, `buddhist`, `roc`), an English month name. Month numbers and codes the calendar does not have throw, so `.not` cannot pass vacuously. Month numbers shift in leap years; month codes do not.
 - `toBeInQuarter` throws for years without 12 months (Hebrew leap years, Ethiopic, Coptic).
 - Duration matchers add calendar units in the calendar of `relativeTo`.
 - ISO strings with a calendar annotation (`[u-ca=hebrew]`) are still rejected; use a Temporal value or the `calendar` option.
 
 ## Durations and precision
 
-Durations are given as an object (`{ minutes: 5 }`), a `Temporal.Duration` or an ISO 8601 duration string (`"PT5M"`). Units are `years`, `months`, `weeks`, `days`, `hours`, `minutes`, `seconds`, `milliseconds`, `microseconds` and `nanoseconds`. Values must be integers, signs must not be mixed, and unknown units are rejected.
+Durations are given as an object (`{ minutes: 5 }`), a `Temporal.Duration` or an ISO 8601 duration string (`"PT5M"`; uppercase designators, fractions only on seconds). Units are `years`, `months`, `weeks`, `days`, `hours`, `minutes`, `seconds`, `milliseconds`, `microseconds` and `nanoseconds`. Values must be integers, signs must not be mixed, and unknown units are rejected.
 
 | Context                                                                                            | Semantics                                                                                                                      |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |

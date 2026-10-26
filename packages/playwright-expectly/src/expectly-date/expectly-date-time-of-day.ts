@@ -51,6 +51,7 @@ function sameUnit(
 ): { pass: boolean; received: NormalizedDateTime; target: NormalizedDateTime; zone: string; floors: [string, string] } {
 	const received = normalizeAs(actual, "actual date", DATE_TIME_KINDS);
 	const target = normalizeAs(expected, "expected date", DATE_TIME_KINDS);
+	rejectTimeZoneWithoutAbsolute(timeZone, [received, target]);
 	const zone = resolveTimeZone(timeZone, received, target);
 	const round = { smallestUnit: unit, roundingMode: "floor" } as const;
 	if (isAbsolute(received) && isAbsolute(target)) {
@@ -172,6 +173,7 @@ export const expectlyDateTimeOfDayMatchers = withMatcherState({
 
 	toBeAtStartOfDay(actual: DateTimeInput, options?: TimeZoneOptions) {
 		const received = normalizeAs(actual, "actual date", DATE_TIME_KINDS);
+		rejectTimeZoneWithoutAbsolute(options?.timeZone, [received]);
 		const zone = resolveTimeZone(options?.timeZone, received);
 		const clock = onClock(received, zone);
 		const start = clock.kind === "zoned" ? clock.value.startOfDay() : clock.value.toPlainDate().toPlainDateTime();
@@ -196,6 +198,7 @@ export const expectlyDateTimeOfDayMatchers = withMatcherState({
 			"precision",
 		);
 		const received = normalizeAs(actual, "actual date", DATE_TIME_KINDS);
+		rejectTimeZoneWithoutAbsolute(options?.timeZone, [received]);
 		const zone = resolveTimeZone(options?.timeZone, received);
 		const { last, next, pass } = endOfDayWindow(onClock(received, zone), zone, PRECISION_NANOSECONDS[precision]);
 		return dateMatcherResult(this, {

@@ -1,7 +1,17 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
 
 import type { Point } from "../date-time/compare";
-import { addToPoint, alignPoints, comparePoints, formatGap, pointKey } from "../date-time/compare";
+import {
+	addToPoint,
+	alignPoints,
+	assertRangeOrder,
+	comparePoints,
+	formatDistance,
+	formatGap,
+	isInRange,
+	pointKey,
+	rangeEnd,
+} from "../date-time/compare";
 import { formatDuration, nonNegativeDuration } from "../date-time/durations";
 import type { NormalizedDateTime } from "../date-time/inputs";
 import { normalize } from "../date-time/inputs";
@@ -162,12 +172,15 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 
 	toHaveDatesWithinRange(actual: DateInput[], startDate: DateInput, endDate: DateInput, options?: TimeZoneOptions) {
 		const values = normalizeDateArray(actual, 1);
+		const endValue = normalize(endDate, "end date");
 		const [start, end, ...points] = alignPoints(
-			[normalize(startDate, "start date"), normalize(endDate, "end date"), ...values],
+			[normalize(startDate, "start date"), endValue, ...values],
 			["start date", "end date", ...indexLabels(values)],
 			options?.timeZone,
 		);
-		const outOfRange = points.filter((point) => comparePoints(point, start) < 0 || comparePoints(point, end) > 0);
+		assertRangeOrder(start, end);
+		const range = rangeEnd(end, endValue);
+		const outOfRange = points.filter((point) => !isInRange(point, start, range));
 		return dateMatcherResult(this, {
 			name: "toHaveDatesWithinRange",
 			pass: outOfRange.length === 0,
@@ -255,7 +268,7 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 								`${points[offending - 1].display} → ${points[offending].display}`,
 								"received",
 							],
-							["Actual gap", formatGap(points[offending - 1], points[offending])],
+							["Actual gap", formatDistance(points[offending - 1], points[offending])],
 							["Maximum gap", formatDuration(gap), "expected"],
 						],
 			expected: maxGap,

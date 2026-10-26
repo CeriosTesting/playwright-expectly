@@ -3,7 +3,7 @@ import type { NormalizedDateTime } from "./inputs";
 import { KIND_NAMES, isAbsolute } from "./inputs";
 import type { Duration, PlainDate, PlainDateTime, ZonedDateTime } from "./temporal";
 import { ISO_CALENDAR, getTemporal } from "./temporal";
-import { resolveTimeZone, toInstant, validateTimeZone } from "./zones";
+import { preferredTimeZone, toInstant, validateTimeZone } from "./zones";
 
 /** A value on a common timeline: absolute timestamps (placed in one zone) or same-kind local values. */
 export type Point =
@@ -33,6 +33,11 @@ export function alignPoints(
 	}
 	const kinds = new Set(values.map((value) => (isAbsolute(value) ? "absolute" : value.kind)));
 	if (kinds.size <= 1 && !kinds.has("absolute")) {
+		if (timeZone !== undefined) {
+			throw new TypeError(
+				"The timeZone option only applies to absolute timestamps or mixed values; local values of one kind are compared as they are",
+			);
+		}
 		return values.map((value) => value as Point);
 	}
 	if (kinds.size > 1 && timeZone === undefined) {
@@ -41,7 +46,8 @@ export function alignPoints(
 				"Pass { timeZone } to interpret local values, or use values of the same kind.",
 		);
 	}
-	const zone = timeZone === undefined ? resolveTimeZone(undefined, ...values) : validateTimeZone(timeZone);
+	// Absolute timestamps compare as instants; the zone only matters for DST-aware calendar arithmetic.
+	const zone = timeZone === undefined ? preferredTimeZone(...values) : validateTimeZone(timeZone);
 	return values.map((value, index) => ({
 		kind: "absolute",
 		value: toInstant(value, labels[index], zone).toZonedDateTimeISO(zone),
@@ -52,6 +58,32 @@ export function alignPoints(
 function compareBigInt(left: bigint, right: bigint): number {
 	if (left === right) return 0;
 	return left < right ? -1 : 1;
+}
+
+/** The end of an inclusive range; `exclusive` when the end is the start of the day after a date-only bound. */
+export type RangeEnd = { point: Point; exclusive: boolean };
+
+/**
+ * The end of an inclusive date range. A calendar-date end bound that was aligned with timestamps covers
+ * that whole day, so the range ends where the next day starts (exclusive) instead of at its first instant.
+ */
+export function rangeEnd(end: Point, original: NormalizedDateTime): RangeEnd {
+	if (end.kind !== "absolute" || original.kind !== "date") return { point: end, exclusive: false };
+	const nextDay = end.value.toPlainDate().add({ days: 1 }).toZonedDateTime({ timeZone: end.value.timeZoneId });
+	return { point: { ...end, value: nextDay }, exclusive: true };
+}
+
+/** Whether `point` lies in the range from `start` (inclusive) to `end`. */
+export function isInRange(point: Point, start: Point, end: RangeEnd): boolean {
+	const toEnd = comparePoints(point, end.point);
+	return comparePoints(point, start) >= 0 && (end.exclusive ? toEnd < 0 : toEnd <= 0);
+}
+
+/** Throws when an inclusive range is inverted. */
+export function assertRangeOrder(start: Point, end: Point): void {
+	if (comparePoints(start, end) > 0) {
+		throw new TypeError(`Invalid range: start date ${start.display} is after end date ${end.display}`);
+	}
 }
 
 /** Chronological order of two aligned points: negative, zero or positive. */
@@ -81,6 +113,11 @@ export function addToPoint(point: Point, duration: Duration, label: string, cale
 		throw new TypeError(`Invalid ${label}: calendar dates can only be shifted by years, months, weeks or days`);
 	}
 	return { ...point, value: shift(point.value) };
+}
+
+/** The unsigned distance between two points, formatted for diagnostics. */
+export function formatDistance(left: Point, right: Point): string {
+	return comparePoints(left, right) <= 0 ? formatGap(left, right) : formatGap(right, left);
 }
 
 /** The signed distance from `from` to `to`, formatted for diagnostics. */

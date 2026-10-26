@@ -43,6 +43,7 @@ export type {
 	ISODateTimeValidationOptions,
 	InstantInput,
 	RelativeTimeOptions,
+	RelativeToInput,
 	SubsecondPrecision,
 	TimeInput,
 	TimeOfDayOptions,

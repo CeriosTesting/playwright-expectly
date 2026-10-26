@@ -1,11 +1,18 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
 
 import type { NormalizedDateTime } from "../date-time/inputs";
-import { normalize } from "../date-time/inputs";
+import { isAbsolute, normalize } from "../date-time/inputs";
 import type { PlainDate } from "../date-time/temporal";
 import { ISO_CALENDAR } from "../date-time/temporal";
 import type { CalendarFieldOptions, DateInput, RelativeTimeOptions, TimeZoneOptions } from "../date-time/types";
-import { calendarDate, currentInstant, inCalendar, resolveCalendar, resolveTimeZone } from "../date-time/zones";
+import {
+	calendarDate,
+	carriedTimeZone,
+	currentInstant,
+	inCalendar,
+	resolveCalendar,
+	resolveTimeZone,
+} from "../date-time/zones";
 import type { DayOfWeek, MonthCode, MonthName } from "../types/matcher-types";
 
 import type { MessageLine } from "./date-matcher-utils";
@@ -40,7 +47,26 @@ const GREGORIAN_MONTH_CALENDARS: ReadonlySet<string> = new Set([
 	"roc",
 ]);
 
-const MONTH_CODE = /^M\d{2}L?$/;
+const MONTH_CODE = /^M(\d{2})(L?)$/;
+
+/** Calendars with a 13th month: as a leap month (Hebrew, Chinese, Korean) or every year (Coptic, Ethiopic). */
+const LEAP_MONTH_CALENDARS: ReadonlySet<string> = new Set(["hebrew", "chinese", "dangi"]);
+const THIRTEENTH_MONTH_CALENDARS: ReadonlySet<string> = new Set(["coptic", "ethiopic", "ethioaa"]);
+
+function monthsInLongestYear(calendarId: string): number {
+	return LEAP_MONTH_CALENDARS.has(calendarId) || THIRTEENTH_MONTH_CALENDARS.has(calendarId) ? 13 : 12;
+}
+
+/** Rejects month codes that no year of the calendar has, so `.not.toBeInMonth("M13")` cannot pass vacuously. */
+function validateMonthCode(code: string, match: RegExpExecArray, calendarId: string): void {
+	const month = Number(match[1]);
+	const leap = match[2] === "L";
+	const highest = THIRTEENTH_MONTH_CALENDARS.has(calendarId) ? 13 : 12;
+	const leapAllowed = calendarId === "hebrew" ? month === 5 : LEAP_MONTH_CALENDARS.has(calendarId);
+	if (month < 1 || month > highest || (leap && !leapAllowed)) {
+		throw new Error(`Invalid month code: ${code} does not exist in the "${calendarId}" calendar`);
+	}
+}
 
 interface CalendarValue {
 	value: NormalizedDateTime;
@@ -144,9 +170,17 @@ function parseMonth(
 ): { field: "month" | "monthCode"; value: number | string; label: string } {
 	const gregorian = hasGregorianMonths(fields);
 	if (typeof expectedMonth === "string") {
-		if (MONTH_CODE.test(expectedMonth)) return { field: "monthCode", value: expectedMonth, label: expectedMonth };
+		const code = MONTH_CODE.exec(expectedMonth);
+		if (code) {
+			validateMonthCode(expectedMonth, code, fields.calendarId);
+			return { field: "monthCode", value: expectedMonth, label: expectedMonth };
+		}
 		const index = MONTH_NAMES.indexOf(expectedMonth as MonthName);
-		if (index === -1) throw new Error(`Invalid month name: ${expectedMonth}`);
+		if (index === -1) {
+			throw new Error(
+				`Invalid month name: ${expectedMonth}. Use an English month name or a two-digit month code such as "M05"`,
+			);
+		}
 		if (!gregorian) {
 			throw new Error(
 				`Month names only apply to Gregorian-based calendars, not "${fields.calendarId}". Pass a month number or code (e.g. "M05L")`,
@@ -154,7 +188,7 @@ function parseMonth(
 		}
 		return { field: "month", value: index + 1, label: expectedMonth };
 	}
-	const maximum = gregorian ? 12 : 13;
+	const maximum = monthsInLongestYear(fields.calendarId);
 	if (!Number.isInteger(expectedMonth) || expectedMonth < 1 || expectedMonth > maximum) {
 		throw new Error(`Invalid month number: ${expectedMonth}. Must be between 1 and ${maximum}`);
 	}
@@ -177,12 +211,22 @@ function parseDay(expectedDay: DayOfWeek | number): number {
 	return expectedDay;
 }
 
+/** Local values have no zone line in `calendarLines`, but "today" was still read in a zone. */
+function relativeZoneLine(received: CalendarValue): MessageLine | undefined {
+	return isAbsolute(received.value) ? undefined : ["Time zone", received.timeZone];
+}
+
 function relativeDay(
 	actual: unknown,
 	options: RelativeTimeOptions | undefined,
 	offsetDays: number,
 ): [CalendarValue, PlainDate] {
-	const received = onCalendar(actual, options);
+	// "Today" is the day of `now` in one zone: the timeZone option, else the zone or offset the actual value
+	// spells out, else the one `now` spells out (so a local date is compared with today where `now` is),
+	// else the machine zone.
+	const actualZone = carriedTimeZone(normalize(actual, "actual date"));
+	const nowZone = options?.now === undefined ? undefined : carriedTimeZone(normalize(options.now, "now"));
+	const received = onCalendar(actual, { ...options, timeZone: options?.timeZone ?? actualZone ?? nowZone });
 	const today = currentInstant(options?.now).toZonedDateTimeISO(received.timeZone).toPlainDate();
 	return [received, today.add({ days: offsetDays })];
 }
@@ -239,7 +283,7 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 			name: "toBeToday",
 			pass: received.date.equals(today),
 			expectation: "be today",
-			lines: () => [["Today", today.toString(), "expected"], ...calendarLines(received)()],
+			lines: () => [["Today", today.toString(), "expected"], ...calendarLines(received)(), relativeZoneLine(received)],
 			actual,
 		});
 	},
@@ -250,7 +294,11 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 			name: "toBeYesterday",
 			pass: received.date.equals(yesterday),
 			expectation: "be yesterday",
-			lines: () => [["Yesterday", yesterday.toString(), "expected"], ...calendarLines(received)()],
+			lines: () => [
+				["Yesterday", yesterday.toString(), "expected"],
+				...calendarLines(received)(),
+				relativeZoneLine(received),
+			],
 			actual,
 		});
 	},
@@ -261,7 +309,11 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 			name: "toBeTomorrow",
 			pass: received.date.equals(tomorrow),
 			expectation: "be tomorrow",
-			lines: () => [["Tomorrow", tomorrow.toString(), "expected"], ...calendarLines(received)()],
+			lines: () => [
+				["Tomorrow", tomorrow.toString(), "expected"],
+				...calendarLines(received)(),
+				relativeZoneLine(received),
+			],
 			actual,
 		});
 	},

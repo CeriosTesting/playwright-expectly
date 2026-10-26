@@ -178,9 +178,16 @@ export interface TimeOfDayOptions extends TimeZoneOptions {
 	precision?: TruncationUnit | "nanosecond";
 }
 
+/**
+ * The start date for calendar-unit duration comparisons: a calendar date, a local datetime, a ZonedDateTime or an
+ * ISO string (with an offset when it is a timestamp). `Date` and `Temporal.Instant` are not accepted because they
+ * carry no calendar or time zone.
+ */
+export type RelativeToInput = string | TemporalPlainDateLike | TemporalPlainDateTimeLike | TemporalZonedDateTimeLike;
+
 export interface DurationCompareOptions {
 	/** Required to compare durations containing years, months or weeks. */
-	relativeTo?: DateInput;
+	relativeTo?: RelativeToInput;
 }
 
 export interface ISODateTimeValidationOptions {
