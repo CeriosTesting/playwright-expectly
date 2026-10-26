@@ -11,8 +11,15 @@ import { expectlyObjectArrayMatchers } from "./expectly-object-array";
 import { withReturn } from "./expectly-return";
 import { expectlyStringMatchers } from "./expectly-string";
 import { expectlyStringArrayMatchers } from "./expectly-string-array";
+import type { StringOrderOptions } from "./matchers/common-utils";
+import type { UrlValidationOptions, UUIDVersion } from "./matchers/text-validation-utils";
 function isLocatorMatcherTarget(received: string | Locator): received is Locator {
-	return typeof received === "object" && received !== null && "innerText" in received;
+	return (
+		typeof received === "object" &&
+		received !== null &&
+		typeof (received as Partial<Locator>).innerText === "function" &&
+		typeof (received as Partial<Locator>).count === "function"
+	);
 }
 
 type SharedTextMatcherReturn = MatcherReturnType | Promise<MatcherReturnType>;
@@ -56,21 +63,25 @@ const expectlyTextMatchers = {
 		}
 		return expectlyStringMatchers.toBeValidEmail.call(this, received);
 	},
-	toBeValidUrl(this: ExpectMatcherState, received: string | Locator, options?: PollOptions): SharedTextMatcherReturn {
+	toBeValidUrl(
+		this: ExpectMatcherState,
+		received: string | Locator,
+		options?: PollOptions & UrlValidationOptions,
+	): SharedTextMatcherReturn {
 		if (isLocatorMatcherTarget(received)) {
 			return expectlyLocatorTextMatchers.toBeValidUrl.call(this, received, options);
 		}
-		return expectlyStringMatchers.toBeValidUrl.call(this, received);
+		return expectlyStringMatchers.toBeValidUrl.call(this, received, options);
 	},
 	toBeAlphanumeric(
 		this: ExpectMatcherState,
 		received: string | Locator,
-		options?: PollOptions,
+		options?: PollOptions & { unicode?: boolean },
 	): SharedTextMatcherReturn {
 		if (isLocatorMatcherTarget(received)) {
 			return expectlyLocatorTextMatchers.toBeAlphanumeric.call(this, received, options);
 		}
-		return expectlyStringMatchers.toBeAlphanumeric.call(this, received);
+		return expectlyStringMatchers.toBeAlphanumeric.call(this, received, options);
 	},
 	toBeNumericString(
 		this: ExpectMatcherState,
@@ -85,7 +96,7 @@ const expectlyTextMatchers = {
 	toBeUUID(
 		this: ExpectMatcherState,
 		received: string | Locator,
-		version?: 1 | 3 | 4 | 5,
+		version?: UUIDVersion,
 		options?: PollOptions,
 	): SharedTextMatcherReturn {
 		if (isLocatorMatcherTarget(received)) {
@@ -97,6 +108,49 @@ const expectlyTextMatchers = {
 };
 
 type OverlappingTextMatcherNames = keyof typeof expectlyTextMatchers;
+
+function isNumberArray(received: unknown): received is number[] {
+	return Array.isArray(received) && received.every((value) => typeof value === "number");
+}
+
+type ArrayMatcherReturn = MatcherReturnType;
+/** Number and string arrays share these names; dispatch on the element type so messages print the right values. */
+const expectlyArrayOrderMatchers = {
+	toHaveAscendingOrder(this: ExpectMatcherState, received: unknown, options?: StringOrderOptions): ArrayMatcherReturn {
+		if (isNumberArray(received)) return expectlyNumberArrayMatchers.toHaveAscendingOrder.call(this, received);
+		return expectlyStringArrayMatchers.toHaveAscendingOrder.call(this, received as string[], options);
+	},
+	toHaveDescendingOrder(this: ExpectMatcherState, received: unknown, options?: StringOrderOptions): ArrayMatcherReturn {
+		if (isNumberArray(received)) return expectlyNumberArrayMatchers.toHaveDescendingOrder.call(this, received);
+		return expectlyStringArrayMatchers.toHaveDescendingOrder.call(this, received as string[], options);
+	},
+	toHaveStrictlyAscendingOrder(
+		this: ExpectMatcherState,
+		received: unknown,
+		options?: StringOrderOptions,
+	): ArrayMatcherReturn {
+		if (isNumberArray(received)) return expectlyNumberArrayMatchers.toHaveStrictlyAscendingOrder.call(this, received);
+		return expectlyStringArrayMatchers.toHaveStrictlyAscendingOrder.call(this, received as string[], options);
+	},
+	toHaveStrictlyDescendingOrder(
+		this: ExpectMatcherState,
+		received: unknown,
+		options?: StringOrderOptions,
+	): ArrayMatcherReturn {
+		if (isNumberArray(received)) return expectlyNumberArrayMatchers.toHaveStrictlyDescendingOrder.call(this, received);
+		return expectlyStringArrayMatchers.toHaveStrictlyDescendingOrder.call(this, received as string[], options);
+	},
+	toBeMonotonic(this: ExpectMatcherState, received: unknown, options?: StringOrderOptions): ArrayMatcherReturn {
+		if (isNumberArray(received)) return expectlyNumberArrayMatchers.toBeMonotonic.call(this, received);
+		return expectlyStringArrayMatchers.toBeMonotonic.call(this, received as string[], options);
+	},
+	toHaveUniqueValues(this: ExpectMatcherState, received: unknown): ArrayMatcherReturn {
+		if (isNumberArray(received)) return expectlyNumberArrayMatchers.toHaveUniqueValues.call(this, received);
+		return expectlyStringArrayMatchers.toHaveUniqueValues.call(this, received as string[]);
+	},
+};
+
+type OverlappingArrayMatcherNames = keyof typeof expectlyArrayOrderMatchers;
 /**
  * Combined raw matchers object containing all expectly matchers.
  * Can be used with expect.extend() to add all matchers to the global expect.
@@ -116,14 +170,16 @@ export const expectlyMatchers = {
 	...expectlyStringMatchers,
 	...expectlyStringArrayMatchers,
 	...expectlyTextMatchers,
+	...expectlyArrayOrderMatchers,
 } as typeof expectlyAnyMatchers &
 	typeof expectlyDateMatchers &
 	Omit<typeof expectlyLocatorMatchers, OverlappingTextMatcherNames> &
-	typeof expectlyNumberArrayMatchers &
+	Omit<typeof expectlyNumberArrayMatchers, OverlappingArrayMatcherNames> &
 	typeof expectlyObjectArrayMatchers &
 	Omit<typeof expectlyStringMatchers, OverlappingTextMatcherNames> &
-	typeof expectlyStringArrayMatchers &
-	typeof expectlyTextMatchers;
+	Omit<typeof expectlyStringArrayMatchers, OverlappingArrayMatcherNames> &
+	typeof expectlyTextMatchers &
+	typeof expectlyArrayOrderMatchers;
 
 /**
  * Expectly - Enhanced Playwright Test Assertions

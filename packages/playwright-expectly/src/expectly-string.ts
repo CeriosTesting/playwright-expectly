@@ -2,6 +2,8 @@ import { withMatcherState } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import { assertReceivedType } from "./matchers/common-utils";
+import type { UrlValidationOptions, UUIDVersion } from "./matchers/text-validation-utils";
 import { matchesPattern } from "./matchers/text-validation-utils";
 import {
 	getUUIDFormatDescription,
@@ -18,6 +20,7 @@ import {
 export const expectlyStringMatchers = withMatcherState({
 	toStartWith(matcher: string, expected: string) {
 		const assertionName = "toStartWith";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
 		const pass = matcher.startsWith(expected);
 
@@ -60,6 +63,7 @@ export const expectlyStringMatchers = withMatcherState({
 	},
 	toEndWith(matcher: string, expected: string) {
 		const assertionName = "toEndWith";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
 		const pass = matcher.endsWith(expected);
 
@@ -102,6 +106,7 @@ export const expectlyStringMatchers = withMatcherState({
 	},
 	toMatchPattern(matcher: string, pattern: RegExp) {
 		const assertionName = "toMatchPattern";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
 		const pass = matchesPattern(matcher, pattern);
 
@@ -141,6 +146,7 @@ export const expectlyStringMatchers = withMatcherState({
 	},
 	toBeValidEmail(matcher: string) {
 		const assertionName = "toBeValidEmail";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
 		const pass = isValidEmail(matcher);
 
@@ -177,10 +183,11 @@ export const expectlyStringMatchers = withMatcherState({
 			actual,
 		};
 	},
-	toBeValidUrl(matcher: string) {
+	toBeValidUrl(matcher: string, options?: UrlValidationOptions) {
 		const assertionName = "toBeValidUrl";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
-		const pass = isValidUrl(matcher);
+		const pass = isValidUrl(matcher, options);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -205,10 +212,11 @@ export const expectlyStringMatchers = withMatcherState({
 			actual,
 		};
 	},
-	toBeAlphanumeric(matcher: string) {
+	toBeAlphanumeric(matcher: string, options?: { unicode?: boolean }) {
 		const assertionName = "toBeAlphanumeric";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
-		const pass = isAlphanumeric(matcher);
+		const pass = isAlphanumeric(matcher, options?.unicode ?? false);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -245,6 +253,7 @@ export const expectlyStringMatchers = withMatcherState({
 	},
 	toBeNumericString(matcher: string) {
 		const assertionName = "toBeNumericString";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
 		const pass = isNumericString(matcher);
 
@@ -281,8 +290,9 @@ export const expectlyStringMatchers = withMatcherState({
 			actual,
 		};
 	},
-	toBeUUID(matcher: string, version?: 1 | 3 | 4 | 5) {
+	toBeUUID(matcher: string, version?: UUIDVersion) {
 		const assertionName = "toBeUUID";
+		assertReceivedType(assertionName, matcher, "string");
 		const actual = matcher;
 		const pass = isValidUUID(matcher, version);
 

@@ -109,7 +109,7 @@ export const expectlyAnyMatchers = withMatcherState({
 	},
 	toBeInteger(this: ExpectMatcherState, received: unknown): MatcherReturnType {
 		const assertionName = "toBeInteger";
-		const pass = Number.isInteger(received);
+		const pass = Number.isInteger(received) || typeof received === "bigint";
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -402,13 +402,61 @@ export const expectlyAny: Expect<typeof expectlyAnyMatchers> = baseExpect.extend
  * For primitives: returns as-is
  * For asymmetric matchers: returns actual as-is (let Playwright's toEqual handle the matching)
  */
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+function isPlainObject(value: unknown): value is Record<PropertyKey, unknown> {
 	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		return false;
 	}
 
 	const prototype = Object.getPrototypeOf(value);
 	return prototype === Object.prototype || prototype === null;
+}
+
+/**
+ * Objects whose properties can be matched partially: plain objects, class instances, objects with a custom
+ * prototype and errors. Built-in value types (Date, RegExp, Map, Set, typed arrays, …) are compared whole.
+ */
+const WHOLE_VALUE_TYPES = [
+	Date,
+	RegExp,
+	Map,
+	Set,
+	WeakMap,
+	WeakSet,
+	Promise,
+	ArrayBuffer,
+	String,
+	Number,
+	Boolean,
+] as const;
+
+function isPartialObjectTarget(value: unknown): value is Record<PropertyKey, unknown> {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+	if (isPlainObject(value)) return true;
+	return !ArrayBuffer.isView(value) && !WHOLE_VALUE_TYPES.some((type) => value instanceof type);
+}
+
+/** Own enumerable keys of an expected structure, including symbols. */
+function expectedKeys(expected: Record<PropertyKey, unknown>): PropertyKey[] {
+	return Reflect.ownKeys(expected).filter((key) => Object.prototype.propertyIsEnumerable.call(expected, key));
+}
+
+/**
+ * Whether the actual object has the key: as an own property, or inherited from a class prototype (getters).
+ * Keys inherited from Object.prototype, such as `toString`, do not count.
+ */
+function hasPartialKey(actual: Record<PropertyKey, unknown>, key: PropertyKey): boolean {
+	for (
+		let owner: object | null = actual;
+		owner !== null && owner !== Object.prototype;
+		owner = Object.getPrototypeOf(owner)
+	) {
+		if (Object.prototype.hasOwnProperty.call(owner, key)) return true;
+	}
+	return false;
+}
+
+function keyPath(path: string, key: PropertyKey): string {
+	return `${path}.${String(key)}`;
 }
 
 function isStructuredValue(value: unknown): boolean {
@@ -690,11 +738,11 @@ function scoreArrayMatch(actual: unknown[], expected: unknown[]): number {
 	return score;
 }
 
-function scoreObjectMatch(actual: Record<string, unknown>, expected: Record<string, unknown>): number {
+function scoreObjectMatch(actual: Record<PropertyKey, unknown>, expected: Record<PropertyKey, unknown>): number {
 	let score = 0;
 
-	for (const key of Object.keys(expected)) {
-		if (key in actual) {
+	for (const key of expectedKeys(expected)) {
+		if (hasPartialKey(actual, key)) {
 			score += countDeepMatches(actual[key], expected[key]);
 		}
 	}
@@ -712,7 +760,7 @@ function countDeepMatches(actual: unknown, expected: unknown): number {
 	}
 
 	if (isPlainObject(expected)) {
-		return isPlainObject(actual) ? scoreObjectMatch(actual, expected) : 0;
+		return isPartialObjectTarget(actual) ? scoreObjectMatch(actual, expected) : 0;
 	}
 
 	return scoreExactMatch(actual, expected);
@@ -759,7 +807,7 @@ function countExpectedMatchUnits(expected: unknown): number {
 	}
 
 	if (isPlainObject(expected)) {
-		const total = Object.keys(expected).reduce((sum, key) => sum + countExpectedMatchUnits(expected[key]), 0);
+		const total = expectedKeys(expected).reduce<number>((sum, key) => sum + countExpectedMatchUnits(expected[key]), 0);
 		return Math.max(1, total);
 	}
 
@@ -815,12 +863,12 @@ function findFirstMismatchPath(actual: unknown, expected: unknown, path: string)
 	}
 
 	if (isPlainObject(expected)) {
-		if (!isPlainObject(actual)) {
+		if (!isPartialObjectTarget(actual)) {
 			return path;
 		}
 
-		for (const key of Object.keys(expected)) {
-			const mismatchPath = findFirstMismatchPath(actual[key], expected[key], `${path}.${key}`);
+		for (const key of expectedKeys(expected)) {
+			const mismatchPath = findFirstMismatchPath(actual[key], expected[key], keyPath(path, key));
 			if (mismatchPath) {
 				return mismatchPath;
 			}
@@ -981,7 +1029,7 @@ function formatIdentityValue(value: unknown): string | undefined {
 }
 
 function getActualIdentitySnippet(actualItem: unknown): string | undefined {
-	if (!isPlainObject(actualItem)) {
+	if (!isPartialObjectTarget(actualItem)) {
 		return formatIdentityValue(actualItem);
 	}
 
@@ -1487,15 +1535,15 @@ function extractMatchingStructure(actual: unknown, expected: unknown, state: Ext
 
 	// For expected object, extract only matching properties
 	if (isPlainObject(expected)) {
-		if (!isPlainObject(actual)) {
+		if (!isPartialObjectTarget(actual)) {
 			return actual; // Type mismatch will be caught by comparison
 		}
 
-		const result: Record<string, unknown> = {};
-		for (const key of Object.keys(expected)) {
-			const keyPath = path === "$" ? `${path}.${key}` : `${path}.${key}`;
-			if (key in actual) {
-				result[key] = extractMatchingStructure(actual[key], expected[key], state, keyPath);
+		// The projection is a plain object, so class instances and errors are matched by their fields only.
+		const result: Record<PropertyKey, unknown> = {};
+		for (const key of expectedKeys(expected)) {
+			if (hasPartialKey(actual, key)) {
+				result[key] = extractMatchingStructure(actual[key], expected[key], state, keyPath(path, key));
 			} else {
 				if (state.requireExplicitUndefinedKeyPresence && expected[key] === undefined) {
 					state.allExplicitUndefinedKeysExist = false;

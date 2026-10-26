@@ -18,6 +18,8 @@ import type {
 	TruncationUnit,
 	UniqueDatesOptions,
 } from "../date-time/types";
+import type { NumericToleranceOptions, StringOrderOptions } from "../matchers/common-utils";
+import type { UrlValidationOptions, UUIDVersion } from "../matchers/text-validation-utils";
 
 export type StabilityOptions = Pick<PollOptions, "timeout"> & {
 	stabilityDuration?: number;
@@ -92,8 +94,7 @@ declare global {
 			 * Asserts that the received value is an integer number.
 			 *
 			 * An integer is a whole number without decimal places.
-			 * This uses Number.isInteger() internally, which returns false for
-			 * NaN, Infinity, and non-number types.
+			 * Integral numbers (Number.isInteger) and BigInts pass; NaN, Infinity and other types fail.
 			 *
 			 * @example
 			 * expect(42).toBeInteger();
@@ -135,9 +136,9 @@ declare global {
 			toBeArray(): R;
 
 			/**
-			 * Asserts that the received value is a plain object.
+			 * Asserts that the received value is a non-null, non-array object.
 			 *
-			 * A plain object must be of type 'object', not null, and not an array.
+			 * Class instances, `Date`, `Map` and other built-in objects pass too; functions do not.
 			 *
 			 * @example
 			 * expect({ name: 'John' }).toBeObject();
@@ -194,6 +195,7 @@ declare global {
 
 			/**
 			 * Asserts that a string matches a regular expression pattern.
+			 * The pattern must be a RegExp; anything else throws a TypeError.
 			 *
 			 * @param pattern - The regular expression to match against
 			 * @param options - Optional polling configuration
@@ -204,7 +206,8 @@ declare global {
 			toMatchPattern(pattern: RegExp, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
-			 * Asserts that a string is a valid email address format.
+			 * Asserts that a string is a valid email address format: a local part without leading, trailing or
+			 * consecutive dots, and a domain of at least two dot-separated labels that do not start or end with a hyphen.
 			 *
 			 * @param options - Optional polling configuration
 			 *
@@ -215,26 +218,32 @@ declare global {
 			toBeValidEmail(options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
-			 * Asserts that a string is a valid URL format.
+			 * Asserts that a string is an absolute URL with an accepted scheme. Web schemes (http, https, ftp,
+			 * ws, wss) must be written with `//` and a valid host; whitespace is never allowed.
 			 *
-			 * @param options - Optional polling configuration
+			 * @param options - `protocols`: accepted schemes, with or without the colon (default `["http", "https"]`),
+			 *   plus polling configuration for locators
 			 *
 			 * @example
 			 * expect('https://example.com').toBeValidUrl();
 			 * expect('not a url').not.toBeValidUrl();
+			 * expect('localhost:3000').not.toBeValidUrl(); // "localhost:" would be the scheme
+			 * expect('mailto:user@example.com').toBeValidUrl({ protocols: ['mailto'] });
 			 */
-			toBeValidUrl(options?: PollOptions): T extends Locator ? Promise<R> : R;
+			toBeValidUrl(options?: UrlValidationOptions & PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string contains only letters and numbers (no spaces or special characters).
+			 * Only ASCII letters and digits count, unless `unicode` is set.
 			 *
-			 * @param options - Optional polling configuration
+			 * @param options - `unicode`: accept any Unicode letter, mark or number; plus polling configuration
 			 *
 			 * @example
 			 * expect('user123').toBeAlphanumeric();
 			 * expect('user 123').not.toBeAlphanumeric();
+			 * expect('café').toBeAlphanumeric({ unicode: true });
 			 */
-			toBeAlphanumeric(options?: PollOptions): T extends Locator ? Promise<R> : R;
+			toBeAlphanumeric(options?: { unicode?: boolean } & PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a string contains only numeric digits (0-9).
@@ -248,16 +257,17 @@ declare global {
 			toBeNumericString(options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
-			 * Asserts that a string is a valid UUID.
+			 * Asserts that a string is a valid RFC 9562 UUID. Without a version, versions 1–8 and the nil and max
+			 * UUIDs are accepted.
 			 *
-			 * @param version - Optional: specific UUID version (1, 3, 4, or 5)
+			 * @param version - Optional: specific UUID version (1–8)
 			 * @param options - Optional polling configuration
 			 *
 			 * @example
 			 * expect('550e8400-e29b-41d4-a716-446655440000').toBeUUID();
 			 * expect('f47ac10b-58cc-4372-a567-0e02b2c3d479').toBeUUID(4);
 			 */
-			toBeUUID(version?: 1 | 3 | 4 | 5, options?: PollOptions): T extends Locator ? Promise<R> : R;
+			toBeUUID(version?: UUIDVersion, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
 			 * Asserts that a date is within an elapsed-time deviation of another date (inclusive).
@@ -695,50 +705,56 @@ declare global {
 			toBeInMonth(expectedMonth: MonthName | MonthCode | number, options?: CalendarFieldOptions): R;
 
 			/**
-			 * Asserts that an array of numbers is in ascending order (smallest to largest).
+			 * Asserts that an array of numbers or strings is in ascending order (smallest to largest).
+			 * Strings are compared by UTF-16 code units unless `options` sets `numeric` or `locale`.
 			 *
 			 * @example
 			 * expect([9.99, 19.99, 29.99]).toHaveAscendingOrder();
+			 * expect(["2", "10"]).toHaveAscendingOrder({ numeric: true });
 			 */
-			toHaveAscendingOrder(): R;
+			toHaveAscendingOrder(options?: StringOrderOptions): R;
 
 			/**
-			 * Asserts that an array of numbers is in descending order (largest to smallest).
+			 * Asserts that an array of numbers or strings is in descending order (largest to smallest).
+			 * Strings are compared by UTF-16 code units unless `options` sets `numeric` or `locale`.
 			 *
 			 * @example
 			 * expect([100, 95, 87, 75]).toHaveDescendingOrder();
 			 */
-			toHaveDescendingOrder(): R;
+			toHaveDescendingOrder(options?: StringOrderOptions): R;
 
 			/**
 			 * Asserts that an array of numbers sums to the expected value.
+			 * Rounding errors of the floating-point computation are tolerated; pass `tolerance` for an explicit bound.
 			 *
 			 * @param expected - The expected sum
 			 *
 			 * @example
 			 * expect([10.99, 5.50, 15.00]).toHaveSum(31.49);
 			 */
-			toHaveSum(expected: number): R;
+			toHaveSum(expected: number, options?: NumericToleranceOptions): R;
 
 			/**
-			 * Asserts that an array of numbers has the expected average (mean).
+			 * Asserts that an array of numbers has the expected average (mean). An empty array has no average and never matches.
+			 * Rounding errors of the floating-point computation are tolerated; pass `tolerance` for an explicit bound.
 			 *
 			 * @param expected - The expected average
 			 *
 			 * @example
 			 * expect([85, 90, 95, 80]).toHaveAverage(87.5);
 			 */
-			toHaveAverage(expected: number): R;
+			toHaveAverage(expected: number, options?: NumericToleranceOptions): R;
 
 			/**
-			 * Asserts that an array of numbers has the expected median (middle value).
+			 * Asserts that an array of numbers has the expected median (middle value). An empty array has no median and never matches.
+			 * Rounding errors of the floating-point computation are tolerated; pass `tolerance` for an explicit bound.
 			 *
 			 * @param expected - The expected median
 			 *
 			 * @example
 			 * expect([50000, 60000, 70000, 80000, 90000]).toHaveMedian(70000);
 			 */
-			toHaveMedian(expected: number): R;
+			toHaveMedian(expected: number, options?: NumericToleranceOptions): R;
 
 			/**
 			 * Asserts that an array's minimum value equals the expected number.
@@ -762,16 +778,18 @@ declare global {
 
 			/**
 			 * Asserts that an array's range (max - min) equals the expected number.
+			 * Rounding errors of the floating-point computation are tolerated; pass `tolerance` for an explicit bound.
 			 *
 			 * @param expected - The expected range
 			 *
 			 * @example
 			 * expect([10, 15, 20, 25, 30]).toHaveRange(20);
 			 */
-			toHaveRange(expected: number): R;
+			toHaveRange(expected: number, options?: NumericToleranceOptions): R;
 
 			/**
 			 * Asserts that all numbers in an array fall within the specified range (inclusive).
+			 * Throws when `min` is greater than `max`.
 			 *
 			 * @param min - The minimum allowed value
 			 * @param max - The maximum allowed value
@@ -834,7 +852,7 @@ declare global {
 			 * expect([10, 20, 35, 50]).toHaveStrictlyAscendingOrder();
 			 * expect([1, 2, 2, 3]).not.toHaveStrictlyAscendingOrder();
 			 */
-			toHaveStrictlyAscendingOrder(): R;
+			toHaveStrictlyAscendingOrder(options?: StringOrderOptions): R;
 
 			/**
 			 * Asserts that numbers are in strictly descending order (each element < previous).
@@ -845,7 +863,7 @@ declare global {
 			 * expect([100, 75, 50, 25]).toHaveStrictlyDescendingOrder();
 			 * expect([5, 4, 4, 3]).not.toHaveStrictlyDescendingOrder();
 			 */
-			toHaveStrictlyDescendingOrder(): R;
+			toHaveStrictlyDescendingOrder(options?: StringOrderOptions): R;
 
 			/**
 			 * Asserts that an array is monotonic (consistently ascending or descending).
@@ -856,10 +874,11 @@ declare global {
 			 * expect([1, 2, 2, 3, 4]).toBeMonotonic();
 			 * expect([1, 3, 2, 4]).not.toBeMonotonic();
 			 */
-			toBeMonotonic(): R;
+			toBeMonotonic(options?: StringOrderOptions): R;
 
 			/**
 			 * Asserts that all values in an array are unique (no duplicates).
+			 * Values are compared like `Set` (SameValueZero), so `0` and `-0` count as duplicates.
 			 *
 			 * @example
 			 * expect([101, 202, 303]).toHaveUniqueValues();
@@ -881,7 +900,8 @@ declare global {
 			/**
 			 * Asserts that an array contains only unique objects (no duplicates).
 			 *
-			 * Uses deep equality comparison via JSON serialization to detect duplicates.
+			 * Uses deep strict equality (`util.isDeepStrictEqual`) to detect duplicates, so prototypes, `Date`,
+			 * `Map` and `Set` contents are compared, and `0` and `-0` are distinct.
 			 *
 			 * @example
 			 * expect([{ id: 1 }, { id: 2 }, { id: 3 }]).toHaveOnlyUniqueObjects();
@@ -890,7 +910,9 @@ declare global {
 			toHaveOnlyUniqueObjects(): R;
 
 			/**
-			 * Asserts that an array of objects is sorted in ascending order by a specific property.
+			 * Asserts that an array of objects is sorted in ascending order by a specific property
+			 * (own or inherited, including getters). Values must be numbers, strings, bigints, booleans or valid Dates
+			 * of one kind; NaN, Invalid Date, objects and mixed kinds throw.
 			 *
 			 * @param propertyName - The property name to sort by
 			 *
@@ -900,7 +922,9 @@ declare global {
 			toHaveObjectsInAscendingOrderBy(propertyName: string): R;
 
 			/**
-			 * Asserts that an array of objects is sorted in descending order by a specific property.
+			 * Asserts that an array of objects is sorted in descending order by a specific property
+			 * (own or inherited, including getters). Values must be numbers, strings, bigints, booleans or valid Dates
+			 * of one kind; NaN, Invalid Date, objects and mixed kinds throw.
 			 *
 			 * @param propertyName - The property name to sort by
 			 *

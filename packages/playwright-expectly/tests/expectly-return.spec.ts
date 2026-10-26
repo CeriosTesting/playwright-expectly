@@ -8,9 +8,9 @@ function checkPollAndReturnMatcherTypes(matchers: ReturnType<typeof expectly.pol
 	const value: Promise<string> = matchers.toBeUUID(4);
 	const negatedValue: Promise<string> = matchers.not.toBeUUID(4);
 	// @ts-expect-error UUID versions outside the supported set must be rejected.
-	void matchers.toBeUUID(2);
+	void matchers.toBeUUID(9);
 	// @ts-expect-error UUID versions outside the supported set must be rejected for `.not`.
-	void matchers.not.toBeUUID(2);
+	void matchers.not.toBeUUID(9);
 	void negatedValue;
 	return value;
 }
