@@ -10,6 +10,9 @@ import type {
 
 export type {
 	CalendarDateInput,
+	CalendarFieldOptions,
+	CalendarId,
+	CalendarOptions,
 	DateInput,
 	DateTimeInput,
 	DurationCompareOptions,
@@ -28,6 +31,8 @@ export type {
 	UniqueDatesOptions,
 } from "./types";
 import {
+	ISO_CALENDAR,
+	calendarIdOf,
 	getTemporal,
 	temporalKind,
 	toActiveInstant,
@@ -37,13 +42,17 @@ import {
 	toActiveZonedDateTime,
 } from "./temporal";
 
+/**
+ * Values are always in the ISO calendar. `calendar` is only set when a Temporal value carried a
+ * non-ISO calendar; like `offset`, it is never inferred.
+ */
 export type NormalizedDateTime =
-	| { kind: "date"; value: PlainDate; display: string }
-	| { kind: "dateTime"; value: PlainDateTime; display: string }
+	| { kind: "date"; value: PlainDate; calendar?: string; display: string }
+	| { kind: "dateTime"; value: PlainDateTime; calendar?: string; display: string }
 	| { kind: "time"; value: PlainTime; display: string }
 	/** `offset` is only set when an ISO string spelled it out; it is never inferred. */
 	| { kind: "instant"; value: Instant; offset?: string; display: string }
-	| { kind: "zoned"; value: ZonedDateTime; offset?: string; display: string };
+	| { kind: "zoned"; value: ZonedDateTime; offset?: string; calendar?: string; display: string };
 
 export type AbsoluteDateTime = Extract<NormalizedDateTime, { kind: "instant" | "zoned" }>;
 
@@ -86,6 +95,17 @@ function normalizeString(value: string, label: string): NormalizedDateTime {
 	}
 }
 
+/** The value as given, so a non-ISO calendar stays visible (`2026-10-25[u-ca=hebrew]`). */
+function displayOf(value: object): string {
+	return (value as { toString(): string }).toString();
+}
+
+/** The non-ISO calendar of a Temporal value, or `undefined` for ISO. */
+function nonIsoCalendar(value: object): { calendar?: string } {
+	const calendar = calendarIdOf(value);
+	return calendar === ISO_CALENDAR ? {} : { calendar };
+}
+
 function normalizeTemporal(value: object, label: string): NormalizedDateTime | undefined {
 	switch (temporalKind(value)) {
 		case "Instant": {
@@ -94,15 +114,15 @@ function normalizeTemporal(value: object, label: string): NormalizedDateTime | u
 		}
 		case "ZonedDateTime": {
 			const zoned = toActiveZonedDateTime(value as TemporalZonedDateTimeLike, label);
-			return { kind: "zoned", value: zoned, offset: zoned.offset, display: zoned.toString() };
+			return { kind: "zoned", value: zoned, offset: zoned.offset, ...nonIsoCalendar(value), display: displayOf(value) };
 		}
 		case "PlainDate": {
 			const date = toActivePlainDate(value as TemporalPlainDateLike, label);
-			return { kind: "date", value: date, display: date.toString() };
+			return { kind: "date", value: date, ...nonIsoCalendar(value), display: displayOf(value) };
 		}
 		case "PlainDateTime": {
 			const dateTime = toActivePlainDateTime(value as TemporalPlainDateTimeLike, label);
-			return { kind: "dateTime", value: dateTime, display: dateTime.toString() };
+			return { kind: "dateTime", value: dateTime, ...nonIsoCalendar(value), display: displayOf(value) };
 		}
 		case "PlainTime": {
 			const time = toActivePlainTime(value as TemporalPlainTimeLike);

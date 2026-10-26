@@ -119,8 +119,41 @@ export interface TimeZoneOptions {
 	timeZone?: string;
 }
 
+/** A Temporal calendar identifier. Other identifiers supported by the runtime are accepted too. */
+export type CalendarId =
+	| "iso8601"
+	| "gregory"
+	| "buddhist"
+	| "chinese"
+	| "coptic"
+	| "dangi"
+	| "ethioaa"
+	| "ethiopic"
+	| "hebrew"
+	| "indian"
+	| "islamic-civil"
+	| "islamic-tbla"
+	| "islamic-umalqura"
+	| "japanese"
+	| "persian"
+	| "roc"
+	| (string & {});
+
+export interface CalendarOptions {
+	/**
+	 * Calendar whose years, months and days are compared (e.g. `"hebrew"`). Default: the calendar of
+	 * the Temporal values (when they carry a non-ISO one), else `"iso8601"`.
+	 */
+	calendar?: CalendarId;
+}
+
+export interface CalendarFieldOptions extends TimeZoneOptions, CalendarOptions {}
+
 export interface RelativeTimeOptions extends TimeZoneOptions {
-	/** The moment treated as "now". Defaults to `Date.now()`, so fake timers are honoured. */
+	/**
+	 * The moment treated as "now". Defaults to the current time from `Date.now()`, so fake timers are
+	 * honoured, refined to sub-millisecond precision by `Temporal.Now` when both agree.
+	 */
 	now?: InstantInput;
 }
 

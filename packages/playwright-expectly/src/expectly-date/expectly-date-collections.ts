@@ -5,10 +5,16 @@ import { addToPoint, alignPoints, comparePoints, formatGap, pointKey } from "../
 import { formatDuration, nonNegativeDuration } from "../date-time/durations";
 import type { NormalizedDateTime } from "../date-time/inputs";
 import { normalize } from "../date-time/inputs";
-import type { PlainDate } from "../date-time/temporal";
-import { getTemporal } from "../date-time/temporal";
-import type { DateInput, DurationInput, TimeZoneOptions, UniqueDatesOptions } from "../date-time/types";
-import { calendarDate, resolveTimeZone } from "../date-time/zones";
+import type { Duration, PlainDate } from "../date-time/temporal";
+import { ISO_CALENDAR, getTemporal } from "../date-time/temporal";
+import type {
+	CalendarFieldOptions,
+	DateInput,
+	DurationInput,
+	TimeZoneOptions,
+	UniqueDatesOptions,
+} from "../date-time/types";
+import { calendarDate, inCalendar, resolveCalendar, resolveTimeZone } from "../date-time/zones";
 
 import { dateMatcherResult, indexLabels, normalizeDateArray } from "./date-matcher-utils";
 
@@ -17,6 +23,22 @@ type ConsecutiveUnit = "day" | "month" | "year";
 function alignArray(actual: unknown, minimum: 1 | 2, timeZone: string | undefined): Point[] {
 	const values = normalizeDateArray(actual, minimum);
 	return alignPoints(values, indexLabels(values), timeZone);
+}
+
+/**
+ * Aligns the values and resolves the calendar the years and months of `duration` are added in.
+ * Weeks and shorter units do not depend on the calendar.
+ */
+function alignForDuration(
+	actual: unknown,
+	minimum: 1 | 2,
+	duration: Duration,
+	options: CalendarFieldOptions | undefined,
+): { points: Point[]; calendar: string } {
+	const values = normalizeDateArray(actual, minimum);
+	const points = alignPoints(values, indexLabels(values), options?.timeZone);
+	const usesCalendar = options?.calendar !== undefined || duration.years !== 0 || duration.months !== 0;
+	return { points, calendar: usesCalendar ? resolveCalendar(options?.calendar, ...values) : ISO_CALENDAR };
 }
 
 function sortPoints(points: readonly Point[]): Point[] {
@@ -59,15 +81,23 @@ function orderResult(
 	});
 }
 
+/** Both dates are in the same calendar; months are matched by code, so 13-month years work. */
 function isConsecutive(previous: PlainDate, current: PlainDate, unit: ConsecutiveUnit): boolean {
 	if (unit === "day") return previous.add({ days: 1 }).equals(current);
-	if (unit === "month") return current.year * 12 + current.month === previous.year * 12 + previous.month + 1;
+	if (unit === "month") {
+		const next = previous.with({ day: 1 }).add({ months: 1 });
+		return next.year === current.year && next.monthCode === current.monthCode;
+	}
 	return current.year === previous.year + 1;
 }
 
-function calendarDates(values: readonly NormalizedDateTime[], timeZone: string | undefined): PlainDate[] {
+function calendarDates(
+	values: readonly NormalizedDateTime[],
+	timeZone: string | undefined,
+	calendar = ISO_CALENDAR,
+): PlainDate[] {
 	const zone = resolveTimeZone(timeZone, ...values);
-	return values.map((value, index) => calendarDate(value, zone, `date at index ${index}`));
+	return values.map((value, index) => inCalendar(calendarDate(value, zone, `date at index ${index}`), calendar));
 }
 
 /**
@@ -84,11 +114,12 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 		return orderResult(this, "toHaveDatesDescendingOrder", actual, options, -1);
 	},
 
-	toHaveDateRange(actual: DateInput[], expectedRange: DurationInput, options?: TimeZoneOptions) {
+	toHaveDateRange(actual: DateInput[], expectedRange: DurationInput, options?: CalendarFieldOptions) {
 		const range = nonNegativeDuration(expectedRange, "expected range");
-		const sorted = sortPoints(alignArray(actual, 1, options?.timeZone));
+		const { points, calendar } = alignForDuration(actual, 1, range, options);
+		const sorted = sortPoints(points);
 		const [first, last] = [sorted[0], sorted[sorted.length - 1]];
-		const expectedLast = addToPoint(first, range, "expected range");
+		const expectedLast = addToPoint(first, range, "expected range", calendar);
 		return dateMatcherResult(this, {
 			name: "toHaveDateRange",
 			pass: comparePoints(expectedLast, last) === 0,
@@ -105,11 +136,13 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 		});
 	},
 
-	toHaveConsecutiveDates(actual: DateInput[], unit: ConsecutiveUnit, options?: TimeZoneOptions) {
+	toHaveConsecutiveDates(actual: DateInput[], unit: ConsecutiveUnit, options?: CalendarFieldOptions) {
 		if (!["day", "month", "year"].includes(unit)) {
 			throw new TypeError(`Invalid unit: ${String(unit)}. Use "day", "month" or "year"`);
 		}
-		const dates = calendarDates(normalizeDateArray(actual, 2), options?.timeZone).sort((left, right) =>
+		const values = normalizeDateArray(actual, 2);
+		const calendar = resolveCalendar(options?.calendar, ...values);
+		const dates = calendarDates(values, options?.timeZone, calendar).sort((left, right) =>
 			getTemporal().PlainDate.compare(left, right),
 		);
 		const gap = dates.findIndex((date, index) => index > 0 && !isConsecutive(dates[index - 1], date, unit));
@@ -172,13 +205,14 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 		});
 	},
 
-	toHaveDateGapsLargerThan(actual: DateInput[], minGap: DurationInput, options?: TimeZoneOptions) {
+	toHaveDateGapsLargerThan(actual: DateInput[], minGap: DurationInput, options?: CalendarFieldOptions) {
 		const gap = nonNegativeDuration(minGap, "minimum gap");
-		const sorted = sortPoints(alignArray(actual, 2, options?.timeZone));
+		const { points, calendar } = alignForDuration(actual, 2, gap, options);
+		const sorted = sortPoints(points);
 		const largeGaps = sorted
 			.slice(1)
 			.map((to, index) => ({ from: sorted[index], to }))
-			.filter(({ from, to }) => comparePoints(to, addToPoint(from, gap, "minimum gap")) > 0);
+			.filter(({ from, to }) => comparePoints(to, addToPoint(from, gap, "minimum gap", calendar)) > 0);
 		return dateMatcherResult(this, {
 			name: "toHaveDateGapsLargerThan",
 			pass: largeGaps.length > 0,
@@ -197,15 +231,15 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 		});
 	},
 
-	toHaveMaximumDateGap(actual: DateInput[], maxGap: DurationInput, options?: TimeZoneOptions) {
+	toHaveMaximumDateGap(actual: DateInput[], maxGap: DurationInput, options?: CalendarFieldOptions) {
 		const gap = nonNegativeDuration(maxGap, "maximum gap");
-		const points = alignArray(actual, 2, options?.timeZone);
+		const { points, calendar } = alignForDuration(actual, 2, gap, options);
 		// Input order is preserved; each pair's gap is measured from its earlier to its later value.
 		const offending = points.findIndex((point, index) => {
 			if (index === 0) return false;
 			const [earlier, later] =
 				comparePoints(points[index - 1], point) <= 0 ? [points[index - 1], point] : [point, points[index - 1]];
-			return comparePoints(later, addToPoint(earlier, gap, "maximum gap")) > 0;
+			return comparePoints(later, addToPoint(earlier, gap, "maximum gap", calendar)) > 0;
 		});
 		return dateMatcherResult(this, {
 			name: "toHaveMaximumDateGap",

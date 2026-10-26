@@ -30,6 +30,9 @@ export type {
 } from "./iso-types";
 export type {
 	CalendarDateInput,
+	CalendarFieldOptions,
+	CalendarId,
+	CalendarOptions,
 	DateInput,
 	DateTimeInput,
 	DurationCompareOptions,

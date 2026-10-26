@@ -1,7 +1,7 @@
 import type { AbsoluteDateTime, NormalizedDateTime } from "./inputs";
 import { KIND_NAMES, isAbsolute, normalize } from "./inputs";
 import type { Instant, PlainDate, PlainDateTime, PlainTime, ZonedDateTime } from "./temporal";
-import { getTemporal } from "./temporal";
+import { ISO_CALENDAR, getTemporal, validateCalendar } from "./temporal";
 import type { InstantInput } from "./types";
 
 /** The machine's time zone, which `Date` getters use. */
@@ -31,6 +31,26 @@ export function resolveTimeZone(timeZone: string | undefined, ...values: Normali
 	const withOffset = values.find((value) => value.kind === "instant" && value.offset !== undefined);
 	if (withOffset?.kind === "instant" && withOffset.offset !== undefined) return withOffset.offset;
 	return systemTimeZone();
+}
+
+/**
+ * Resolves the one calendar an assertion reads years, months and days in:
+ * explicit `calendar` → the non-ISO calendar the Temporal values carry → ISO 8601.
+ */
+export function resolveCalendar(calendar: string | undefined, ...values: NormalizedDateTime[]): string {
+	if (calendar !== undefined) return validateCalendar(calendar);
+	const carried = [
+		...new Set(values.flatMap((value) => ("calendar" in value && value.calendar ? [value.calendar] : []))),
+	];
+	if (carried.length > 1) {
+		throw new TypeError(`Values use different calendars (${carried.join(", ")}); pass { calendar } to choose one`);
+	}
+	return carried[0] ?? ISO_CALENDAR;
+}
+
+/** The same day with its fields (year, month, day, …) in `calendar`. */
+export function inCalendar(date: PlainDate, calendar: string): PlainDate {
+	return calendar === ISO_CALENDAR ? date : date.withCalendar(calendar);
 }
 
 export function toZoned(value: AbsoluteDateTime, timeZone: string): ZonedDateTime {
@@ -92,9 +112,18 @@ export function toInstant(value: NormalizedDateTime, label: string, timeZone?: s
 	}
 }
 
-/** "Now", captured once per assertion. Without `now`, `Date.now()` is used so fake timers are honoured. */
+/**
+ * "Now", captured once per assertion. Without `now`, `Date.now()` is read first so fake timers are
+ * honoured; the more precise `Temporal.Now.instant()` is used only when it agrees to the millisecond.
+ */
 export function currentInstant(now: InstantInput | undefined): Instant {
-	if (now === undefined) return getTemporal().Instant.fromEpochMilliseconds(Date.now());
+	if (now === undefined) {
+		const T = getTemporal();
+		const milliseconds = Date.now();
+		const precise = T.Now.instant();
+		const drift = precise.epochMilliseconds - milliseconds;
+		return drift === 0 || drift === 1 ? precise : T.Instant.fromEpochMilliseconds(milliseconds);
+	}
 	const normalized = normalize(now, "now");
 	if (!isAbsolute(normalized)) throw unsupported(normalized, "now", "time zone; pass an absolute timestamp");
 	return toInstant(normalized, "now");

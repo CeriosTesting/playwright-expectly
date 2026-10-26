@@ -1,6 +1,7 @@
 // The `implementation` entry is always the polyfill; the package root would return any global Temporal.
-import type { Temporal as TemporalTypes } from "temporal-polyfill/implementation";
-import { Temporal as PolyfillTemporal } from "temporal-polyfill/implementation";
+// The `full` build adds the non-ISO calendars (hebrew, islamic, persian, japanese, …).
+import type { Temporal as TemporalTypes } from "temporal-polyfill/full/implementation";
+import { Temporal as PolyfillTemporal } from "temporal-polyfill/full/implementation";
 
 import type {
 	TemporalDurationLike,
@@ -32,7 +33,7 @@ export type Duration = TemporalTypes.Duration;
 type TemporalKind = "Instant" | "ZonedDateTime" | "PlainDate" | "PlainDateTime" | "PlainTime" | "Duration";
 
 const TEMPORAL_TAG = /^\[object Temporal\.(Instant|ZonedDateTime|PlainDate|PlainDateTime|PlainTime|Duration)\]$/;
-const ISO_CALENDAR = "iso8601";
+export const ISO_CALENDAR = "iso8601";
 
 function hasPrototypeMember(constructor: unknown, member: string): boolean {
 	return typeof constructor === "function" && member in (constructor as { prototype: object }).prototype;
@@ -82,32 +83,53 @@ function identifier(value: object, current: string, legacy: string): string | un
 	return typeof id === "string" ? id : undefined;
 }
 
-function requireIsoCalendar(value: object, label: string): void {
-	const calendarId = identifier(value, "calendarId", "calendar");
-	if (calendarId !== ISO_CALENDAR) {
-		throw new TypeError(
-			`Invalid ${label}: only the ISO 8601 calendar is supported, received calendar "${String(calendarId)}"`,
-		);
+/** The calendar of a Temporal value; values without a readable calendar are treated as ISO. */
+export function calendarIdOf(value: object): string {
+	return identifier(value, "calendarId", "calendar") ?? ISO_CALENDAR;
+}
+
+/**
+ * The same day in the ISO calendar. A value in another calendar converts itself, because its
+ * `year`/`month`/`day` fields are in that calendar.
+ */
+function inIsoCalendar<T extends TemporalPlainDateLike | TemporalPlainDateTimeLike>(value: T, label: string): T {
+	const calendar = calendarIdOf(value);
+	if (calendar === ISO_CALENDAR) return value;
+	const withCalendar = (value as { withCalendar?: unknown }).withCalendar;
+	if (typeof withCalendar !== "function") {
+		throw new TypeError(`Invalid ${label}: cannot convert calendar "${calendar}" to ISO 8601`);
+	}
+	return (withCalendar as (calendar: string) => T).call(value, ISO_CALENDAR);
+}
+
+/** Validates a calendar identifier known to Temporal and returns its canonical form. */
+export function validateCalendar(calendar: unknown, label = "calendar"): string {
+	if (typeof calendar !== "string")
+		throw new TypeError(`Invalid ${label}: expected a string, received ${typeof calendar}`);
+	try {
+		return getTemporal().PlainDate.from("2000-01-01").withCalendar(calendar).calendarId;
+	} catch {
+		throw new TypeError(`Invalid ${label}: ${JSON.stringify(calendar)} is not a supported calendar`);
 	}
 }
 
 // Values from another implementation are rebuilt from their public fields; same-implementation values are reused.
+// Every value is converted to the ISO calendar; callers keep the original calendar via `calendarIdOf`.
 export function toActiveInstant(value: TemporalInstantLike): Instant {
 	const T = getTemporal();
 	return value instanceof T.Instant ? value : T.Instant.fromEpochNanoseconds(value.epochNanoseconds);
 }
 
 export function toActiveZonedDateTime(value: TemporalZonedDateTimeLike, label: string): ZonedDateTime {
-	requireIsoCalendar(value, label);
 	const T = getTemporal();
-	if (value instanceof T.ZonedDateTime) return value;
+	if (value instanceof T.ZonedDateTime) return value.withCalendar(ISO_CALENDAR);
 	const timeZone = identifier(value, "timeZoneId", "timeZone");
 	if (timeZone === undefined) throw new TypeError(`Invalid ${label}: the ZonedDateTime has no readable time zone`);
 	return T.Instant.fromEpochNanoseconds(value.epochNanoseconds).toZonedDateTimeISO(timeZone);
 }
 
-export function toActivePlainDate(value: TemporalPlainDateLike, label: string): PlainDate {
-	requireIsoCalendar(value, label);
+export function toActivePlainDate(input: TemporalPlainDateLike, label: string): PlainDate {
+	const value = inIsoCalendar(input, label);
 	const T = getTemporal();
 	if (value instanceof T.PlainDate) return value;
 	return T.PlainDate.from({ year: value.year, month: value.month, day: value.day }, { overflow: "reject" });
@@ -124,8 +146,8 @@ function timeFields(value: TemporalPlainTimeLike | TemporalPlainDateTimeLike): R
 	};
 }
 
-export function toActivePlainDateTime(value: TemporalPlainDateTimeLike, label: string): PlainDateTime {
-	requireIsoCalendar(value, label);
+export function toActivePlainDateTime(input: TemporalPlainDateTimeLike, label: string): PlainDateTime {
+	const value = inIsoCalendar(input, label);
 	const T = getTemporal();
 	if (value instanceof T.PlainDateTime) return value;
 	return T.PlainDateTime.from(

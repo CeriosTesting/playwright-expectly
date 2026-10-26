@@ -1,6 +1,6 @@
 import { Temporal as JsTemporal } from "@js-temporal/polyfill";
 import { expect, test } from "@playwright/test";
-import { Temporal as Polyfill } from "temporal-polyfill/implementation";
+import { Temporal as Polyfill } from "temporal-polyfill/full/implementation";
 
 import { normalize } from "../../src/date-time/inputs";
 import { getTemporal, temporalKind } from "../../src/date-time/temporal";
@@ -49,9 +49,15 @@ test.describe("values from another implementation", () => {
 		expectlyDate(JsTemporal.Duration.from({ seconds: 5 })).toBeShorterThan(Polyfill.Duration.from({ seconds: 10 }));
 	});
 
-	test("reject non-ISO calendars", () => {
+	test("accept non-ISO calendars, converting them to the same ISO day", () => {
 		const hebrew = JsTemporal.PlainDate.from("2026-10-25").withCalendar("hebrew");
-		expect(() => expectlyDate(hebrew).toBeWeekday()).toThrow(/only the ISO 8601 calendar is supported/);
+		expectlyDate(hebrew).toBeSameDay("2026-10-25");
+		expectlyDate(hebrew).not.toBeWeekday();
+		expectlyDate(hebrew).toBeInMonth(2);
+		expectlyDate(JsTemporal.PlainDateTime.from("2026-10-25T09:30").withCalendar("persian")).toBeSameTimeOfDay("09:30");
+		expectlyDate(
+			JsTemporal.ZonedDateTime.from("2026-10-25T12:00:00+01:00[Europe/Amsterdam]").withCalendar("japanese"),
+		).toBeSameInstant("2026-10-25T11:00:00Z");
 	});
 });
 

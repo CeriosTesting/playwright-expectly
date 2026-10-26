@@ -19,6 +19,7 @@ expectly(appointment.scheduledAt).toBeWithinTimeOfDay("09:00", "17:00", { timeZo
 - [Parsing functions and type guards](#parsing-functions-and-type-guards)
 - [Temporal compatibility](#temporal-compatibility)
 - [Time zones](#time-zones)
+- [Calendars](#calendars)
 - [Durations and precision](#durations-and-precision)
 - Matchers
   - [Chronology](#chronology): `toBeBefore`, `toBeAfter`, `toBeBetween`, `toBeDateCloseTo`, `toBeSameInstant`
@@ -144,7 +145,7 @@ Parse functions, guards, `toBeValidISODate()` and `toBeValidISODateTime()` all s
 - Engines that ship an outdated draft (for example Node 24 with `--harmony-temporal`, which lacks `calendarId` and `timeZoneId`) are detected and not used as the implementation. Values they create are still accepted.
 - Values are recognised by their `Symbol.toStringTag`, not `instanceof`. Values from native Temporal, `temporal-polyfill` and `@js-temporal/polyfill` can be mixed freely and are converted without losing nanosecond precision.
 - Public types are structural (`TemporalInstantLike`, `TemporalZonedDateTimeLike`, `TemporalPlainDateLike`, `TemporalPlainDateTimeLike`, `TemporalPlainTimeLike`, `TemporalDurationLike`). They do not require TypeScript's `esnext.temporal` lib, and they accept values from any of those implementations.
-- Only the ISO 8601 calendar is supported. Values in other calendars throw a clear error.
+- Temporal values in any calendar are accepted (see [Calendars](#calendars)). The bundled polyfill is the `full` build, so non-ISO calendars work without native Temporal.
 
 ## Time zones
 
@@ -169,6 +170,39 @@ expectly("2026-10-25T12:00:00").toBeBefore("2026-10-25T13:00:00Z", { timeZone: "
 
 Calendar days are never assumed to last 24 hours. In Europe/Amsterdam, 2026-10-25 has 25 hours and 2026-03-29 has 23.
 
+## Calendars
+
+ISO strings and `Date` values are always in the ISO 8601 calendar. Temporal values can carry any calendar Temporal supports (`hebrew`, `islamic-umalqura`, `persian`, `japanese`, `chinese`, `ethiopic`, …).
+
+**Days are the same in every calendar.** Matchers that compare days, weekdays, instants or times of day (`toBeSameDay`, `toBeToday`, `toBeWeekday`, `toBeSpecificDayOfWeek`, chronology, time of day, ordering, uniqueness, …) accept any mix of calendars and need no option.
+
+**Years and months differ per calendar.** These matchers read them in one calendar per assertion, resolved like the time zone:
+
+1. the `calendar` option, if given;
+2. otherwise the non-ISO calendar the Temporal values carry (values in two different non-ISO calendars throw; pass `{ calendar }`);
+3. otherwise `"iso8601"`.
+
+| Matcher                                                               | Reads                                                     |
+| --------------------------------------------------------------------- | --------------------------------------------------------- |
+| `toBeSameMonth`, `toBeSameYear`, `toBeLeapYear`                       | year, month code, leap year                               |
+| `toBeInMonth`, `toBeInQuarter`, `toBeStartOfMonth`, `toBeEndOfMonth`  | month, day of month                                       |
+| `toHaveConsecutiveDates`                                              | consecutive months and years                              |
+| `toHaveDateRange`, `toHaveDateGapsLargerThan`, `toHaveMaximumDateGap` | adding years and months (weeks and smaller are unchanged) |
+
+```typescript
+// 2026-10-25 is 14 Cheshvan 5787, a Hebrew leap year with 13 months.
+expectly("2026-10-25").toBeLeapYear({ calendar: "hebrew" });
+expectly(Temporal.PlainDate.from("2026-10-25").withCalendar("hebrew")).toBeLeapYear(); // its own calendar
+expectly("2027-02-10").toBeInMonth("M05L", { calendar: "hebrew" }); // Adar I, by month code
+expectly("2027-02-10").toBeInMonth(6, { calendar: "hebrew" }); // the 6th month this year
+expectly(["2027-02-08", "2027-03-10"]).toHaveDateRange({ months: 1 }, { calendar: "hebrew" }); // 1 Adar I → 1 Adar II
+```
+
+- `toBeInMonth` takes a month number in that calendar (`1`–`13`), a month code (`"M01"` … `"M12"`, `"M05L"` for a leap month) or, for Gregorian-based calendars (`iso8601`, `gregory`, `japanese`, `buddhist`, `roc`), an English month name. Month numbers shift in leap years; month codes do not.
+- `toBeInQuarter` throws for years without 12 months (Hebrew leap years, Ethiopic, Coptic).
+- Duration matchers add calendar units in the calendar of `relativeTo`.
+- ISO strings with a calendar annotation (`[u-ca=hebrew]`) are still rejected; use a Temporal value or the `calendar` option.
+
 ## Durations and precision
 
 Durations are given as an object (`{ minutes: 5 }`), a `Temporal.Duration` or an ISO 8601 duration string (`"PT5M"`). Units are `years`, `months`, `weeks`, `days`, `hours`, `minutes`, `seconds`, `milliseconds`, `microseconds` and `nanoseconds`. Values must be integers, signs must not be mixed, and unknown units are rejected.
@@ -181,7 +215,11 @@ Durations are given as an object (`{ minutes: 5 }`), a `Temporal.Duration` or an
 
 Comparisons use bigint epoch nanoseconds, so nanosecond precision is preserved. `Date` values have millisecond precision.
 
-**"Now"** is captured once per assertion. It defaults to `Date.now()`, so fake timers that replace `Date` are honoured. You can also pass it explicitly with `{ now }`.
+**"Now"** is captured once per assertion. You can pass it explicitly with `{ now }`. Otherwise:
+
+- `Date.now()` is read first, so fake timers that replace `Date` (Sinon, Jest, Vitest) are honoured.
+- `Temporal.Now.instant()` is then used when it agrees with `Date.now()` to the millisecond. With native Temporal this adds sub-millisecond precision, so a value from `Temporal.Now.instant()` taken just before the assertion is reliably in the past. The polyfill's clock is `Date.now()` itself, so nothing changes there.
+- Playwright's `page.clock` controls the browser, not the test runner. To compare against the page's fake time, pass it with `{ now }`.
 
 ## Chronology
 
@@ -244,7 +282,7 @@ Maximum: 15 seconds
 
 ## Calendar
 
-All calendar matchers accept `{ timeZone }` ([zone resolution](#time-zones)). Matchers relative to today also accept `{ now }`.
+All calendar matchers accept `{ timeZone }` ([zone resolution](#time-zones)). Matchers relative to today also accept `{ now }`. Matchers that read years or months also accept `{ calendar }` ([calendars](#calendars)).
 
 ```typescript
 expectly(eventDate).toBeSameDay(new Date());
@@ -259,7 +297,7 @@ expectly(deliveryDate).toBeWeekday(); // Monday–Friday
 expectly(event.date).toBeWeekend(); // Saturday–Sunday
 expectly("2024-06-15").toBeLeapYear();
 expectly(date).toBeInQuarter(4); // Oct–Dec
-expectly(date).toBeInMonth("October"); // or 10 (1–12)
+expectly(date).toBeInMonth("October"); // or 10 (1–12), or "M10"
 expectly(meetingDate).toBeSpecificDayOfWeek("Monday"); // or 1 (0 = Sunday … 6 = Saturday)
 expectly("2026-02-01").toBeStartOfMonth();
 expectly("2026-02-28").toBeEndOfMonth();

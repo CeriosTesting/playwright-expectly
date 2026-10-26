@@ -137,11 +137,15 @@ export function formatDuration(duration: Duration): string {
 	return `${text} (${duration.toString()})`;
 }
 
+/** A Temporal value keeps its own calendar, so `{ months: 1 }` relative to a Hebrew date is one Hebrew month. */
 function toRelativeTo(input: DateInput): PlainDate | ZonedDateTime {
 	const value = normalize(input, "relativeTo");
-	if (value.kind === "date") return value.value;
-	if (value.kind === "dateTime") return value.value.toPlainDate();
-	if (value.kind === "zoned") return value.value;
+	if (value.kind === "date") return value.calendar ? value.value.withCalendar(value.calendar) : value.value;
+	if (value.kind === "dateTime") {
+		const date = value.value.toPlainDate();
+		return value.calendar ? date.withCalendar(value.calendar) : date;
+	}
+	if (value.kind === "zoned") return value.calendar ? value.value.withCalendar(value.calendar) : value.value;
 	if (value.kind === "instant" && value.offset !== undefined) return value.value.toZonedDateTimeISO(value.offset);
 	throw new TypeError(
 		`Invalid relativeTo: ${JSON.stringify(value.display)} has no calendar or time zone; ` +

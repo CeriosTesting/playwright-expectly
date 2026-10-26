@@ -2,7 +2,7 @@ import { elapsedNanoseconds, formatDuration, formatElapsed } from "./durations";
 import type { NormalizedDateTime } from "./inputs";
 import { KIND_NAMES, isAbsolute } from "./inputs";
 import type { Duration, PlainDate, PlainDateTime, ZonedDateTime } from "./temporal";
-import { getTemporal } from "./temporal";
+import { ISO_CALENDAR, getTemporal } from "./temporal";
 import { resolveTimeZone, toInstant, validateTimeZone } from "./zones";
 
 /** A value on a common timeline: absolute timestamps (placed in one zone) or same-kind local values. */
@@ -66,17 +66,21 @@ export function comparePoints(left: Point, right: Point): number {
 }
 
 /**
- * Temporal `.add()` semantics: years, months, weeks and days follow the calendar (DST-aware in the
- * comparison zone), smaller units are exact elapsed time.
+ * Temporal `.add()` semantics: years, months, weeks and days follow `calendar` (DST-aware in the
+ * comparison zone), smaller units are exact elapsed time. The result is back in the ISO calendar.
  */
-export function addToPoint(point: Point, duration: Duration, label: string): Point {
-	if (point.kind === "absolute") return { ...point, value: point.value.add(duration) };
-	if (point.kind === "dateTime") return { ...point, value: point.value.add(duration) };
+export function addToPoint(point: Point, duration: Duration, label: string, calendar = ISO_CALENDAR): Point {
+	const shift = <T extends Point["value"]>(value: T): T =>
+		(calendar === ISO_CALENDAR
+			? value.add(duration)
+			: value.withCalendar(calendar).add(duration).withCalendar(ISO_CALENDAR)) as T;
+	if (point.kind === "absolute") return { ...point, value: shift(point.value) };
+	if (point.kind === "dateTime") return { ...point, value: shift(point.value) };
 	const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
 	if ([hours, minutes, seconds, milliseconds, microseconds, nanoseconds].some((value) => value !== 0)) {
 		throw new TypeError(`Invalid ${label}: calendar dates can only be shifted by years, months, weeks or days`);
 	}
-	return { ...point, value: point.value.add(duration) };
+	return { ...point, value: shift(point.value) };
 }
 
 /** The signed distance from `from` to `to`, formatted for diagnostics. */

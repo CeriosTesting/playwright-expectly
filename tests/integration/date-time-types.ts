@@ -1,4 +1,5 @@
 import type {
+	CalendarId,
 	DateInput,
 	DurationInput,
 	InstantInput,
@@ -134,6 +135,13 @@ export function matcherSignatures(): void {
 	});
 	expectly(["2026-10-25", new Date()]).toHaveMaximumDateGap({ days: 1 });
 	expectly([new Date()]).toHaveUniqueDates({ ignoreTime: true });
+	expectly(parsedDate).toBeLeapYear({ calendar: "hebrew", timeZone: "Asia/Jerusalem" });
+	expectly(parsedDate).toBeInMonth("M05L", { calendar: "hebrew" });
+	expectly(JsTemporal.PlainDate.from("2026-10-25").withCalendar("persian")).toBeSameMonth(parsedDate);
+	expectly(["2026-10-25", "2026-11-23"]).toHaveDateRange({ months: 1 }, { calendar: "islamic-umalqura" });
+	const knownCalendar: CalendarId = "japanese";
+	const otherCalendar: CalendarId = dynamic;
+	void [knownCalendar, otherCalendar];
 
 	const instant: InstantInput = JsTemporal.Instant.from("2026-10-25T12:00:00Z");
 	const date: DateInput = PolyfillTemporal.PlainDateTime.from("2026-10-25T12:00:00");
@@ -147,6 +155,10 @@ export function matcherSignatures(): void {
 	expectly([new Date()]).toHaveUniqueDates(true);
 	// @ts-expect-error - toMatchTimeZone was removed in favour of toHaveOffset / toHaveTimeZone
 	expectly(new Date()).toMatchTimeZone("UTC");
+	// @ts-expect-error - calendar applies only to matchers that read years, months or days of the month
+	expectly(new Date()).toBeSameDay(new Date(), { calendar: "hebrew" });
+	// @ts-expect-error - month codes start with M
+	expectly(new Date()).toBeInMonth("05L");
 	// @ts-expect-error - unknown truncation unit
 	expectly(new Date()).toBeTruncatedTo("day");
 	void notInstant;

@@ -23,7 +23,9 @@ Rebuild the date matchers on Temporal: one type-safe Date/DateTime API for `Date
 - ISO template literal types: `ISODateString`, `ISOTimeString`, `ISOLocalDateTimeString`, `ISOInstantString`, `ISOZonedDateTimeString`, `ISODateTimeString`, `SupportedISOString`.
 - Runtime-validated branded types (`ValidatedISODate`, `ValidatedISOInstant`, …), returned by the literal-aware `parseISODate`, `parseISOTime`, `parseISOLocalDateTime`, `parseISODateTime`, `parseISOInstant` and `parseISOZonedDateTime`, and narrowed by the `isISO*` type guards.
 - Public input types: `DateInput`, `DateTimeInput`, `InstantInput`, `TimeInput`, `DurationInput`, plus structural `Temporal*Like` types that work without TypeScript's `esnext.temporal` lib.
-- Adds a runtime dependency on `temporal-polyfill`. A global Temporal that implements the current specification is preferred, and `globalThis` is never modified.
+- Non-ISO calendars: Temporal values in any calendar (`hebrew`, `islamic-umalqura`, `persian`, `japanese`, …) are accepted. Matchers that read years or months (`toBeSameMonth`, `toBeSameYear`, `toBeLeapYear`, `toBeInMonth`, `toBeInQuarter`, `toBeStartOfMonth`, `toBeEndOfMonth`, `toHaveConsecutiveDates`, `toHaveDateRange`, `toHaveDateGapsLargerThan`, `toHaveMaximumDateGap`) take a `calendar` option. It defaults to the values' own calendar, else ISO 8601. `toBeInMonth` also accepts month codes such as `"M05L"`.
+- "Now" honours fake timers through `Date.now()` and gains sub-millisecond precision from native `Temporal.Now` when both clocks agree.
+- Adds a runtime dependency on `temporal-polyfill` (its `full` build, which includes the non-ISO calendars). A global Temporal that implements the current specification is preferred, and `globalThis` is never modified.
 
 **Breaking**
 

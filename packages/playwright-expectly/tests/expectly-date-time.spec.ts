@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { Temporal } from "temporal-polyfill";
+import { Temporal as FullTemporal } from "temporal-polyfill/full/implementation";
 
 import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
 import { parseISOInstant } from "../src/date-time/iso-parse";
@@ -102,6 +103,41 @@ test.describe("toBeWithinLast / toBeWithinNext", () => {
 		} finally {
 			Date.now = realNow;
 		}
+	});
+
+	test.describe("with a precise Temporal clock", () => {
+		const globals = globalThis as { Temporal?: unknown };
+		const realTemporal = globals.Temporal;
+		const realNow = Date.now;
+		const nowMs = Date.parse(NOW);
+
+		/** A Temporal (as if native) whose clock reads 0.5 ms after `epochMilliseconds()`. */
+		function preciseTemporal(epochMilliseconds: () => number): unknown {
+			const instant = (): FullTemporal.Instant =>
+				FullTemporal.Instant.fromEpochNanoseconds(BigInt(epochMilliseconds()) * 1_000_000n + 500_000n);
+			return Object.create(FullTemporal, {
+				Now: { value: Object.create(FullTemporal.Now, { instant: { value: instant } }) },
+			});
+		}
+
+		test.afterEach(() => {
+			globals.Temporal = realTemporal;
+			Date.now = realNow;
+		});
+
+		test("use sub-millisecond precision when the clocks agree", () => {
+			globals.Temporal = preciseTemporal(() => nowMs);
+			Date.now = (): number => nowMs;
+			expectlyDate("2026-10-25T12:00:00.000400Z").toBeInThePast();
+			expectlyDate("2026-10-25T12:00:00.000600Z").toBeInTheFuture();
+		});
+
+		test("prefer a faked Date.now() over a Temporal clock that disagrees", () => {
+			globals.Temporal = preciseTemporal(realNow);
+			Date.now = (): number => nowMs;
+			expectlyDate("2026-10-25T11:58:00Z").toBeWithinLast({ minutes: 5 });
+			expectlyDate("2026-10-25T12:00:00.000400Z").toBeInTheFuture();
+		});
 	});
 
 	test("work with validated branded strings", () => {

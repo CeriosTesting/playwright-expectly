@@ -2,6 +2,7 @@ import type { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Locator } from "@playwright/test";
 
 import type {
+	CalendarFieldOptions,
 	DateInput,
 	DateTimeInput,
 	DurationCompareOptions,
@@ -42,6 +43,8 @@ export type MonthName =
 	| "October"
 	| "November"
 	| "December";
+/** A Temporal month code: `"M01"` … `"M13"`, with `L` for leap months (e.g. `"M05L"`, Hebrew Adar I). */
+export type MonthCode = `M${number}` | `M${number}L`;
 
 declare global {
 	export namespace PlaywrightTest {
@@ -338,22 +341,25 @@ declare global {
 
 			/**
 			 * Asserts that two dates are in the same month and year.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect("2026-10-25").toBeSameMonth("2026-10-01");
+			 * expect("2026-10-25").toBeSameMonth("2026-10-12", { calendar: "hebrew" }); // both Cheshvan 5787
 			 */
-			toBeSameMonth(expectedDate: DateInput, options?: TimeZoneOptions): R;
+			toBeSameMonth(expectedDate: DateInput, options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that two dates are in the same year.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect("2026-01-01").toBeSameYear("2026-12-31");
 			 */
-			toBeSameYear(expectedDate: DateInput, options?: TimeZoneOptions): R;
+			toBeSameYear(expectedDate: DateInput, options?: CalendarFieldOptions): R;
 
 			/**
-			 * Asserts that a date is today. "Now" is captured once (`now` option, else `Date.now()`).
+			 * Asserts that a date is today. "Now" is captured once (`now` option, else the current time).
 			 *
 			 * @example
 			 * expect(new Date()).toBeToday();
@@ -411,7 +417,7 @@ declare global {
 
 			/**
 			 * Asserts that a timestamp lies within the given elapsed time before now (inclusive).
-			 * Future timestamps fail. "Now" is captured once (`now` option, else `Date.now()`).
+			 * Future timestamps fail. "Now" is captured once (`now` option, else the current time).
 			 *
 			 * @example
 			 * expect(order.createdAt).toBeWithinLast({ minutes: 5 });
@@ -544,7 +550,7 @@ declare global {
 			 * @example
 			 * expect([event1.timestamp, event2.timestamp, event3.timestamp]).toHaveMaximumDateGap({ minutes: 5 });
 			 */
-			toHaveMaximumDateGap(maxGap: DurationInput, options?: TimeZoneOptions): R;
+			toHaveMaximumDateGap(maxGap: DurationInput, options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that a duration is strictly shorter than `limit`. Years, months and weeks require `relativeTo`.
@@ -572,30 +578,34 @@ declare global {
 
 			/**
 			 * Asserts that a date's year is a leap year.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect("2024-06-15").toBeLeapYear();
 			 * expect("2023-06-15").not.toBeLeapYear();
+			 * expect("2026-10-25").toBeLeapYear({ calendar: "hebrew" }); // 5787 has 13 months
 			 */
-			toBeLeapYear(options?: TimeZoneOptions): R;
+			toBeLeapYear(options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that an array of dates spans exactly the given duration from its earliest to its
-			 * latest value. Calendar units are calendar-exact; no tolerance is applied.
+			 * latest value. Calendar units are calendar-exact; no tolerance is applied. Years and months
+			 * follow the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect(["2026-01-01", "2026-01-15", "2026-01-31"]).toHaveDateRange({ days: 30 });
 			 * expect(["2026-01-31", "2026-02-28"]).toHaveDateRange({ months: 1 });
 			 */
-			toHaveDateRange(expectedRange: DurationInput, options?: TimeZoneOptions): R;
+			toHaveDateRange(expectedRange: DurationInput, options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that an array of dates is consecutive by the specified unit (sorted first).
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect(["2026-01-01", "2026-01-02", "2026-01-03"]).toHaveConsecutiveDates("day");
 			 */
-			toHaveConsecutiveDates(unit: "day" | "month" | "year", options?: TimeZoneOptions): R;
+			toHaveConsecutiveDates(unit: "day" | "month" | "year", options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that all dates in an array fall within a range (inclusive).
@@ -626,35 +636,40 @@ declare global {
 
 			/**
 			 * Asserts that a date is the first day of the month.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect("2026-01-01").toBeStartOfMonth();
 			 */
-			toBeStartOfMonth(options?: TimeZoneOptions): R;
+			toBeStartOfMonth(options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that a date is the last day of the month.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect("2026-01-31").toBeEndOfMonth();
 			 */
-			toBeEndOfMonth(options?: TimeZoneOptions): R;
+			toBeEndOfMonth(options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that a sorted array of dates has at least one gap larger than `minGap`.
+			 * Years and months follow the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
 			 * @example
 			 * expect(activityDates).toHaveDateGapsLargerThan({ days: 7 });
 			 */
-			toHaveDateGapsLargerThan(minGap: DurationInput, options?: TimeZoneOptions): R;
+			toHaveDateGapsLargerThan(minGap: DurationInput, options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that a date falls within a specific quarter of the year.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
+			 * Throws for calendars whose year does not have 12 months (e.g. Hebrew leap years, Ethiopic).
 			 *
 			 * @example
 			 * expect(date).toBeInQuarter(1); // Jan-Mar
 			 */
-			toBeInQuarter(expectedQuarter: 1 | 2 | 3 | 4, options?: TimeZoneOptions): R;
+			toBeInQuarter(expectedQuarter: 1 | 2 | 3 | 4, options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that a date falls on a specific day of the week.
@@ -668,13 +683,16 @@ declare global {
 
 			/**
 			 * Asserts that a date falls within a specific month.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
 			 *
-			 * @param expectedMonth - Month name or number (1-12)
+			 * @param expectedMonth - Month number in the calendar (1-12, or 1-13), month code (`"M05L"`), or
+			 * English month name (Gregorian-based calendars only)
 			 *
 			 * @example
 			 * expect(date).toBeInMonth("January");
+			 * expect("2027-02-10").toBeInMonth("M05L", { calendar: "hebrew" }); // Adar I
 			 */
-			toBeInMonth(expectedMonth: MonthName | number, options?: TimeZoneOptions): R;
+			toBeInMonth(expectedMonth: MonthName | MonthCode | number, options?: CalendarFieldOptions): R;
 
 			/**
 			 * Asserts that an array of numbers is in ascending order (smallest to largest).
