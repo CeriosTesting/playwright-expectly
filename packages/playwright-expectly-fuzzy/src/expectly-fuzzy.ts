@@ -5,9 +5,15 @@ import { expect as baseExpect, ExpectMatcherState, Locator } from "@playwright/t
 
 import { expectlyFuzzyLocatorMatchers } from "./expectly-fuzzy-locator";
 import { expectlyFuzzyStringMatchers } from "./expectly-fuzzy-string";
+import type { FuzzyOptions } from "./fuzzy-score";
 
 function isLocatorMatcherTarget(received: string | Locator): received is Locator {
-	return typeof received === "object" && received !== null && "innerText" in received;
+	return (
+		typeof received === "object" &&
+		received !== null &&
+		typeof (received as Partial<Locator>).innerText === "function" &&
+		typeof (received as Partial<Locator>).count === "function"
+	);
 }
 
 const expectlyFuzzySharedMatchers = {
@@ -16,13 +22,13 @@ const expectlyFuzzySharedMatchers = {
 		received: string | Locator,
 		expected: string,
 		threshold?: number,
-		options?: PollOptions,
+		options?: PollOptions & FuzzyOptions,
 	): MatcherReturnType | Promise<MatcherReturnType> {
 		if (isLocatorMatcherTarget(received)) {
 			return expectlyFuzzyLocatorMatchers.toMatchFuzzy.call(this, received, expected, threshold, options);
 		}
 
-		return expectlyFuzzyStringMatchers.toMatchFuzzy.call(this, received, expected, threshold);
+		return expectlyFuzzyStringMatchers.toMatchFuzzy.call(this, received, expected, threshold, options);
 	},
 };
 

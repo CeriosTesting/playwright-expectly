@@ -13,6 +13,11 @@ export const expectlyLocatorVisibilityMatchers = withMatcherState({
 		let visibleCount: number = 0;
 		let locatorError: Error | undefined;
 
+		// An impossible count would never match, so `.not` would pass without checking anything.
+		if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
+			throw new TypeError(`${assertionName}: count must be a non-negative integer, got: ${String(count)}`);
+		}
+
 		pass = await runPolledMatcher(this, options, async () => {
 			try {
 				const handles = await locator.elementHandles();

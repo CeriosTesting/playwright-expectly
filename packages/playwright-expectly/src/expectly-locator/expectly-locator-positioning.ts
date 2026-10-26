@@ -1,7 +1,128 @@
-import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
+import type { MatcherReturnType } from "@cerios/playwright-expectly-core";
+import { locatorNotFoundMessage, pollLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
-import type { Expect } from "@playwright/test";
+import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
+
+type Box = { x: number; y: number; width: number; height: number };
+
+// Layout with transforms or zoom can report touching edges a fraction of a pixel apart.
+const EDGE_TOLERANCE_PX = 0.5;
+
+type Relation = {
+	assertionName: string;
+	/** "above", "below", "left of", "right of". */
+	relation: string;
+	/** The compared edge of the first and the second element, e.g. ["bottom", "top"]. */
+	edgeNames: readonly [string, string];
+	/** Returns [first edge, second edge] in page pixels. */
+	edges: (box: Box, otherBox: Box) => readonly [number, number];
+	/** Whether the first edge must be at or before ("before") or at or after ("after") the second edge. */
+	order: "before" | "after";
+	rule: string;
+};
+
+const ELEMENT_LABELS = ["First element", "Second element"] as const;
+const LOCATOR_LABELS = ["first locator", "second locator"] as const;
+
+async function positionMatcher(
+	state: ExpectMatcherState,
+	relation: Relation,
+	locator: Locator,
+	otherLocator: Locator,
+	options: PollOptions | undefined,
+): Promise<MatcherReturnType> {
+	let hiddenIndex: number | undefined;
+	let edges: readonly [number, number] | undefined;
+
+	const { pass, snapshot } = await pollLocators(
+		state,
+		options,
+		[locator, otherLocator],
+		(actionOptions) => Promise.all([locator.boundingBox(actionOptions), otherLocator.boundingBox(actionOptions)]),
+		([box, otherBox]) => {
+			// A hidden element has no box, so the relation cannot be measured. Like a missing element, this keeps
+			// polling and fails both the assertion and its `.not` form if the element never becomes visible.
+			if (!box || !otherBox) {
+				hiddenIndex = box ? 1 : 0;
+				edges = undefined;
+				return state.isNot;
+			}
+			hiddenIndex = undefined;
+			edges = relation.edges(box, otherBox);
+			const [first, second] = edges;
+			return relation.order === "before" ? first <= second + EDGE_TOLERANCE_PX : first >= second - EDGE_TOLERANCE_PX;
+		},
+	);
+
+	const message = (): string => {
+		const notFound = locatorNotFoundMessage(state, relation.assertionName, snapshot, LOCATOR_LABELS);
+		if (notFound) return notFound;
+		const hint = state.utils.matcherHint(relation.assertionName, undefined, undefined, {
+			isNot: state.isNot,
+		});
+		if (hiddenIndex !== undefined) {
+			return `${hint}\n\nError: ${ELEMENT_LABELS[hiddenIndex]} is not visible (it has no bounding box)`;
+		}
+		const [firstEdge, secondEdge] = relation.edgeNames;
+		const edgeLines = edges
+			? `First element ${firstEdge}: ${edges[0]}px\nSecond element ${secondEdge}: ${edges[1]}px`
+			: undefined;
+
+		if (pass && state.isNot) {
+			return `${hint}\n\nExpected first element to not be ${relation.relation} second element\n${edgeLines}`;
+		}
+
+		if (!pass && !state.isNot) {
+			const reason = edgeLines ? `${edgeLines}\n${relation.rule}` : "The elements were not measured before the timeout";
+			return `${hint}\n\nExpected first element to be ${relation.relation} second element\n${reason}`;
+		}
+
+		return hint;
+	};
+
+	return {
+		message,
+		pass,
+		name: relation.assertionName,
+	};
+}
+
+const ABOVE: Relation = {
+	assertionName: "toBeAbove",
+	relation: "above",
+	edgeNames: ["bottom", "top"],
+	edges: (box, otherBox) => [box.y + box.height, otherBox.y],
+	order: "before",
+	rule: "First element must end at or before second element starts",
+};
+
+const BELOW: Relation = {
+	assertionName: "toBeBelow",
+	relation: "below",
+	edgeNames: ["top", "bottom"],
+	edges: (box, otherBox) => [box.y, otherBox.y + otherBox.height],
+	order: "after",
+	rule: "First element must start at or after second element ends",
+};
+
+const LEFT_OF: Relation = {
+	assertionName: "toBeLeftOf",
+	relation: "left of",
+	edgeNames: ["right edge", "left edge"],
+	edges: (box, otherBox) => [box.x + box.width, otherBox.x],
+	order: "before",
+	rule: "First element must end at or before second element starts",
+};
+
+const RIGHT_OF: Relation = {
+	assertionName: "toBeRightOf",
+	relation: "right of",
+	edgeNames: ["left edge", "right edge"],
+	edges: (box, otherBox) => [box.x, otherBox.x + otherBox.width],
+	order: "after",
+	rule: "First element must start at or after second element ends",
+};
 
 /**
  * Element positioning matchers for Playwright locators.
@@ -9,252 +130,16 @@ import { expect as baseExpect, Locator } from "@playwright/test";
  */
 export const expectlyLocatorPositioningMatchers = withMatcherState({
 	async toBeAbove(locator: Locator, otherLocator: Locator, options?: PollOptions) {
-		const assertionName = "toBeAbove";
-		let pass: boolean = false;
-		let actualBottom: number | undefined;
-		let otherTop: number | undefined;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
-
-				if (!box || !otherBox) {
-					return false;
-				}
-
-				actualBottom = box.y + box.height;
-				otherTop = otherBox.y;
-				return actualBottom <= otherTop;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to not be above second element\n` +
-					`First element bottom: ${actualBottom}px\n` +
-					`Second element top: ${otherTop}px`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to be above second element\n` +
-					`First element bottom: ${actualBottom}px\n` +
-					`Second element top: ${otherTop}px\n` +
-					`First element must end at or before second element starts`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-		};
+		return positionMatcher(this, ABOVE, locator, otherLocator, options);
 	},
 	async toBeBelow(locator: Locator, otherLocator: Locator, options?: PollOptions) {
-		const assertionName = "toBeBelow";
-		let pass: boolean = false;
-		let actualTop: number | undefined;
-		let otherBottom: number | undefined;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
-
-				if (!box || !otherBox) {
-					return false;
-				}
-
-				actualTop = box.y;
-				otherBottom = otherBox.y + otherBox.height;
-				return actualTop >= otherBottom;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to not be below second element\n` +
-					`First element top: ${actualTop}px\n` +
-					`Second element bottom: ${otherBottom}px`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to be below second element\n` +
-					`First element top: ${actualTop}px\n` +
-					`Second element bottom: ${otherBottom}px\n` +
-					`First element must start at or after second element ends`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-		};
+		return positionMatcher(this, BELOW, locator, otherLocator, options);
 	},
 	async toBeLeftOf(locator: Locator, otherLocator: Locator, options?: PollOptions) {
-		const assertionName = "toBeLeftOf";
-		let pass: boolean = false;
-		let actualRight: number | undefined;
-		let otherLeft: number | undefined;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
-
-				if (!box || !otherBox) {
-					return false;
-				}
-
-				actualRight = box.x + box.width;
-				otherLeft = otherBox.x;
-				return actualRight <= otherLeft;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to not be left of second element\n` +
-					`First element right edge: ${actualRight}px\n` +
-					`Second element left edge: ${otherLeft}px`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to be left of second element\n` +
-					`First element right edge: ${actualRight}px\n` +
-					`Second element left edge: ${otherLeft}px\n` +
-					`First element must end at or before second element starts`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-		};
+		return positionMatcher(this, LEFT_OF, locator, otherLocator, options);
 	},
 	async toBeRightOf(locator: Locator, otherLocator: Locator, options?: PollOptions) {
-		const assertionName = "toBeRightOf";
-		let pass: boolean = false;
-		let actualLeft: number | undefined;
-		let otherRight: number | undefined;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				const [box, otherBox] = await Promise.all([locator.boundingBox(), otherLocator.boundingBox()]);
-
-				if (!box || !otherBox) {
-					return false;
-				}
-
-				actualLeft = box.x;
-				otherRight = otherBox.x + otherBox.width;
-				return actualLeft >= otherRight;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to not be right of second element\n` +
-					`First element left edge: ${actualLeft}px\n` +
-					`Second element right edge: ${otherRight}px`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected first element to be right of second element\n` +
-					`First element left edge: ${actualLeft}px\n` +
-					`Second element right edge: ${otherRight}px\n` +
-					`First element must start at or after second element ends`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-		};
+		return positionMatcher(this, RIGHT_OF, locator, otherLocator, options);
 	},
 });
 

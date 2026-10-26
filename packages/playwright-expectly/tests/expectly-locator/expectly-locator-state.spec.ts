@@ -146,17 +146,33 @@ test.describe("expectLocator - toBeStable", () => {
 		expect(error.message).toMatch(/stabilityDuration must be positive/);
 	});
 
-	test("should validate timeout is positive", async ({ page }) => {
+	test("should validate timeout is not negative", async ({ page }) => {
 		await page.setContent('<div id="stable">Content</div>');
 		const element = page.locator("#stable");
 
 		const error = await getRejectedError(
 			expectlyLocator(element).toBeStable({
-				timeout: 0,
+				timeout: -1,
 			}),
 		);
 
-		expect(error.message).toMatch(/timeout must be positive/);
+		expect(error.message).toMatch(/timeout must not be negative/);
+	});
+
+	test("should treat a zero timeout as no timeout, like Playwright", async ({ page }) => {
+		await page.setContent('<div id="stable">Content</div>');
+		await expectlyLocator(page.locator("#stable")).toBeStable({ timeout: 0, stabilityDuration: 200 });
+	});
+
+	test("should fit the default stability window into a short expect timeout", async ({ page }) => {
+		await page.setContent('<div id="stable">Content</div>');
+		await expectlyLocator(page.locator("#stable")).toBeStable({ timeout: 300 });
+	});
+
+	test("should throw strict mode violations instead of retrying", async ({ page }) => {
+		await page.setContent("<p>One</p><p>Two</p>");
+		const error = await getRejectedError(expectlyLocator(page.locator("p")).not.toBeStable({ timeout: 2000 }));
+		expect(error.message).toMatch(/strict mode violation/);
 	});
 
 	test("should validate checkInterval is not too large", async ({ page }) => {
