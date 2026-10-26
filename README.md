@@ -3,16 +3,18 @@
 [![npm version](https://badge.fury.io/js/%40cerios%2Fplaywright-expectly.svg)](https://www.npmjs.com/package/@cerios/playwright-expectly)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions.
+Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, locators, and page state. Simplify your E2E tests with intuitive assertions.
 
 ## Features
 
-- 🎯 **50+ Custom Matchers** - Extensive validation for all data types
-- 🔤 **String Validation** - Email, URL, UUID, alphanumeric, and more
+- 🎯 **130+ Custom Matchers** - Extensive validation for all data types
+- 🔤 **String Validation** - Email, URL, UUID, alphanumeric, hexadecimal, case-insensitive equality, and more
 - 🔢 **Number Arrays** - Sorting, statistics, ranges, and patterns
 - 📅 **Date & Time** - `Date`, ISO strings and Temporal; time zones, DST, nanosecond precision, durations
-- 🎨 **Locator Assertions** - DOM element validation and text formatting
+- 🎨 **Locator Assertions** - DOM element validation, text formatting, count ranges, sorted texts, and computed styles
+- 🍪 **Page State** - Retrying cookie, `localStorage` and `sessionStorage` assertions
 - 📦 **Object Arrays** - Sorting, uniqueness, and property validation
+- 🧺 **Collections & Functions** - Array members, object keys and entries, promises, and thrown errors
 - 🤖 **Fuzzy Matching** - AI-generated text validation with configurable similarity threshold (separate package)
 - 💪 **Type-Safe** - Full TypeScript support
 - ⚡ **Lightweight** - Only Playwright required. @cerios/playwright-expectly-fuzzy uses `fuzzball` as an optional dependency
@@ -197,15 +199,17 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
 - `toBeUUID(version?)` - Validate UUID (optionally specific version)
 - `toBeAlphanumeric()` - Only letters and numbers
 - `toBeNumericString()` - Only digits
+- `toBeHexadecimal({ prefix })` - Hexadecimal string, optionally with `0x`
 - `toStartWith(prefix)` / `toEndWith(suffix)` - String boundaries
 - `toMatchPattern(regex)` - Regular expression matching
+- `toEqualCaseInsensitive(text)` / `toEqualIgnoringWhitespace(text)` - Lenient equality
 
 [📖 View all string matchers →](./docs/STRING_MATCHERS.md)
 
 ### Number Array Matchers
 
 - `toHaveAscendingOrder()` / `toHaveDescendingOrder()` - Sort validation
-- `toHaveAverage(value)` / `toHaveMedian(value)` - Statistical validation
+- `toHaveSum(value, { tolerance })` / `toHaveAverage(value)` / `toHaveMedian(value)` - Statistics with floating-point tolerance
 - `toHaveMin(value)` / `toHaveMax(value)` - Boundary validation
 - `toBeAllPositive()` / `toBeAllNegative()` - Sign validation
 - `toBeMonotonic()` - Consistent direction
@@ -237,8 +241,18 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 - `toBeUpperCase()` / `toBeLowerCase()` - Case validation
 - `toBeTitleCase()` - Title case format
 - `toHaveSrc(value)` / `toHaveHref(value)` / `toHaveAlt(value)` - Attribute validation
+- `toHaveStyles({ ... })` - Several computed CSS properties at once
+- `toHaveCountGreaterThan(n)` / `toHaveCountBetween(min, max)` - Retrying element count ranges
+- `toHaveTextsInAscendingOrder()` / `toHaveTextsInDescendingOrder()` - Sorted table columns and lists
 
 [📖 View all locator matchers →](./docs/LOCATOR_MATCHERS.md)
+
+### Page Matchers
+
+- `toHaveCookie(name, value?, { domain, path })` - Cookie on a `Page` or `BrowserContext`
+- `toHaveLocalStorageItem(key, value?)` / `toHaveSessionStorageItem(key, value?)` - Web storage on a `Page`
+
+[📖 View all page matchers →](./docs/PAGE_MATCHERS.md)
 
 ### Object Array Matchers
 
@@ -260,12 +274,23 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 ### Generic Matchers
 
 - `toBeInteger()` / `toBeFloat()` - Number type validation
+- `toBeEven()` / `toBeOdd()` / `toBeFinite()` - Number value validation
 - `toBeAnyOf(...values)` - Multiple value matching
+- `toSatisfy(predicate)` - Custom predicate
 - `toEqualPartially(expected, options)` - Partial object and array matching with configurable array modes
 - `toBeNullish()` - Null or undefined check
 - `toBePrimitive()` / `toBeArray()` / `toBeObject()` - Type checking
 
 [📖 View all generic matchers →](./docs/GENERIC_MATCHERS.md)
+
+### Collection and Function Matchers
+
+- `toSatisfyAll(predicate)` / `toSatisfyAny(predicate)` - Array predicates
+- `toIncludeSameMembers(values)` / `toIncludeAllMembers(values)` / `toIncludeAnyMembers(values)` - Members in any order
+- `toContainKey(key)` / `toContainKeys(keys)` / `toContainAllKeys(keys)` / `toContainEntry(entry)` / `toBeEmptyObject()` - Object keys and entries
+- `toResolve()` / `toReject()` / `toThrowWithMessage(type, message)` - Promises and thrown errors
+
+[📖 View all collection and function matchers →](./docs/COLLECTION_MATCHERS.md)
 
 ### Fuzzy Matchers (`@cerios/playwright-expectly-fuzzy`)
 
@@ -399,10 +424,12 @@ await expectly(page.locator(".text")).not.toBeNumericString();
 - [📖 String Matchers](./docs/STRING_MATCHERS.md) - Email, URL, UUID, alphanumeric validation
 - [📖 Number Array Matchers](./docs/NUMBER_ARRAY_MATCHERS.md) - Sorting, statistics, range checks
 - [📖 Date Matchers](./docs/DATE_MATCHERS.md) - Dates, datetimes, time zones, durations and typed ISO strings
-- [📖 Locator Matchers](./docs/LOCATOR_MATCHERS.md) - DOM element text and attribute validation
+- [📖 Locator Matchers](./docs/LOCATOR_MATCHERS.md) - DOM element text, attribute, style, count and order validation
+- [📖 Page Matchers](./docs/PAGE_MATCHERS.md) - Cookies, `localStorage` and `sessionStorage`
 - [📖 Object Array Matchers](./docs/OBJECT_ARRAY_MATCHERS.md) - Sorting and uniqueness by property
 - [📖 String Array Matchers](./docs/STRING_ARRAY_MATCHERS.md) - Alphabetical sorting and uniqueness
 - [📖 Generic Matchers](./docs/GENERIC_MATCHERS.md) - Type checking and partial matching
+- [📖 Collection and Function Matchers](./docs/COLLECTION_MATCHERS.md) - Array members, object keys and entries, promises and thrown errors
 - [📖 Fuzzy Matchers](./docs/FUZZY_MATCHERS.md) - AI-generated text validation with fuzzy string matching
 
 ## Contributing

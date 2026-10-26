@@ -1,4 +1,4 @@
-import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
+import { assertLocators, withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
@@ -21,6 +21,7 @@ export async function countVisibleElements(locator: Locator): Promise<number> {
 export const expectlyLocatorVisibilityMatchers = withMatcherState({
 	async toHaveCountVisible(locator: Locator, count: number, options?: PollOptions) {
 		const assertionName = "toHaveCountVisible";
+		assertLocators([locator]);
 		let pass: boolean = false;
 		let visibleCount: number = 0;
 		let locatorError: Error | undefined;

@@ -1,4 +1,4 @@
-import { runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
+import { assertLocators, runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
@@ -64,6 +64,7 @@ async function textOrderMatcher(
 	order: Order,
 	options: TextOrderOptions | undefined,
 ): Promise<ExpectlyMatcherResult> {
+	assertLocators([locator]);
 	let snapshot: OrderSnapshot | undefined;
 
 	const pass = await runPolledMatcher(

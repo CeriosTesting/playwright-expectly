@@ -928,8 +928,8 @@ declare global {
 
 			/**
 			 * Asserts that an array of objects is sorted in ascending order by a specific property
-			 * (own or inherited, including getters). Values must be numbers, strings, bigints, booleans or valid Dates
-			 * of one kind; NaN, Invalid Date, objects and mixed kinds throw.
+			 * (own or inherited, including getters). Values must be numbers, strings, bigints, booleans or valid Dates;
+			 * NaN, Invalid Date, objects, functions and symbols throw, and values of different types fail.
 			 *
 			 * @param propertyName - The property name to sort by
 			 *
@@ -940,8 +940,8 @@ declare global {
 
 			/**
 			 * Asserts that an array of objects is sorted in descending order by a specific property
-			 * (own or inherited, including getters). Values must be numbers, strings, bigints, booleans or valid Dates
-			 * of one kind; NaN, Invalid Date, objects and mixed kinds throw.
+			 * (own or inherited, including getters). Values must be numbers, strings, bigints, booleans or valid Dates;
+			 * NaN, Invalid Date, objects, functions and symbols throw, and values of different types fail.
 			 *
 			 * @param propertyName - The property name to sort by
 			 *
@@ -1340,7 +1340,8 @@ declare global {
 			toContainKeys(keys: readonly PropertyKey[]): R;
 
 			/**
-			 * Asserts that an object has exactly the given own enumerable keys, in any order.
+			 * Asserts that an object has exactly the given own enumerable keys, in any order. Numbers name their
+			 * string keys (`1` matches the key `"1"`).
 			 *
 			 * @example
 			 * expect(payload).toContainAllKeys(['id', 'name', 'createdAt']);
@@ -1364,7 +1365,8 @@ declare global {
 			toContainEntries(entries: readonly (readonly [PropertyKey, unknown])[]): R;
 
 			/**
-			 * Asserts that the received value is an object (not an array) without own enumerable keys.
+			 * Asserts that the received value is an object (not an array) without own enumerable keys; a Map or Set
+			 * must also have no entries.
 			 *
 			 * @example
 			 * expect(response.errors).toBeEmptyObject();

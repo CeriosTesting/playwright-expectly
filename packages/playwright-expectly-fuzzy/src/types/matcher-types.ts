@@ -27,7 +27,7 @@ declare global {
 			 * @example
 			 * expect('Hello World').toMatchFuzzy('Hello Wrold');         // passes (default threshold 80)
 			 * expect('world hello').toMatchFuzzy('hello world');         // passes (word-order-insensitive)
-			 * expect('Hello World').toMatchFuzzy('Hi Earth', 60);        // passes with lower threshold
+			 * expect('Hello World').toMatchFuzzy('Helo Word', 90);       // passes (score 90)
 			 * expect('completely different').toMatchFuzzy('hello world'); // fails
 			 * expect('Hello World').toMatchFuzzy('hello world', 100, { caseSensitive: true }); // fails
 			 */

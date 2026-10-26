@@ -138,6 +138,15 @@ test.describe("locator polling - receivers", () => {
 	test("locator-only matchers explain a non-locator receiver", async () => {
 		const error = await getRejectedError(expectlyLocator("HELLO" as unknown as Locator).toBeUpperCase());
 		expect(error.message).toContain("needs a Playwright Locator, got: string");
+		const notLocator = "x" as unknown as Locator;
+		for (const assertion of [
+			expectlyLocator(notLocator).toBeStable(),
+			expectlyLocator(notLocator).toHaveCountVisible(1),
+			expectlyLocator(notLocator).toHaveCountGreaterThan(0),
+			expectlyLocator(notLocator).toHaveTextsInAscendingOrder(),
+		]) {
+			expect((await getRejectedError(assertion)).message).toContain("needs a Playwright Locator");
+		}
 	});
 });
 

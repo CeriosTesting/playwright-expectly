@@ -122,6 +122,7 @@ for (const fails of [false, true]) {
 	test(`visible-count handles are disposed on ${fails ? "failure" : "success"}`, async () => {
 		let disposals = 0;
 		const locator = {
+			count: (): Promise<number> => Promise.resolve(1),
 			elementHandles: () =>
 				Promise.resolve([
 					{

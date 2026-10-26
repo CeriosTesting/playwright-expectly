@@ -7,9 +7,14 @@ Type checking and partial matching matchers that work with any data type.
 - [toBeAnyOf()](#tobeanyof)
 - [toBeNullish()](#tobenullish)
 - [toBeInteger() / toBeFloat()](#tobeinteger--tobefloat)
+- [toBeEven() / toBeOdd()](#tobeeven--tobeodd)
+- [toBeFinite()](#tobefinite)
 - [toBePrimitive()](#tobeprimitive)
 - [toBeArray() / toBeObject()](#tobearray--tobeobject)
+- [toSatisfy()](#tosatisfy)
 - [toEqualPartially()](#toequalpartially)
+
+For array members, object keys and entries (`toSatisfyAll()`, `toIncludeSameMembers()`, `toContainKeys()`, `toBeEmptyObject()`, …) and for promises and thrown errors (`toResolve()`, `toReject()`, `toThrowWithMessage()`), see [Collection and Function Matchers](./COLLECTION_MATCHERS.md).
 
 ## toBeAnyOf()
 
@@ -60,11 +65,14 @@ test("validate optional fields", async ({ page }) => {
 
 Asserts that the received value is an integer or floating-point number.
 
+`toBeInteger()` passes for integral numbers (`Number.isInteger`) and BigInts. `toBeFloat()` passes for finite numbers with a fractional part. `NaN`, `Infinity` and other types fail both.
+
 ```typescript
 // Valid integers
 expectly(42).toBeInteger();
 expectly(0).toBeInteger();
 expectly(-100).toBeInteger();
+expectly(9007199254740993n).toBeInteger(); // BigInt
 
 // Testing API responses
 const userCount = await page.locator(".user-count").textContent();
@@ -88,6 +96,51 @@ expectly(tax).toBeFloat();
 expectly(42).not.toBeFloat(); // Integer
 expectly(NaN).not.toBeFloat(); // NaN
 expectly(Infinity).not.toBeFloat(); // Infinity
+```
+
+## toBeEven() / toBeOdd()
+
+Asserts that the received value is an even or odd integer (number or BigInt). Fractions, `NaN`, `Infinity` and other types fail both matchers.
+
+```typescript
+// Even and odd numbers
+expectly(4).toBeEven();
+expectly(-2).toBeEven();
+expectly(0).toBeEven();
+expectly(7).toBeOdd();
+expectly(-3).toBeOdd();
+
+// BigInts
+expectly(10n).toBeEven();
+expectly(11n).toBeOdd();
+
+// Neither even nor odd
+expectly(2.5).not.toBeEven();
+expectly(2.5).not.toBeOdd();
+expectly("4").not.toBeEven();
+```
+
+## toBeFinite()
+
+Asserts that the received value is a finite number: not `NaN`, `Infinity` or `-Infinity`. Only the `number` type passes, so BigInts and numeric strings fail.
+
+```typescript
+// Finite numbers
+expectly(42).toBeFinite();
+expectly(-0.5).toBeFinite();
+
+// Not finite
+expectly(NaN).not.toBeFinite();
+expectly(1 / 0).not.toBeFinite();
+expectly(-Infinity).not.toBeFinite();
+
+// Not a number
+expectly("42").not.toBeFinite();
+expectly(42n).not.toBeFinite();
+
+// Guard calculations
+const conversionRate = orders / visitors;
+expectly(conversionRate).toBeFinite();
 ```
 
 ## toBePrimitive()
@@ -120,6 +173,8 @@ expectly(apiValue).toBePrimitive();
 
 Type checking for arrays and objects.
 
+`toBeArray()` uses `Array.isArray()`. `toBeObject()` passes for any non-null object that is not an array: plain objects, class instances, `Date`, `Map` and other built-in objects. Functions, arrays and `null` fail.
+
 ```typescript
 // Valid arrays
 expectly([]).toBeArray();
@@ -142,6 +197,7 @@ expectly({ length: 3 }).not.toBeArray();
 expectly({}).toBeObject();
 expectly({ name: "John", age: 30 }).toBeObject();
 expectly(new Date()).toBeObject();
+expectly(new Map()).toBeObject();
 
 // Testing API responses
 const user = await api.getUser(123);
@@ -151,8 +207,27 @@ expectly(user.profile).toBeObject();
 // Not objects
 expectly([]).not.toBeObject(); // Arrays are excluded
 expectly(null).not.toBeObject(); // Null is excluded
+expectly(() => {}).not.toBeObject(); // Functions are excluded
 expectly("string").not.toBeObject();
 ```
+
+## toSatisfy()
+
+Asserts that the received value satisfies a predicate. The predicate receives the value; a truthy result passes. A named predicate function appears in the failure message. Anything other than a function throws a `TypeError`.
+
+```typescript
+// Inline predicate
+expectly(order.total).toSatisfy((total) => total > 0 && total < 1000);
+
+// Reusable, named predicates
+const isEuroAmount = (value: string) => /^€\s?\d+(,\d{2})?$/.test(value);
+expectly("€ 12,50").toSatisfy(isEuroAmount);
+
+// With negation
+expectly(response.status).not.toSatisfy((status) => status >= 500);
+```
+
+For arrays, use [`toSatisfyAll()` and `toSatisfyAny()`](./COLLECTION_MATCHERS.md#tosatisfyall--tosatisfyany).
 
 ## toEqualPartially()
 
@@ -273,6 +348,43 @@ test("validate API response structure", async () => {
 	});
 	// Response can have additional fields like timestamp, metadata, etc.
 });
+```
+
+### Class Instances, Errors and Symbol Keys
+
+The expected structure is a plain object, and the received value can be any object whose fields can be matched:
+
+- **Class instances, objects with a custom prototype and errors** are matched by the expected fields only, instead of being compared whole. Inherited properties and getters count, so an error's `name` and a class getter can be checked
+- **Built-in value types** (`Date`, `RegExp`, `Map`, `Set`, typed arrays, …) are compared whole
+- **Symbol keys** in the expected object are matched like string keys
+- **`Object.prototype` members** such as `toString` or `constructor` do not count as present keys
+- **Circular plain objects or arrays** in either value throw a `TypeError` (also under `.not`). Shared references to the same object without a cycle are fine
+
+```typescript
+// Class instance with a getter
+class User {
+	firstName: string;
+	lastName: string;
+	constructor(firstName: string, lastName: string) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+	}
+	get fullName(): string {
+		return `${this.firstName} ${this.lastName}`;
+	}
+}
+expectly(new User("Ada", "Lovelace")).toEqualPartially({ fullName: "Ada Lovelace" });
+
+// Errors: message is an own property, name is inherited
+const error = new TypeError("Invalid input");
+expectly(error).toEqualPartially({ name: "TypeError", message: "Invalid input" });
+
+// Symbol keys
+const VERSION = Symbol("version");
+expectly({ [VERSION]: 2, name: "config" }).toEqualPartially({ [VERSION]: 2 });
+
+// Object.prototype members are not present keys
+expectly({ id: 1 }).not.toEqualPartially({ toString: expect.any(Function) });
 ```
 
 ### Using with Asymmetric Matchers
@@ -562,5 +674,6 @@ expectly(users).toEqualPartially([{ name: "Bob" }]);
 - [String Matchers](./STRING_MATCHERS.md) - For string validation
 - [Number Array Matchers](./NUMBER_ARRAY_MATCHERS.md) - For number arrays
 - [Object Array Matchers](./OBJECT_ARRAY_MATCHERS.md) - For object arrays
+- [Collection and Function Matchers](./COLLECTION_MATCHERS.md) - For array members, object keys and entries, promises and thrown errors
 
 [← Back to README](../README.md)

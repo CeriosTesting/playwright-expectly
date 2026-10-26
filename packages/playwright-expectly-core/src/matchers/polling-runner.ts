@@ -52,6 +52,17 @@ function isTimeoutError(error: unknown): boolean {
 	return error instanceof errors.TimeoutError || (error instanceof Error && error.name === "TimeoutError");
 }
 
+/** Throws a clear TypeError when a locator-only matcher receives something other than a Locator. */
+export function assertLocators(locators: readonly unknown[]): asserts locators is readonly Locator[] {
+	for (const locator of locators) {
+		if (typeof locator !== "object" || locator === null || typeof (locator as Partial<Locator>).count !== "function") {
+			throw new TypeError(
+				`This matcher needs a Playwright Locator, got: ${locator === null ? "null" : typeof locator}`,
+			);
+		}
+	}
+}
+
 /**
  * Polls a read of one or more locators, with Playwright's semantics for missing elements: polling
  * continues until the element appears, and if it never does, both the assertion and its `.not` form fail
@@ -66,13 +77,7 @@ export async function pollLocators<T>(
 	read: (actionOptions: { timeout: number }) => Promise<T>,
 	check: (value: T) => boolean,
 ): Promise<LocatorPollResult<T>> {
-	for (const locator of locators) {
-		if (typeof locator !== "object" || locator === null || typeof (locator as Partial<Locator>).count !== "function") {
-			throw new TypeError(
-				`This matcher needs a Playwright Locator, got: ${locator === null ? "null" : typeof locator}`,
-			);
-		}
-	}
+	assertLocators(locators);
 	const timeout = options?.timeout ?? state.timeout;
 	const deadline = timeout ? Date.now() + timeout : 0;
 	// Returning the undesired condition keeps polling, for the assertion and for its `.not` form.

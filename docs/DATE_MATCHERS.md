@@ -156,9 +156,9 @@ Parse functions, guards, `toBeValidISODate()` and `toBeValidISODateTime()` all s
 3. otherwise the explicit offset of an ISO string (`Z` means UTC);
 4. otherwise the machine's time zone, used for `Date` and `Temporal.Instant` (as `Date` getters do).
 
-Values that carry different zones, or (without zones) different offsets, throw instead of letting the argument order decide: pass `{ timeZone }` to choose one. Chronology matchers compare instants and need no zone. A `timeZone` option that cannot apply (all values local) throws rather than being ignored.
+Values that carry different zones, or (without zones) different offsets, throw instead of letting the argument order decide: pass `{ timeZone }` to choose one. Chronology matchers compare instants and need no zone. A `timeZone` option that cannot apply (all values local) throws rather than being ignored. An invalid zone name throws too, even when every value is an absolute timestamp.
 
-For `toBeToday`, `toBeYesterday` and `toBeTomorrow`, a local value is compared with today in the zone that `now` spells out, so `{ now: "2026-10-26T00:30:00+01:00[Europe/Amsterdam]" }` means 26 October.
+For `toBeToday`, `toBeYesterday` and `toBeTomorrow`, a local value is compared with today in the zone that `now` spells out, so `{ now: "2026-10-26T00:30:00+01:00[Europe/Amsterdam]" }` means 26 October. Their failure messages always name the zone used.
 
 ```typescript
 expectly("2026-10-25T23:30:00Z").toBeSameDay("2026-10-25"); // UTC, from the string
@@ -232,7 +232,7 @@ Comparisons use bigint epoch nanoseconds, so nanosecond precision is preserved. 
 expectly(user.createdAt).toBeBefore(user.updatedAt);
 expectly("2026-10-25").toBeAfter("2026-10-20");
 
-// Inclusive range
+// Inclusive range; throws when the start is after the end
 expectly(eventDate).toBeBetween("2026-01-01", "2026-12-31");
 
 // Within an elapsed deviation (inclusive)
@@ -273,7 +273,7 @@ expectly(payment.processedAt).toBeWithinDurationAfter(payment.createdAt, {
 });
 ```
 
-Events before `start` fail. Negative limits and `min > max` throw. A failure shows the measured duration:
+Events before `start` fail. Negative limits, `min > max`, and range objects that mix `{ min, max }` with duration units (`{ max: { seconds: 10 }, minutes: 1 }`) throw. A failure shows the measured duration:
 
 ```text
 Expected event to occur within 15 seconds after the start
@@ -369,7 +369,7 @@ expectly(["2026-01-01", "2026-01-15", "2026-01-31"]).toHaveDateRange({ days: 30 
 expectly(["2026-01-31", "2026-02-28"]).toHaveDateRange({ months: 1 });
 
 expectly(["2026-01-01", "2026-01-02", "2026-01-03"]).toHaveConsecutiveDates("day"); // sorted first; also "month", "year"
-expectly(transactions).toHaveDatesWithinRange("2026-01-01", "2026-03-31"); // inclusive
+expectly(transactions).toHaveDatesWithinRange("2026-01-01", "2026-03-31"); // inclusive; throws when start > end
 expectly(eventTimestamps).toHaveUniqueDates(); // nanosecond identity
 expectly(dailyRecords).toHaveUniqueDates({ ignoreTime: true, timeZone: "Europe/Amsterdam" });
 
@@ -414,16 +414,16 @@ expectly({ days: 31 }).toBeDurationBetween({ months: 1 }, { days: 31 }, { relati
 
 ## Upgrading from 1.x
 
-| 1.x                                                                  | 2.x                                                                                        |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Date matchers accept only `Date`                                     | `Date`, strict ISO strings and Temporal values                                             |
-| `toBeValidISODate()` validates `YYYY-MM-DDTHH:mm:ss[.sss][Z]`        | validates `YYYY-MM-DD`; use `toBeValidISODateTime()` for datetimes                         |
-| `toMatchTimeZone(offset)` checks the **machine's** offset for a Date | removed; use `toHaveOffset()` (explicit offset) or `toHaveTimeZone()` (IANA zone)          |
-| `toHaveDateRange()` approximates months/years with ±1 day tolerance  | exact, calendar-aware span                                                                 |
-| `toHaveDateGapsLargerThan()` approximates months (30.44 d) and years | calendar-exact                                                                             |
-| `toHaveUniqueDates(true)`                                            | `toHaveUniqueDates({ ignoreTime: true })`                                                  |
-| Deviation/gap objects allow fractional units                         | integer units, plus `milliseconds`, `microseconds`, `nanoseconds`, `weeks` (where allowed) |
-| `toBeBetween()` with `start > end` fails                             | throws                                                                                     |
+| 1.x                                                                   | 2.x                                                                                        |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Date matchers accept only `Date`                                      | `Date`, strict ISO strings and Temporal values                                             |
+| `toBeValidISODate()` validates `YYYY-MM-DDTHH:mm:ss[.sss][Z]`         | validates `YYYY-MM-DD`; use `toBeValidISODateTime()` for datetimes                         |
+| `toMatchTimeZone(offset)` checks the **machine's** offset for a Date  | removed; use `toHaveOffset()` (explicit offset) or `toHaveTimeZone()` (IANA zone)          |
+| `toHaveDateRange()` approximates months/years with ±1 day tolerance   | exact, calendar-aware span                                                                 |
+| `toHaveDateGapsLargerThan()` approximates months (30.44 d) and years  | calendar-exact                                                                             |
+| `toHaveUniqueDates(true)`                                             | `toHaveUniqueDates({ ignoreTime: true })`                                                  |
+| Deviation/gap objects allow fractional units                          | integer units, plus `milliseconds`, `microseconds`, `nanoseconds`, `weeks` (where allowed) |
+| `toBeBetween()` / `toHaveDatesWithinRange()` with `start > end` fails | throws                                                                                     |
 
 ## Related
 

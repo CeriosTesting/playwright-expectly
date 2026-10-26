@@ -1,4 +1,4 @@
-import { runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
+import { assertLocators, runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
@@ -39,6 +39,7 @@ async function countMatcher(
 	rule: CountRule,
 	options: CountOptions | undefined,
 ): Promise<ExpectlyMatcherResult> {
+	assertLocators([locator]);
 	const visible = options?.visible ?? false;
 	let actualCount = 0;
 

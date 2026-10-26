@@ -86,6 +86,14 @@ test.describe("keys and entries", () => {
 		expectlyCollection({ a: 1 }).not.toBeEmptyObject();
 		expectlyCollection([]).not.toBeEmptyObject();
 		expectlyCollection(null).not.toBeEmptyObject();
+		expectlyCollection(new Map()).toBeEmptyObject();
+		expectlyCollection(new Map([["a", 1]])).not.toBeEmptyObject();
+		expectlyCollection(new Set([1])).not.toBeEmptyObject();
+	});
+
+	test("numeric keys name their string keys", () => {
+		expectlyCollection({ 1: "a" }).toContainAllKeys([1]);
+		expectlyCollection({ 1: "a" }).toContainKey(1);
 	});
 
 	test("rejects non-object receivers for key matchers", () => {

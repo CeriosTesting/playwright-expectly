@@ -200,8 +200,11 @@ export const expectlyCollectionMatchers = withMatcherState({
 		assertObject(assertionName, received);
 		assertArgumentArray(assertionName, "keys", keys);
 		const actualKeys = ownKeys(received);
-		const missing = keys.filter((key) => !actualKeys.includes(key));
-		const extra = actualKeys.filter((key) => !keys.includes(key));
+		// Object keys are strings or symbols, so the number 1 names the key "1" (as in toContainKey).
+		const asKey = (key: PropertyKey): string | symbol => (typeof key === "symbol" ? key : String(key));
+		const expectedKeys = keys.map(asKey);
+		const missing = keys.filter((key) => !actualKeys.includes(asKey(key)));
+		const extra = actualKeys.filter((key) => !expectedKeys.includes(asKey(key)));
 		return result(
 			this,
 			assertionName,
@@ -258,7 +261,9 @@ export const expectlyCollectionMatchers = withMatcherState({
 	toBeEmptyObject(received: unknown) {
 		const assertionName = "toBeEmptyObject";
 		const isObject = typeof received === "object" && received !== null && !Array.isArray(received);
-		const keys = isObject ? ownKeys(received as Record<PropertyKey, unknown>) : [];
+		// A Map or Set keeps its entries outside own keys, so count those too.
+		const entries = received instanceof Map || received instanceof Set ? [...received.keys()] : [];
+		const keys = isObject ? [...ownKeys(received as Record<PropertyKey, unknown>), ...entries] : [];
 		return result(
 			this,
 			assertionName,

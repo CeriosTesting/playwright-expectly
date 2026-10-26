@@ -1,4 +1,4 @@
-import { withMatcherState } from "@cerios/playwright-expectly-core";
+import { assertLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect, errors, Locator } from "@playwright/test";
@@ -146,6 +146,7 @@ async function pollForStability(
 export const expectlyLocatorStateMatchers = withMatcherState({
 	async toBeStable(locator: Locator, options?: StabilityOptions) {
 		const assertionName = "toBeStable";
+		assertLocators([locator]);
 		const settings = resolveStabilitySettings(options, this.timeout);
 		const { stabilityDuration, timeout } = settings;
 

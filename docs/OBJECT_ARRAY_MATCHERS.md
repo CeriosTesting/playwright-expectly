@@ -12,7 +12,13 @@ Matchers for validating arrays of objects, including sorting and uniqueness chec
 
 Asserts that an array contains only unique objects (no duplicates).
 
-Uses deep equality comparison via JSON serialization to detect duplicates. Handles circular references gracefully.
+Duplicates are detected with Node's deep strict equality (`util.isDeepStrictEqual`), on the current values at the time of the assertion:
+
+- Property order does not matter
+- Prototypes count: a class instance never equals a plain object with the same fields
+- `Date`, `Map`, `Set` and typed array contents are compared, and bigints are supported
+- `0` and `-0` are distinct, and a property set to `undefined` differs from a missing property
+- Circular references are supported
 
 ```typescript
 import { expectly } from "@cerios/playwright-expectly";
@@ -35,11 +41,29 @@ const records = [
 	{ user: { id: 2, name: "Bob" }, status: "active" },
 ];
 expectly(records).toHaveOnlyUniqueObjects();
+
+// Property order does not matter
+expectly([
+	{ id: 1, name: "Alice" },
+	{ name: "Alice", id: 1 },
+]).not.toHaveOnlyUniqueObjects();
+
+// Dates are compared by value
+expectly([{ at: new Date("2026-01-01") }, { at: new Date("2026-01-01") }]).not.toHaveOnlyUniqueObjects();
+
+// Explicit undefined is not the same as a missing property
+expectly([{ id: 1 }, { id: 1, note: undefined }]).toHaveOnlyUniqueObjects();
 ```
 
 ## toHaveObjectsInAscendingOrderBy()
 
-Asserts that an array of objects is sorted in ascending order by a specific property.
+Asserts that an array of objects is sorted in ascending order by a specific property. Equal neighbours are allowed.
+
+The property can be an own property, an inherited one or a getter (for example on class instances). Its values must be orderable, and of the same type on every object:
+
+- Numbers, strings, bigints, booleans and valid `Date` objects can be ordered. Dates are compared by time, strings by UTF-16 code units
+- `NaN`, an Invalid Date, objects (including arrays), functions and symbols throw a `TypeError`, because they would make any order look valid
+- A missing property, `null`, `undefined` or a type mismatch between neighbours fails the assertion ([Property Validation](#property-validation))
 
 ```typescript
 // Validate sorted by age
@@ -65,11 +89,33 @@ const events = [
 	{ title: "Third", date: "2024-03-01" },
 ];
 expectly(events).toHaveObjectsInAscendingOrderBy("date");
+
+// Date objects are compared by time
+const orders = [{ placedAt: new Date("2026-01-05") }, { placedAt: new Date("2026-02-10") }];
+expectly(orders).toHaveObjectsInAscendingOrderBy("placedAt");
+
+// Getters on class instances
+class Invoice {
+	net: number;
+	vat: number;
+	constructor(net: number, vat: number) {
+		this.net = net;
+		this.vat = vat;
+	}
+	get total(): number {
+		return this.net + this.vat;
+	}
+}
+expectly([new Invoice(100, 21), new Invoice(200, 42)]).toHaveObjectsInAscendingOrderBy("total");
+
+// Values that cannot be ordered throw
+expectly([{ score: 10 }, { score: NaN }]).toHaveObjectsInAscendingOrderBy("score");
+// TypeError: Property "score" at index 1 is NaN, which cannot be ordered. Sort by numbers, strings, bigints, booleans or valid Dates.
 ```
 
 ## toHaveObjectsInDescendingOrderBy()
 
-Asserts that an array of objects is sorted in descending order by a specific property.
+Asserts that an array of objects is sorted in descending order by a specific property. The same value rules apply as for [toHaveObjectsInAscendingOrderBy()](#tohaveobjectsinascendingorderby).
 
 ```typescript
 // Validate sorted by score (high to low)
@@ -279,21 +325,21 @@ expectly(categoryA).toHaveObjectsInAscendingOrderBy("priority");
 
 ### Large Arrays
 
-The uniqueness matcher uses memoization for performance with large arrays:
+The uniqueness matcher compares each object with every distinct object seen before it, so its run time grows quadratically with the array length. Nothing is cached between assertions, so an array that was mutated after an earlier assertion is checked again from scratch. For thousands of objects, comparing a unique key is faster:
 
 ```typescript
-// Efficient even with thousands of objects
 const largeDataset = Array.from({ length: 10000 }, (_, i) => ({
 	id: i,
 	value: Math.random(),
 }));
 
-expectly(largeDataset).toHaveOnlyUniqueObjects(); // Fast
+// Compare the identifying field instead of whole objects
+expectly(largeDataset.map((item) => item.id)).toHaveUniqueValues();
 ```
 
 ### Circular References
 
-Circular references are handled gracefully:
+Circular references are supported:
 
 ```typescript
 const obj1: any = { id: 1, name: "Alice" };

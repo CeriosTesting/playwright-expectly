@@ -12,6 +12,7 @@ Part of the [playwright-expectly](https://github.com/CeriosTesting/playwright-ex
 - 🤖 **AI-Ready** — Tolerates minor wording variations, typos, and rephrasing
 - 🔀 **Word-order-insensitive** — `"hello world"` and `"world hello"` both score 100
 - 🎯 **Configurable threshold** — 0–100 similarity score, default 80
+- 🌍 **Unicode-aware** — NFC normalization, letters in any script kept, punctuation treated as word separators; optional case-sensitive comparison
 - 🎨 **Locator support** — Works directly on Playwright `Locator` objects with automatic polling
 - 💪 **Type-Safe** — Full TypeScript support with Playwright `expect` type augmentation
 - ⚡ **Lightweight** — Only Playwright and `fuzzball` required
@@ -94,8 +95,8 @@ expectlyFuzzy("Hello Wrold").toMatchFuzzy("Hello World");
 // Word-order-insensitive — scores 100
 expectlyFuzzy("world hello").toMatchFuzzy("hello world");
 
-// Custom threshold for more lenient matching
-expectlyFuzzy("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 70);
+// Custom threshold for more lenient matching (scores 63)
+expectlyFuzzy("The cat sat on the mat").toMatchFuzzy("A cat sits on a mat", 60);
 
 // With negation
 expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
@@ -105,24 +106,32 @@ expectlyFuzzy("completely different").not.toMatchFuzzy("hello world");
 
 ## Available Matchers
 
-### `toMatchFuzzy(expected, threshold?)`
+### `toMatchFuzzy(expected, threshold?, options?)`
 
 Asserts that a string or locator's text content fuzzy-matches the expected string using fuzzball's `token_sort_ratio` algorithm.
 
-| Parameter   | Type     | Default | Description                                           |
-| ----------- | -------- | ------- | ----------------------------------------------------- |
-| `expected`  | `string` | —       | The string to compare against                         |
-| `threshold` | `number` | `80`    | Minimum similarity score (0–100). Pass to be lenient. |
+| Parameter               | Type      | Default | Description                                                    |
+| ----------------------- | --------- | ------- | -------------------------------------------------------------- |
+| `expected`              | `string`  | —       | The string to compare against                                  |
+| `threshold`             | `number`  | `80`    | Minimum similarity score (0–100). Pass to be lenient.          |
+| `options.caseSensitive` | `boolean` | `false` | Compare letter case too                                        |
+| `options.timeout`       | `number`  | —       | Locators only: maximum time to retry (default: expect timeout) |
 
 **Key behaviours:**
 
-- Scores range from **0–100**; assertion passes when `score >= threshold`
+- Scores range from **0–100** and are rounded to integers; assertion passes when `score >= threshold`
 - **Word-order-insensitive**: token sort normalises word order before comparison
-- Locator variant **polls** until the condition is met (or times out)
+- **Preprocessing**: both strings are NFC-normalized, runs of punctuation, symbols and whitespace become single word separators, letters in any script are kept, and case is ignored unless `caseSensitive: true`
+- Strings that are equal after preprocessing score **100**, including two empty strings, so `"HELLO, World!"` matches `"hello world"` at threshold 100
+- Non-string receivers throw a `TypeError`
+- Locator variant **polls** until the condition is met (or times out); a missing element fails both the assertion and `.not` with `element(s) not found`
 
 ```typescript
 // String
-expectlyFuzzy("Hello Wrold").toMatchFuzzy("Hello World"); // score ~89 ≥ 80 ✓
+expectlyFuzzy("Hello Wrold").toMatchFuzzy("Hello World"); // score 91 ≥ 80 ✓
+
+// Case-sensitive
+expectlyFuzzy("Hello World").not.toMatchFuzzy("hello world", 100, { caseSensitive: true });
 
 // Locator (async)
 await expectlyFuzzyLocator(page.locator("[data-testid='summary']")).toMatchFuzzy(
