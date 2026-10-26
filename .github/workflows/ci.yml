@@ -73,9 +73,9 @@ jobs:
   minimum-playwright:
     name: Published packages (Playwright 1.40)
     runs-on: ubuntu-22.04
-    env:
-      CONSUMER: ${{ runner.temp }}/expectly-minimum-consumer
     steps:
+      # The runner context is not available in job-level env, so derive the path inside a step.
+      - run: echo "CONSUMER=$RUNNER_TEMP/expectly-minimum-consumer" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
