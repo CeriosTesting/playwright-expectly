@@ -37,3 +37,5 @@ Locator matchers now resolve elements the way Playwright's own assertions do.
   - `toMatchPattern` throws for a non-RegExp pattern instead of matching everything.
 - **Stack traces:** stack frame filtering is anchored to the package and workspace folders, so user code in a folder named `playwright-expectly/src` keeps its frames.
 - **New core exports:** `pollLocators` and `locatorNotFoundMessage` for custom locator matchers.
+
+Locator-only matchers called on something other than a Locator throw a clear `TypeError` instead of an internal error.

@@ -134,6 +134,13 @@ test.describe("locator polling - positioning", () => {
 	});
 });
 
+test.describe("locator polling - receivers", () => {
+	test("locator-only matchers explain a non-locator receiver", async () => {
+		const error = await getRejectedError(expectlyLocator("HELLO" as unknown as Locator).toBeUpperCase());
+		expect(error.message).toContain("needs a Playwright Locator, got: string");
+	});
+});
+
 test.describe("locator polling - small fixes", () => {
 	test("toHaveDirectText should normalize the expected text like the received text", async ({ page }) => {
 		await page.setContent("<div id='t'>  a   b  </div>");

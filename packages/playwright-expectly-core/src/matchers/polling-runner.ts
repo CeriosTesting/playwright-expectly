@@ -66,6 +66,13 @@ export async function pollLocators<T>(
 	read: (actionOptions: { timeout: number }) => Promise<T>,
 	check: (value: T) => boolean,
 ): Promise<LocatorPollResult<T>> {
+	for (const locator of locators) {
+		if (typeof locator !== "object" || locator === null || typeof (locator as Partial<Locator>).count !== "function") {
+			throw new TypeError(
+				`This matcher needs a Playwright Locator, got: ${locator === null ? "null" : typeof locator}`,
+			);
+		}
+	}
 	const timeout = options?.timeout ?? state.timeout;
 	const deadline = timeout ? Date.now() + timeout : 0;
 	// Returning the undesired condition keeps polling, for the assertion and for its `.not` form.
