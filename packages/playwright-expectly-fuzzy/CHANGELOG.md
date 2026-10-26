@@ -1,5 +1,82 @@
 # @cerios/playwright-expectly-fuzzy
 
+## 2.0.0
+
+### Major Changes
+
+- 1b21746: **Breaking:** rename the Date matcher `toBeCloseTo` to `toBeDateCloseTo`, and remove the deprecated `setupExpectly()` / `setupExpectlyFuzzy()`.
+
+  - **`toBeCloseTo` → `toBeDateCloseTo`** (`@cerios/playwright-expectly`). The Date matcher was registered under the same name as Playwright's built-in numeric `toBeCloseTo`, so every `expect` extended with `expectlyMatchers` (including `mergeExpects()` compositions and the standalone `expectly`) lost numeric support: `expect(0.1 + 0.2).toBeCloseTo(0.3, 5)` threw `Invalid actual date`, while TypeScript still accepted the call. The Date matcher now has its own name, and Playwright's numeric `toBeCloseTo` keeps working unchanged next to it.
+
+    ```typescript
+    // Before
+    expect(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
+
+    // After
+    expect(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
+    ```
+
+  - **`setupExpectly()` and `setupExpectlyFuzzy()` are removed.** Both were deprecated in 1.x. Extend Playwright's `expect` yourself and capture the return value, e.g. in `tests/support/expect.ts`:
+
+    ```typescript
+    import { expectlyMatchers } from "@cerios/playwright-expectly";
+    import { expect as baseExpect, test } from "@playwright/test";
+
+    export const expect = baseExpect.extend(expectlyMatchers);
+    export { test };
+    ```
+
+### Minor Changes
+
+- 3f88bd6: Locator matchers now resolve elements the way Playwright's own assertions do.
+
+  - **Timeouts:** each locator action receives the remaining assertion time, so a short `actionTimeout` no longer cuts a longer `{ timeout }` or expect timeout short.
+  - **Missing elements:** a missing element no longer blocks inside a Playwright action. Polling continues until it appears; if it never does, both the assertion and its `.not` form fail with `element(s) not found`, as `expect(locator).not.toHaveAttribute()` does. Previously the `.not` form failed after the full timeout with a misleading `Received: null`.
+  - **Errors:** strict mode violations and other non-timeout errors are thrown at once instead of being retried or turned into a failed assertion.
+  - **Positioning matchers** (`toBeAbove`, `toBeBelow`, `toBeLeftOf`, `toBeRightOf`):
+    - A hidden element (no bounding box) is reported as such, and its `.not` form no longer passes without comparing anything.
+    - Edges within 0.5px count as touching.
+    - Messages print real edge values.
+  - **`toBeStable`:**
+    - `timeout: 0` means no timeout, as in Playwright.
+    - The default stability window shrinks to fit a short expect timeout.
+    - The deadline is checked after every sleep.
+    - Strict mode violations are thrown.
+    - A missing element fails the `.not` form too.
+  - **Smaller fixes:**
+    - `toHaveDirectText` normalizes whitespace in the expected text as it does in the element text.
+    - `toHaveDataAttribute` prints regex expectations correctly.
+    - `toHaveCountVisible` rejects negative or fractional counts.
+  - **Fuzzy matching:**
+    - `toMatchFuzzy` preprocesses with Unicode-aware rules: NFC normalization, non-ASCII letters kept, punctuation and whitespace as separators.
+    - Text that is equal after preprocessing (including two empty strings) scores 100.
+    - A new `{ caseSensitive: true }` option compares letter case.
+    - Non-string receivers get a clear error.
+  - **Validators:**
+    - `toBeUUID` accepts RFC 9562 versions 1–8 and the nil and max UUIDs.
+    - `toBeValidUrl` requires an `http`/`https` URL with `//` and a valid host by default (`{ protocols }` accepts other schemes), so `localhost:3000`, `C:\Windows` and `javascript:` URLs are no longer valid.
+    - `toBeValidEmail` rejects leading, trailing and consecutive dots and hyphen-edged domain labels.
+    - Case and title-case checks are Unicode-aware and keep inner capitals such as `McDonald` and `Jean-Luc`.
+    - `toBeAlphanumeric` takes `{ unicode: true }`.
+    - `toMatchPattern` throws for a non-RegExp pattern instead of matching everything.
+  - **Stack traces:** stack frame filtering is anchored to the package and workspace folders, so user code in a folder named `playwright-expectly/src` keeps its frames.
+  - **Wrong receivers:** locator-only matchers called on something other than a Locator throw a clear `TypeError` instead of an internal error.
+  - **New core exports:** `pollLocators` and `locatorNotFoundMessage` for custom locator matchers.
+
+### Patch Changes
+
+- 1b21746: Report thrown matcher validation errors and locator API errors at the user's assertion call site. Preserve synchronous behavior, asynchronous rejections, error identity, messages, causes, and metadata. Nested native assertion and browser API steps remain available for diagnostics.
+- 1b21746: Fix stale object-uniqueness results after mutation and compare rich values using deep strict equality. Make regex assertions independent of `lastIndex`, isolate concurrent return-aware polling assertions, fix consecutive-month checks at month ends, and reject impossible ISO dates.
+
+  Reject cyclic partial-matching inputs with an explicit error while allowing shared acyclic references. Numeric comparisons reject non-finite values; sum, average and median use a magnitude-aware floating-point tolerance.
+
+  Defer matcher stack formatting and partial-match diagnostic scoring until needed, dispose visibility-check handles, and reduce generated declarations with explicit expect types. Derive matcher return types from the public extension API to support Playwright 1.40 declarations, and add packaged-consumer compatibility checks in CI.
+
+- Updated dependencies [1b21746]
+- Updated dependencies [3f88bd6]
+- Updated dependencies [1b21746]
+  - @cerios/playwright-expectly-core@1.1.0
+
 ## 1.0.1
 
 ### Patch Changes
