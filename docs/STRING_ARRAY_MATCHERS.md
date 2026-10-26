@@ -2,6 +2,8 @@
 
 Matchers for validating arrays of strings, including sorting and uniqueness checks.
 
+These matchers require an array of strings. Any other value throws a `TypeError` that names the received type, such as `toHaveAscendingOrder: received value must be a string array, got: array of string | number`.
+
 ## Available Matchers
 
 - [toHaveAscendingOrder()](#tohaveascendingorder)
@@ -10,6 +12,40 @@ Matchers for validating arrays of strings, including sorting and uniqueness chec
 - [toHaveStrictlyDescendingOrder()](#tohavestrictlydescendingorder)
 - [toBeMonotonic()](#tobemonotonic)
 - [toHaveUniqueValues()](#tohaveuniquevalues)
+
+## Order Options
+
+The ordering matchers (`toHaveAscendingOrder()`, `toHaveDescendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveStrictlyDescendingOrder()` and `toBeMonotonic()`) accept an options object:
+
+| Option    | Default | Description                                                                              |
+| --------- | ------- | ---------------------------------------------------------------------------------------- |
+| `numeric` | `false` | Compare digit sequences by numeric value, so `"2"` sorts before `"10"` (natural order)   |
+| `locale`  | -       | Compare with the rules of a locale (an `Intl.Collator` locale), such as `"de"` or `"sv"` |
+
+Without `numeric` or `locale`, strings are compared by UTF-16 code units: uppercase sorts before lowercase, and `"10"` before `"2"`.
+
+```typescript
+// Natural order
+expectly(["Item 1", "Item 2", "Item 10"]).not.toHaveAscendingOrder();
+expectly(["Item 1", "Item 2", "Item 10"]).toHaveAscendingOrder({ numeric: true });
+
+// Locale-aware order
+expectly(["Änne", "Österreich", "Zebra"]).toHaveAscendingOrder({ locale: "de" });
+expectly(["Zebra", "Änne", "Österreich"]).toHaveAscendingOrder({ locale: "sv" });
+
+// Both
+expectly(["Datei 2", "Datei 10", "Übersicht"]).toHaveStrictlyAscendingOrder({ numeric: true, locale: "de" });
+```
+
+### With the combined `expectly`
+
+`toHaveAscendingOrder()`, `toHaveDescendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveStrictlyDescendingOrder()`, `toBeMonotonic()` and `toHaveUniqueValues()` exist for both number and string arrays. The combined `expectly` (and `expect` extended with `expectlyMatchers`) picks the implementation by element type: an array of numbers uses the [number array matchers](./NUMBER_ARRAY_MATCHERS.md), so numbers are compared and printed as numbers, and any other array uses the string array matchers. The string options have no effect on number arrays.
+
+```typescript
+expectly([2, 10, 100]).toHaveAscendingOrder(); // Numeric comparison
+expectly(["2", "10", "100"]).not.toHaveAscendingOrder(); // Code-unit comparison
+expectly(["2", "10", "100"]).toHaveAscendingOrder({ numeric: true });
+```
 
 ## toHaveAscendingOrder()
 
@@ -29,6 +65,9 @@ expectly(categories).toHaveAscendingOrder();
 // Case-sensitive sorting
 const items = ["Apple", "Banana", "apple", "banana"];
 expectly(items).toHaveAscendingOrder(); // Uppercase comes first
+
+// Natural order for numbered items
+expectly(["Chapter 2", "Chapter 10"]).toHaveAscendingOrder({ numeric: true });
 ```
 
 ## toHaveDescendingOrder()
@@ -75,15 +114,15 @@ Unlike `toHaveDescendingOrder()`, this rejects equal consecutive values.
 
 ```typescript
 // Validate decreasing values
-const priorities = ["urgent", "high", "medium", "low"];
+const priorities = ["P3", "P2", "P1"];
 expectly(priorities).toHaveStrictlyDescendingOrder();
 
 // This would fail (has equal consecutive values)
 expectly(["z", "y", "y", "x"]).not.toHaveStrictlyDescendingOrder();
 
 // All values must be different
-const ranks = ["gold", "silver", "bronze"];
-expectly(ranks).toHaveStrictlyDescendingOrder();
+const versions = ["v10", "v9", "v2"];
+expectly(versions).toHaveStrictlyDescendingOrder({ numeric: true });
 ```
 
 ## toBeMonotonic()
@@ -228,14 +267,14 @@ test("validate version progression", async () => {
 	const versions = await api.getReleases();
 	const versionNumbers = versions.map((v) => v.version);
 
-	// Versions should increase
-	expectly(versionNumbers).toHaveStrictlyAscendingOrder();
+	// Versions should increase ("1.9.0" before "1.10.0")
+	expectly(versionNumbers).toHaveStrictlyAscendingOrder({ numeric: true });
 });
 ```
 
 ## Case Sensitivity
 
-String comparison is case-sensitive. Uppercase letters come before lowercase in ASCII order:
+By default, string comparison is case-sensitive. Uppercase letters come before lowercase in code-unit order:
 
 ```typescript
 // This will pass (uppercase comes first)
@@ -244,7 +283,10 @@ expectly(["Apple", "Banana", "apple"]).toHaveAscendingOrder();
 // This will fail
 expectly(["apple", "Apple", "Banana"]).not.toHaveAscendingOrder();
 
-// To normalize case, transform the array first
+// Dictionary order with a locale
+expectly(["apple", "Apple", "Banana"]).toHaveAscendingOrder({ locale: "en" });
+
+// Or normalize case first
 const items = ["apple", "Apple", "Banana"];
 const normalized = items.map((s) => s.toLowerCase()).sort();
 expectly(normalized).toHaveAscendingOrder();
@@ -256,8 +298,7 @@ Whitespace is significant in string comparisons:
 
 ```typescript
 // These are different strings
-expectly(["a", "a "]).not.toHaveUniqueValues(); // Has duplicate (false)
-expectly(["a", "a "]).toHaveUniqueValues(); // Actually different (true)
+expectly(["a", "a "]).toHaveUniqueValues();
 
 // Trim whitespace if needed
 const values = ["  a  ", "  b  ", "  c  "];
@@ -267,19 +308,18 @@ expectly(trimmed).toHaveAscendingOrder();
 
 ## Locale-Specific Sorting
 
-For locale-specific sorting, sort the array with `localeCompare` before validating:
+Pass `locale` to compare with the rules of a language, for example for accented letters:
 
 ```typescript
-test("validate locale-specific sorting", async () => {
-	const names = ["Änne", "Zebra", "Österreich"];
+test("validate locale-specific sorting", async ({ page }) => {
+	const names = await page.locator(".customer-name").allTextContents();
 
-	// Sort with locale
-	const sorted = [...names].sort((a, b) => a.localeCompare(b, "de"));
-
-	// Validate the sorted result
-	expectly(sorted).toHaveAscendingOrder();
+	// German: "Ä" sorts with "A", "Ö" with "O"
+	expectly(names).toHaveAscendingOrder({ locale: "de" });
 });
 ```
+
+To retry until a list on the page is sorted, use [`toHaveTextsInAscendingOrder()`](./LOCATOR_MATCHERS.md#tohavetextsinascendingorder--tohavetextsindescendingorder) on the locator instead of reading the texts once.
 
 ## Error Messages
 
@@ -310,7 +350,7 @@ All matchers are optimized for performance:
 // Efficient even with thousands of strings
 const largeArray = Array.from({ length: 10000 }, (_, i) => `item${i}`);
 expectly(largeArray).toHaveUniqueValues(); // Fast
-expectly(largeArray).toHaveAscendingOrder(); // Fast
+expectly(largeArray).toHaveAscendingOrder({ numeric: true }); // Fast ("item9" before "item10")
 ```
 
 ### Monotonic Checking

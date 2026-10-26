@@ -3,6 +3,15 @@ import { expect, test } from "@playwright/test";
 import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
 import { expectlyDate } from "../src/expectly-date";
 
+/**
+ * Local midnight of a calendar date. Calendar matchers read `Date` values in the machine's zone, and
+ * `new Date("YYYY-MM-DD")` is UTC midnight, which falls on the previous day west of UTC.
+ */
+function localDate(isoDate: string): Date {
+	const [year, month, day] = isoDate.split("-").map(Number);
+	return new Date(year, month - 1, day);
+}
+
 test.describe("toBeDateCloseTo", () => {
 	test("should pass when dates are exactly the same", () => {
 		const date = new Date("2023-01-01T12:00:00Z");
@@ -143,9 +152,9 @@ test.describe("toBeDateCloseTo", () => {
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(actual).toBeDateCloseTo(expected, { minutes: 2 });
 		});
-		expect(error.message).toContain("300.000 seconds");
+		expect(error.message).toContain("Difference:        5 minutes (later)");
 		expect(error.message).toContain("later");
-		expect(error.message).toContain("120.000 seconds");
+		expect(error.message).toContain("Allowed deviation: ±2 minutes");
 	});
 });
 
@@ -409,7 +418,7 @@ test.describe("toBeBetween", () => {
 
 test.describe("toBeSameDay", () => {
 	test("should pass when dates are on the same day", () => {
-		expectlyDate(new Date("2023-01-15T08:00:00Z")).toBeSameDay(new Date("2023-01-15T20:00:00Z"));
+		expectlyDate(new Date("2023-01-15T08:00:00Z")).toBeSameDay(new Date("2023-01-15T20:00:00Z"), { timeZone: "UTC" });
 	});
 
 	test("should pass when dates are identical", () => {
@@ -419,73 +428,75 @@ test.describe("toBeSameDay", () => {
 
 	test("should fail when dates are on different days", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-15")).toBeSameDay(new Date("2023-01-16"));
+			expectlyDate(localDate("2023-01-15")).toBeSameDay(localDate("2023-01-16"));
 		}).toThrow(/Expected dates to be the same day/);
 	});
 
 	test("should fail when dates are in different months", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-31")).toBeSameDay(new Date("2023-02-01"));
+			expectlyDate(localDate("2023-01-31")).toBeSameDay(localDate("2023-02-01"));
 		}).toThrow();
 	});
 
 	test("should work with .not", () => {
-		expectlyDate(new Date("2023-01-15")).not.toBeSameDay(new Date("2023-01-16"));
+		expectlyDate(localDate("2023-01-15")).not.toBeSameDay(localDate("2023-01-16"));
 	});
 
 	test("should fail with .not when dates are same day", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-15T08:00:00Z")).not.toBeSameDay(new Date("2023-01-15T20:00:00Z"));
+			expectlyDate(new Date("2023-01-15T08:00:00Z")).not.toBeSameDay(new Date("2023-01-15T20:00:00Z"), {
+				timeZone: "UTC",
+			});
 		}).toThrow(/Expected dates to not be the same day/);
 	});
 });
 
 test.describe("toBeSameMonth", () => {
 	test("should pass when dates are in the same month", () => {
-		expectlyDate(new Date("2023-01-01")).toBeSameMonth(new Date("2023-01-31"));
+		expectlyDate(localDate("2023-01-01")).toBeSameMonth(localDate("2023-01-31"));
 	});
 
 	test("should fail when dates are in different months", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-31")).toBeSameMonth(new Date("2023-02-01"));
+			expectlyDate(localDate("2023-01-31")).toBeSameMonth(localDate("2023-02-01"));
 		}).toThrow(/Expected dates to be in the same month/);
 	});
 
 	test("should fail when dates are in different years", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-15")).toBeSameMonth(new Date("2024-01-15"));
+			expectlyDate(localDate("2023-01-15")).toBeSameMonth(localDate("2024-01-15"));
 		}).toThrow();
 	});
 
 	test("should work with .not", () => {
-		expectlyDate(new Date("2023-01-15")).not.toBeSameMonth(new Date("2023-02-15"));
+		expectlyDate(localDate("2023-01-15")).not.toBeSameMonth(localDate("2023-02-15"));
 	});
 
 	test("should fail with .not when dates are same month", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-01")).not.toBeSameMonth(new Date("2023-01-31"));
+			expectlyDate(localDate("2023-01-01")).not.toBeSameMonth(localDate("2023-01-31"));
 		}).toThrow(/Expected dates to not be in the same month/);
 	});
 });
 
 test.describe("toBeSameYear", () => {
 	test("should pass when dates are in the same year", () => {
-		expectlyDate(new Date("2023-01-01")).toBeSameYear(new Date("2023-12-31"));
+		expectlyDate(localDate("2023-01-01")).toBeSameYear(localDate("2023-12-31"));
 	});
 
 	test("should fail when dates are in different years", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-12-31")).toBeSameYear(new Date("2024-01-01"));
+			expectlyDate(localDate("2023-12-31")).toBeSameYear(localDate("2024-01-01"));
 		}).toThrow(/Expected dates to be in the same year/);
 	});
 
 	test("should work with .not", () => {
-		expectlyDate(new Date("2023-01-15")).not.toBeSameYear(new Date("2024-01-15"));
+		expectlyDate(localDate("2023-01-15")).not.toBeSameYear(localDate("2024-01-15"));
 	});
 
 	test("should fail with .not when dates are same year", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-01")).not.toBeSameYear(new Date("2023-12-31"));
+			expectlyDate(localDate("2023-01-01")).not.toBeSameYear(localDate("2023-12-31"));
 		}).toThrow(/Expected dates to not be in the same year/);
 	});
 });
@@ -596,32 +607,32 @@ test.describe("toBeTomorrow", () => {
 
 test.describe("toBeWeekday", () => {
 	test("should pass for Monday", () => {
-		const monday = new Date("2023-01-02"); // A Monday
+		const monday = localDate("2023-01-02"); // A Monday
 		expectlyDate(monday).toBeWeekday();
 	});
 
 	test("should pass for Tuesday", () => {
-		const tuesday = new Date("2023-01-03");
+		const tuesday = localDate("2023-01-03");
 		expectlyDate(tuesday).toBeWeekday();
 	});
 
 	test("should pass for Wednesday", () => {
-		const wednesday = new Date("2023-01-04");
+		const wednesday = localDate("2023-01-04");
 		expectlyDate(wednesday).toBeWeekday();
 	});
 
 	test("should pass for Thursday", () => {
-		const thursday = new Date("2023-01-05");
+		const thursday = localDate("2023-01-05");
 		expectlyDate(thursday).toBeWeekday();
 	});
 
 	test("should pass for Friday", () => {
-		const friday = new Date("2023-01-06");
+		const friday = localDate("2023-01-06");
 		expectlyDate(friday).toBeWeekday();
 	});
 
 	test("should fail for Saturday", () => {
-		const saturday = new Date("2023-01-07");
+		const saturday = localDate("2023-01-07");
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(saturday).toBeWeekday();
 		});
@@ -630,7 +641,7 @@ test.describe("toBeWeekday", () => {
 	});
 
 	test("should fail for Sunday", () => {
-		const sunday = new Date("2023-01-01");
+		const sunday = localDate("2023-01-01");
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(sunday).toBeWeekday();
 		});
@@ -638,23 +649,23 @@ test.describe("toBeWeekday", () => {
 	});
 
 	test("should work with .not for weekend", () => {
-		expectlyDate(new Date("2023-01-07")).not.toBeWeekday(); // Saturday
+		expectlyDate(localDate("2023-01-07")).not.toBeWeekday(); // Saturday
 	});
 });
 
 test.describe("toBeWeekend", () => {
 	test("should pass for Saturday", () => {
-		const saturday = new Date("2023-01-07");
+		const saturday = localDate("2023-01-07");
 		expectlyDate(saturday).toBeWeekend();
 	});
 
 	test("should pass for Sunday", () => {
-		const sunday = new Date("2023-01-01");
+		const sunday = localDate("2023-01-01");
 		expectlyDate(sunday).toBeWeekend();
 	});
 
 	test("should fail for Monday", () => {
-		const monday = new Date("2023-01-02");
+		const monday = localDate("2023-01-02");
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(monday).toBeWeekend();
 		});
@@ -663,7 +674,7 @@ test.describe("toBeWeekend", () => {
 	});
 
 	test("should fail for Friday", () => {
-		const friday = new Date("2023-01-06");
+		const friday = localDate("2023-01-06");
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(friday).toBeWeekend();
 		});
@@ -671,7 +682,7 @@ test.describe("toBeWeekend", () => {
 	});
 
 	test("should work with .not for weekday", () => {
-		expectlyDate(new Date("2023-01-02")).not.toBeWeekend(); // Monday
+		expectlyDate(localDate("2023-01-02")).not.toBeWeekend(); // Monday
 	});
 });
 
@@ -722,31 +733,31 @@ test.describe("toBeInTheFuture", () => {
 
 test.describe("toBeLeapYear", () => {
 	test("should pass for leap year divisible by 4", () => {
-		expectlyDate(new Date("2024-01-01")).toBeLeapYear();
+		expectlyDate(localDate("2024-01-01")).toBeLeapYear();
 	});
 
 	test("should pass for leap year divisible by 400", () => {
-		expectlyDate(new Date("2000-01-01")).toBeLeapYear();
+		expectlyDate(localDate("2000-01-01")).toBeLeapYear();
 	});
 
 	test("should pass for 2020", () => {
-		expectlyDate(new Date("2020-06-15")).toBeLeapYear();
+		expectlyDate(localDate("2020-06-15")).toBeLeapYear();
 	});
 
 	test("should fail for non-leap year", () => {
 		expect(() => {
-			expectlyDate(new Date("2023-01-01")).toBeLeapYear();
+			expectlyDate(localDate("2023-01-01")).toBeLeapYear();
 		}).toThrow(/Expected year to be a leap year/);
 	});
 
 	test("should fail for year divisible by 100 but not 400", () => {
 		expect(() => {
-			expectlyDate(new Date("1900-01-01")).toBeLeapYear();
+			expectlyDate(localDate("1900-01-01")).toBeLeapYear();
 		}).toThrow();
 	});
 
 	test("should work with .not for non-leap year", () => {
-		expectlyDate(new Date("2023-01-01")).not.toBeLeapYear();
+		expectlyDate(localDate("2023-01-01")).not.toBeLeapYear();
 	});
 });
 
@@ -780,7 +791,7 @@ test.describe("toHaveDateRange", () => {
 		const dates = [new Date("2023-01-01"), new Date("2023-01-11")];
 		expect(() => {
 			expectlyDate(dates).toHaveDateRange({ days: 20 });
-		}).toThrow(/Expected date range to match/);
+		}).toThrow(/Expected date range to span exactly 20 days/);
 	});
 
 	test("should throw for empty array", () => {
@@ -792,27 +803,27 @@ test.describe("toHaveDateRange", () => {
 
 test.describe("toHaveConsecutiveDates", () => {
 	test("should pass for consecutive days", () => {
-		const dates = [new Date("2023-01-01"), new Date("2023-01-02"), new Date("2023-01-03")];
+		const dates = [localDate("2023-01-01"), localDate("2023-01-02"), localDate("2023-01-03")];
 		expectlyDate(dates).toHaveConsecutiveDates("day");
 	});
 
 	test("should pass for consecutive months", () => {
-		const dates = [new Date("2023-01-15"), new Date("2023-02-15"), new Date("2023-03-15")];
+		const dates = [localDate("2023-01-15"), localDate("2023-02-15"), localDate("2023-03-15")];
 		expectlyDate(dates).toHaveConsecutiveDates("month");
 	});
 
 	test("should pass for consecutive years", () => {
-		const dates = [new Date("2021-06-15"), new Date("2022-06-15"), new Date("2023-06-15")];
+		const dates = [localDate("2021-06-15"), localDate("2022-06-15"), localDate("2023-06-15")];
 		expectlyDate(dates).toHaveConsecutiveDates("year");
 	});
 
 	test("should pass with unsorted dates", () => {
-		const dates = [new Date("2023-01-03"), new Date("2023-01-01"), new Date("2023-01-02")];
+		const dates = [localDate("2023-01-03"), localDate("2023-01-01"), localDate("2023-01-02")];
 		expectlyDate(dates).toHaveConsecutiveDates("day");
 	});
 
 	test("should fail for non-consecutive days", () => {
-		const dates = [new Date("2023-01-01"), new Date("2023-01-03")];
+		const dates = [localDate("2023-01-01"), localDate("2023-01-03")];
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveConsecutiveDates("day");
 		});
@@ -821,7 +832,7 @@ test.describe("toHaveConsecutiveDates", () => {
 	});
 
 	test("should fail for non-consecutive months", () => {
-		const dates = [new Date("2023-01-15"), new Date("2023-03-15")];
+		const dates = [localDate("2023-01-15"), localDate("2023-03-15")];
 		expect(() => {
 			expectlyDate(dates).toHaveConsecutiveDates("month");
 		}).toThrow();
@@ -836,19 +847,19 @@ test.describe("toHaveConsecutiveDates", () => {
 
 test.describe("toHaveDatesWithinRange", () => {
 	test("should pass when all dates are within range", () => {
-		const dates = [new Date("2023-01-10"), new Date("2023-01-15"), new Date("2023-01-20")];
-		expectlyDate(dates).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"));
+		const dates = [localDate("2023-01-10"), localDate("2023-01-15"), localDate("2023-01-20")];
+		expectlyDate(dates).toHaveDatesWithinRange(localDate("2023-01-01"), localDate("2023-01-31"));
 	});
 
 	test("should pass with dates at boundaries", () => {
-		const dates = [new Date("2023-01-01"), new Date("2023-01-15"), new Date("2023-01-31")];
-		expectlyDate(dates).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"));
+		const dates = [localDate("2023-01-01"), localDate("2023-01-15"), localDate("2023-01-31")];
+		expectlyDate(dates).toHaveDatesWithinRange(localDate("2023-01-01"), localDate("2023-01-31"));
 	});
 
 	test("should fail when some dates are out of range", () => {
-		const dates = [new Date("2022-12-31"), new Date("2023-01-15"), new Date("2023-02-01")];
+		const dates = [localDate("2022-12-31"), localDate("2023-01-15"), localDate("2023-02-01")];
 		const error = getRejectedErrorSync(() => {
-			expectlyDate(dates).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"));
+			expectlyDate(dates).toHaveDatesWithinRange(localDate("2023-01-01"), localDate("2023-01-31"));
 		});
 		expect(error.message).toContain("Expected all dates to be within range");
 		expect(error.message).toContain("Out of range dates");
@@ -856,14 +867,14 @@ test.describe("toHaveDatesWithinRange", () => {
 
 	test("should throw for empty array", () => {
 		expect(() => {
-			expectlyDate([]).toHaveDatesWithinRange(new Date("2023-01-01"), new Date("2023-01-31"));
+			expectlyDate([]).toHaveDatesWithinRange(localDate("2023-01-01"), localDate("2023-01-31"));
 		}).toThrow(/Array must contain at least one date/);
 	});
 });
 
 test.describe("toHaveUniqueDates", () => {
 	test("should pass when all dates are unique", () => {
-		const dates = [new Date("2023-01-01"), new Date("2023-01-02"), new Date("2023-01-03")];
+		const dates = [localDate("2023-01-01"), localDate("2023-01-02"), localDate("2023-01-03")];
 		expectlyDate(dates).toHaveUniqueDates();
 	});
 
@@ -873,12 +884,12 @@ test.describe("toHaveUniqueDates", () => {
 			new Date("2023-01-02T12:00:00Z"),
 			new Date("2023-01-03T18:00:00Z"),
 		];
-		expectlyDate(dates).toHaveUniqueDates(true);
+		expectlyDate(dates).toHaveUniqueDates({ ignoreTime: true, timeZone: "UTC" });
 	});
 
 	test("should fail when dates have duplicates", () => {
 		const date = new Date("2023-01-01T12:00:00Z");
-		const dates = [date, new Date("2023-01-02"), date];
+		const dates = [date, localDate("2023-01-02"), date];
 		const error = getRejectedErrorSync(() => {
 			expectlyDate(dates).toHaveUniqueDates();
 		});
@@ -889,13 +900,13 @@ test.describe("toHaveUniqueDates", () => {
 	test("should fail when same day but different times with ignoreTime", () => {
 		const dates = [new Date("2023-01-01T08:00:00Z"), new Date("2023-01-01T12:00:00Z")];
 		expect(() => {
-			expectlyDate(dates).toHaveUniqueDates(true);
+			expectlyDate(dates).toHaveUniqueDates({ ignoreTime: true, timeZone: "UTC" });
 		}).toThrow();
 	});
 
 	test("should pass when same day but different times without ignoreTime", () => {
 		const dates = [new Date("2023-01-01T08:00:00Z"), new Date("2023-01-01T12:00:00Z")];
-		expectlyDate(dates).toHaveUniqueDates(false);
+		expectlyDate(dates).toHaveUniqueDates({ ignoreTime: false });
 	});
 
 	test("should throw for empty array", () => {
@@ -906,159 +917,89 @@ test.describe("toHaveUniqueDates", () => {
 });
 
 test.describe("toBeValidISODate", () => {
-	test("should pass for valid ISO date with milliseconds", () => {
-		expectlyDate("2023-01-15T12:30:45.123Z").toBeValidISODate();
+	test("should pass for strict calendar dates", () => {
+		expectlyDate("2023-01-15").toBeValidISODate();
+		expectlyDate("2024-02-29").toBeValidISODate();
+		expectlyDate("0000-02-29").toBeValidISODate();
 	});
 
-	test("should pass for valid ISO date without milliseconds", () => {
-		expectlyDate("2023-01-15T12:30:45Z").toBeValidISODate();
-	});
-
-	test("should pass for valid ISO date without Z", () => {
-		expectlyDate("2023-01-15T12:30:45").toBeValidISODate();
-	});
-
-	test("should fail for invalid ISO format", () => {
+	test("should fail for datetimes, which belong to toBeValidISODateTime", () => {
 		expect(() => {
-			expectlyDate("2023-01-15").toBeValidISODate();
-		}).toThrow(/Expected string to be a valid ISO 8601 date/);
+			expectlyDate("2023-01-15T12:30:45.123Z").toBeValidISODate();
+		}).toThrow(/Expected value to be a valid ISO 8601 calendar date/);
 	});
 
-	test("should fail for invalid date values", () => {
-		expect(() => {
-			expectlyDate("2023-13-45T99:99:99Z").toBeValidISODate();
-		}).toThrow();
+	test("should fail for impossible dates with the reason", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2023-02-29").toBeValidISODate();
+		});
+		expect(error.message).toContain("Problem:");
+		expect(error.message).toContain("2023-02-29");
 	});
 
-	test("should fail for non-ISO format", () => {
-		expect(() => {
-			expectlyDate("01/15/2023").toBeValidISODate();
-		}).toThrow();
-	});
-
-	test("should work with .not for invalid format", () => {
-		expectlyDate("not-a-date").not.toBeValidISODate();
+	test("should fail for non-ISO formats and non-strings", () => {
+		for (const invalid of [
+			"01/15/2023",
+			"2023-1-15",
+			"20230115",
+			"2023-13-01",
+			"2023-00-10",
+			" 2023-01-15",
+			null,
+			20230115,
+		]) {
+			expectlyDate(invalid).not.toBeValidISODate();
+		}
 	});
 
 	test("should fail with .not for valid ISO date", () => {
 		expect(() => {
-			expectlyDate("2023-01-15T12:30:45.123Z").not.toBeValidISODate();
-		}).toThrow(/Expected string to not be a valid ISO 8601 date/);
-	});
-});
-
-test.describe("toMatchTimeZone", () => {
-	test("should pass when date matches timezone offset (numeric)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		// Date objects always use the local timezone of the machine running the test
-		expectlyDate(date).toMatchTimeZone(-date.getTimezoneOffset());
-	});
-
-	test("should pass with UTC string when in UTC timezone", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		if (localOffset === 0) {
-			expectlyDate(date).toMatchTimeZone("UTC");
-		} else {
-			// Skip if not in UTC - dates always use local timezone
-			expectlyDate(date).not.toMatchTimeZone("UTC");
-		}
-	});
-
-	test("should pass with positive offset string matching local", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const offsetMinutes = -date.getTimezoneOffset();
-		const sign = offsetMinutes >= 0 ? "+" : "-";
-		const absOffset = Math.abs(offsetMinutes);
-		const hours = Math.floor(absOffset / 60);
-		const minutes = absOffset % 60;
-		const offsetString = `${sign}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-		expectlyDate(date).toMatchTimeZone(offsetString);
-	});
-
-	test("should fail when date does not match timezone offset (numeric)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		// Test with an offset that's definitely different from local
-		const wrongOffset = localOffset === 330 ? 0 : 330;
-		expect(() => {
-			expectlyDate(date).toMatchTimeZone(wrongOffset);
-		}).toThrow(/Expected date to match timezone offset/);
-	});
-
-	test("should fail with wrong string offset", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		// Test with an offset that's different from local
-		const wrongOffset = localOffset === 330 ? "+00:00" : "+05:30";
-		expect(() => {
-			expectlyDate(date).toMatchTimeZone(wrongOffset);
-		}).toThrow(/Expected date to match timezone offset/);
-	});
-
-	test("should work with negation (numeric)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		const wrongOffset = localOffset === 330 ? 0 : 330;
-		expectlyDate(date).not.toMatchTimeZone(wrongOffset);
-	});
-
-	test("should work with negation (string)", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		const localOffset = -date.getTimezoneOffset();
-		const wrongOffset = localOffset === 330 ? "+00:00" : "+05:30";
-		expectlyDate(date).not.toMatchTimeZone(wrongOffset);
-	});
-
-	test("should throw for invalid offset format", () => {
-		const date = new Date("2024-06-15T12:00:00Z");
-		expect(() => {
-			expectlyDate(date).toMatchTimeZone("invalid");
-		}).toThrow(/Invalid timezone offset format/);
+			expectlyDate("2023-01-15").not.toBeValidISODate();
+		}).toThrow(/Expected value to not be a valid ISO 8601 calendar date/);
 	});
 });
 
 test.describe("toBeStartOfMonth", () => {
 	test("should pass for first day of month", () => {
-		expectlyDate(new Date("2024-01-01")).toBeStartOfMonth();
-		expectlyDate(new Date("2024-02-01T15:30:00Z")).toBeStartOfMonth();
-		expectlyDate(new Date("2024-12-01")).toBeStartOfMonth();
+		expectlyDate(localDate("2024-01-01")).toBeStartOfMonth();
+		expectlyDate(new Date(2024, 1, 1, 15, 30)).toBeStartOfMonth(); // local time, so any machine zone
+		expectlyDate(localDate("2024-12-01")).toBeStartOfMonth();
 	});
 
 	test("should fail for non-first day of month", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-15")).toBeStartOfMonth();
+			expectlyDate(localDate("2024-01-15")).toBeStartOfMonth();
 		}).toThrow(/Expected date to be the start of the month/);
 	});
 
 	test("should work with negation", () => {
-		expectlyDate(new Date("2024-01-15")).not.toBeStartOfMonth();
-		expectlyDate(new Date("2024-01-31")).not.toBeStartOfMonth();
+		expectlyDate(localDate("2024-01-15")).not.toBeStartOfMonth();
+		expectlyDate(localDate("2024-01-31")).not.toBeStartOfMonth();
 	});
 });
 
 test.describe("toBeEndOfMonth", () => {
 	test("should pass for last day of month", () => {
-		expectlyDate(new Date("2024-01-31")).toBeEndOfMonth();
-		expectlyDate(new Date("2024-02-29")).toBeEndOfMonth(); // Leap year
-		expectlyDate(new Date("2024-04-30")).toBeEndOfMonth();
-		expectlyDate(new Date("2024-12-31")).toBeEndOfMonth();
+		expectlyDate(localDate("2024-01-31")).toBeEndOfMonth();
+		expectlyDate(localDate("2024-02-29")).toBeEndOfMonth(); // Leap year
+		expectlyDate(localDate("2024-04-30")).toBeEndOfMonth();
+		expectlyDate(localDate("2024-12-31")).toBeEndOfMonth();
 	});
 
 	test("should fail for non-last day of month", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-15")).toBeEndOfMonth();
+			expectlyDate(localDate("2024-01-15")).toBeEndOfMonth();
 		}).toThrow(/Expected date to be the end of the month/);
 	});
 
 	test("should handle February in non-leap year", () => {
-		expectlyDate(new Date("2023-02-28")).toBeEndOfMonth();
-		expectlyDate(new Date("2023-02-27")).not.toBeEndOfMonth();
+		expectlyDate(localDate("2023-02-28")).toBeEndOfMonth();
+		expectlyDate(localDate("2023-02-27")).not.toBeEndOfMonth();
 	});
 
 	test("should work with negation", () => {
-		expectlyDate(new Date("2024-01-15")).not.toBeEndOfMonth();
-		expectlyDate(new Date("2024-01-01")).not.toBeEndOfMonth();
+		expectlyDate(localDate("2024-01-15")).not.toBeEndOfMonth();
+		expectlyDate(localDate("2024-01-01")).not.toBeEndOfMonth();
 	});
 });
 
@@ -1144,107 +1085,107 @@ test.describe("toHaveDateGapsLargerThan", () => {
 
 test.describe("toBeInQuarter", () => {
 	test("should pass for Q1 dates (Jan-Mar)", () => {
-		expectlyDate(new Date("2024-01-15")).toBeInQuarter(1);
-		expectlyDate(new Date("2024-02-01")).toBeInQuarter(1);
-		expectlyDate(new Date("2024-03-31")).toBeInQuarter(1);
+		expectlyDate(localDate("2024-01-15")).toBeInQuarter(1);
+		expectlyDate(localDate("2024-02-01")).toBeInQuarter(1);
+		expectlyDate(localDate("2024-03-31")).toBeInQuarter(1);
 	});
 
 	test("should pass for Q2 dates (Apr-Jun)", () => {
-		expectlyDate(new Date("2024-04-01")).toBeInQuarter(2);
-		expectlyDate(new Date("2024-05-15")).toBeInQuarter(2);
-		expectlyDate(new Date("2024-06-30")).toBeInQuarter(2);
+		expectlyDate(localDate("2024-04-01")).toBeInQuarter(2);
+		expectlyDate(localDate("2024-05-15")).toBeInQuarter(2);
+		expectlyDate(localDate("2024-06-30")).toBeInQuarter(2);
 	});
 
 	test("should pass for Q3 dates (Jul-Sep)", () => {
-		expectlyDate(new Date("2024-07-01")).toBeInQuarter(3);
-		expectlyDate(new Date("2024-08-15")).toBeInQuarter(3);
-		expectlyDate(new Date("2024-09-30")).toBeInQuarter(3);
+		expectlyDate(localDate("2024-07-01")).toBeInQuarter(3);
+		expectlyDate(localDate("2024-08-15")).toBeInQuarter(3);
+		expectlyDate(localDate("2024-09-30")).toBeInQuarter(3);
 	});
 
 	test("should pass for Q4 dates (Oct-Dec)", () => {
-		expectlyDate(new Date("2024-10-01")).toBeInQuarter(4);
-		expectlyDate(new Date("2024-11-15")).toBeInQuarter(4);
-		expectlyDate(new Date("2024-12-31")).toBeInQuarter(4);
+		expectlyDate(localDate("2024-10-01")).toBeInQuarter(4);
+		expectlyDate(localDate("2024-11-15")).toBeInQuarter(4);
+		expectlyDate(localDate("2024-12-31")).toBeInQuarter(4);
 	});
 
 	test("should fail for wrong quarter", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-15")).toBeInQuarter(2);
+			expectlyDate(localDate("2024-01-15")).toBeInQuarter(2);
 		}).toThrow(/Expected date to be in Q/);
 	});
 
 	test("should work with negation", () => {
-		expectlyDate(new Date("2024-01-15")).not.toBeInQuarter(2);
-		expectlyDate(new Date("2024-01-15")).not.toBeInQuarter(3);
-		expectlyDate(new Date("2024-01-15")).not.toBeInQuarter(4);
+		expectlyDate(localDate("2024-01-15")).not.toBeInQuarter(2);
+		expectlyDate(localDate("2024-01-15")).not.toBeInQuarter(3);
+		expectlyDate(localDate("2024-01-15")).not.toBeInQuarter(4);
 	});
 });
 
 test.describe("toBeSpecificDayOfWeek", () => {
 	test("should pass with day name", () => {
 		// 2024-01-01 is Monday
-		expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek("Monday");
-		expectlyDate(new Date("2024-01-02")).toBeSpecificDayOfWeek("Tuesday");
-		expectlyDate(new Date("2024-01-06")).toBeSpecificDayOfWeek("Saturday");
-		expectlyDate(new Date("2024-01-07")).toBeSpecificDayOfWeek("Sunday");
+		expectlyDate(localDate("2024-01-01")).toBeSpecificDayOfWeek("Monday");
+		expectlyDate(localDate("2024-01-02")).toBeSpecificDayOfWeek("Tuesday");
+		expectlyDate(localDate("2024-01-06")).toBeSpecificDayOfWeek("Saturday");
+		expectlyDate(localDate("2024-01-07")).toBeSpecificDayOfWeek("Sunday");
 	});
 
 	test("should pass with day number", () => {
 		// 2024-01-01 is Monday (1)
-		expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek(1);
-		expectlyDate(new Date("2024-01-02")).toBeSpecificDayOfWeek(2);
-		expectlyDate(new Date("2024-01-06")).toBeSpecificDayOfWeek(6);
-		expectlyDate(new Date("2024-01-07")).toBeSpecificDayOfWeek(0); // Sunday
+		expectlyDate(localDate("2024-01-01")).toBeSpecificDayOfWeek(1);
+		expectlyDate(localDate("2024-01-02")).toBeSpecificDayOfWeek(2);
+		expectlyDate(localDate("2024-01-06")).toBeSpecificDayOfWeek(6);
+		expectlyDate(localDate("2024-01-07")).toBeSpecificDayOfWeek(0); // Sunday
 	});
 
 	test("should fail for wrong day", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek("Tuesday");
+			expectlyDate(localDate("2024-01-01")).toBeSpecificDayOfWeek("Tuesday");
 		}).toThrow(/Expected date to be/);
 	});
 
 	test("should work with negation", () => {
-		expectlyDate(new Date("2024-01-01")).not.toBeSpecificDayOfWeek("Tuesday");
-		expectlyDate(new Date("2024-01-01")).not.toBeSpecificDayOfWeek(2);
+		expectlyDate(localDate("2024-01-01")).not.toBeSpecificDayOfWeek("Tuesday");
+		expectlyDate(localDate("2024-01-01")).not.toBeSpecificDayOfWeek(2);
 	});
 
 	test("should throw for invalid day number", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-01")).toBeSpecificDayOfWeek(7);
+			expectlyDate(localDate("2024-01-01")).toBeSpecificDayOfWeek(7);
 		}).toThrow(/Invalid day/);
 	});
 });
 
 test.describe("toBeInMonth", () => {
 	test("should pass with month name", () => {
-		expectlyDate(new Date("2024-01-15")).toBeInMonth("January");
-		expectlyDate(new Date("2024-02-15")).toBeInMonth("February");
-		expectlyDate(new Date("2024-12-31")).toBeInMonth("December");
+		expectlyDate(localDate("2024-01-15")).toBeInMonth("January");
+		expectlyDate(localDate("2024-02-15")).toBeInMonth("February");
+		expectlyDate(localDate("2024-12-31")).toBeInMonth("December");
 	});
 
 	test("should pass with month number", () => {
-		expectlyDate(new Date("2024-01-15")).toBeInMonth(1);
-		expectlyDate(new Date("2024-02-15")).toBeInMonth(2);
-		expectlyDate(new Date("2024-12-31")).toBeInMonth(12);
+		expectlyDate(localDate("2024-01-15")).toBeInMonth(1);
+		expectlyDate(localDate("2024-02-15")).toBeInMonth(2);
+		expectlyDate(localDate("2024-12-31")).toBeInMonth(12);
 	});
 
 	test("should fail for wrong month", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-15")).toBeInMonth("February");
+			expectlyDate(localDate("2024-01-15")).toBeInMonth("February");
 		}).toThrow(/Expected date to be in/);
 	});
 
 	test("should work with negation", () => {
-		expectlyDate(new Date("2024-01-15")).not.toBeInMonth("February");
-		expectlyDate(new Date("2024-01-15")).not.toBeInMonth(2);
+		expectlyDate(localDate("2024-01-15")).not.toBeInMonth("February");
+		expectlyDate(localDate("2024-01-15")).not.toBeInMonth(2);
 	});
 
 	test("should throw for invalid month number", () => {
 		expect(() => {
-			expectlyDate(new Date("2024-01-01")).toBeInMonth(0);
+			expectlyDate(localDate("2024-01-01")).toBeInMonth(0);
 		}).toThrow(/Invalid month/);
 		expect(() => {
-			expectlyDate(new Date("2024-01-01")).toBeInMonth(13);
+			expectlyDate(localDate("2024-01-01")).toBeInMonth(13);
 		}).toThrow(/Invalid month/);
 	});
 });

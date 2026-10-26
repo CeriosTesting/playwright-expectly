@@ -1,21 +1,23 @@
 import { withMatcherState } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
-import * as fuzz from "fuzzball";
+
+import { type FuzzyOptions, fuzzyScore, validateThreshold } from "./fuzzy-score";
 
 /**
  * Expectly Custom matcher for fuzzy string validation.
  */
 export const expectlyFuzzyStringMatchers = withMatcherState({
-	toMatchFuzzy(matcher: string, expected: string, threshold = 80) {
+	toMatchFuzzy(matcher: string, expected: string, threshold = 80, options?: FuzzyOptions) {
 		const assertionName = "toMatchFuzzy";
 		const actual = matcher;
-		if (typeof threshold !== "number" || !Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
-			throw new Error(
-				`${assertionName}: threshold must be a finite number between 0 and 100, got: ${String(threshold)}`,
+		validateThreshold(assertionName, threshold);
+		if (typeof actual !== "string") {
+			throw new TypeError(
+				`${assertionName}: received value must be a string, got: ${actual === null ? "null" : typeof actual}`,
 			);
 		}
-		const score: number = fuzz.token_sort_ratio(matcher, expected);
+		const score: number = fuzzyScore(actual, expected, options);
 		const pass = score >= threshold;
 
 		const message = (): string => {

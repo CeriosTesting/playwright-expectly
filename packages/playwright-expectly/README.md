@@ -3,16 +3,18 @@
 [![npm version](https://badge.fury.io/js/%40cerios%2Fplaywright-expectly.svg)](https://www.npmjs.com/package/@cerios/playwright-expectly)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions like `toBeAlphanumeric`, `toHaveAscendingOrder`, `toBeInTheFuture`, and 50+ more matchers.
+Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, locators, and page state. Simplify your E2E tests with intuitive assertions like `toBeAlphanumeric`, `toHaveAscendingOrder`, `toBeInTheFuture`, and 130+ more matchers.
 
 ## Features
 
-- 🎯 **50+ Custom Matchers** — extensive validation for all data types
-- 🔤 **String Validation** — email, URL, UUID, alphanumeric, and more
+- 🎯 **130+ Custom Matchers** — extensive validation for all data types
+- 🔤 **String Validation** — email, URL, UUID, alphanumeric, hexadecimal, case-insensitive equality, and more
 - 🔢 **Number Arrays** — sorting, statistics, ranges, and patterns
-- 📅 **Date Operations** — comparisons, ranges, quarters, and business logic
-- 🎨 **Locator Assertions** — DOM element validation and text formatting
+- 📅 **Date & Time** — `Date`, ISO strings and Temporal; time zones, DST, nanosecond precision, durations
+- 🎨 **Locator Assertions** — DOM element validation, text formatting, count ranges, sorted texts, and computed styles
+- 🍪 **Page State** — retrying cookie, `localStorage` and `sessionStorage` assertions
 - 📦 **Object Arrays** — sorting, uniqueness, and property validation
+- 🧺 **Collections & Functions** — array members, object keys and entries, promises, and thrown errors
 - 🤖 **Fuzzy Matching** — AI-generated text validation (separate [`@cerios/playwright-expectly-fuzzy`](https://www.npmjs.com/package/@cerios/playwright-expectly-fuzzy) package)
 - 💪 **Type-Safe** — full TypeScript support
 - ⚡ **Lightweight** — only Playwright required
@@ -63,7 +65,7 @@ import { expectly } from "@cerios/playwright-expectly";
 
 expectly("user@example.com").toBeValidEmail();
 expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
-expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
+expectly(subscription.expiresAt).toBeInTheFuture();
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
@@ -93,17 +95,19 @@ export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
 export const test = base;
 ```
 
-> **Upgrading from 1.x:** the Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, and the deprecated `setupExpectly()` is removed. Use the `tests/support` pattern above instead. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
+> **Upgrading from 1.x:** the Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, the deprecated `setupExpectly()` is removed (use the `tests/support` pattern above instead), and the date matchers are rebuilt on Temporal with exact calendar semantics: `toBeValidISODate()` now validates `YYYY-MM-DD` and `toMatchTimeZone()` is replaced by `toHaveOffset()` / `toHaveTimeZone()`. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
 
 ## Available Matchers
 
-- **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toStartWith()`, `toEndWith()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
+- **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toBeHexadecimal()`, `toEqualCaseInsensitive()`, `toEqualIgnoringWhitespace()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
 - **Number Array** — `toHaveAscendingOrder()`, `toHaveAverage()`, `toBeAllPositive()`, `toBeMonotonic()`, and more — [📖 docs](../../docs/NUMBER_ARRAY_MATCHERS.md)
-- **Date** — `toBeDateCloseTo()`, `toBeInTheFuture()`, `toBeSameDay()`, `toBeInQuarter()`, and more — [📖 docs](../../docs/DATE_MATCHERS.md)
-- **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveHref()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
+- **Date & Time** — `Date`, ISO strings and Temporal values: `toBeWithinLast()`, `toBeWithinDurationAfter()`, `toBeSameInstant()`, `toBeSameDay()`, `toBeWithinTimeOfDay()`, `toHaveOffset()`, duration matchers, plus `parseISO*()` / `isISO*()` and typed ISO strings — [📖 docs](../../docs/DATE_MATCHERS.md)
+- **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveStyles()`, `toHaveCountGreaterThan()`, `toHaveCountBetween()`, `toHaveTextsInAscendingOrder()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
+- **Page** — `toHaveCookie()` on a `Page` or `BrowserContext`, `toHaveLocalStorageItem()`, `toHaveSessionStorageItem()` — [📖 docs](../../docs/PAGE_MATCHERS.md)
 - **Object Array** — `toHaveObjectsInAscendingOrderBy()`, `toHaveOnlyUniqueObjects()`, and more — [📖 docs](../../docs/OBJECT_ARRAY_MATCHERS.md)
 - **String Array** — `toHaveAscendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveUniqueValues()`, and more — [📖 docs](../../docs/STRING_ARRAY_MATCHERS.md)
-- **Generic** — `toBeInteger()`, `toBeAnyOf()`, `toEqualPartially()`, `toBeNullish()`, and more — [📖 docs](../../docs/GENERIC_MATCHERS.md)
+- **Generic** — `toBeInteger()`, `toBeAnyOf()`, `toSatisfy()`, `toBeEven()`, `toBeFinite()`, `toEqualPartially()`, `toBeNullish()`, and more — [📖 docs](../../docs/GENERIC_MATCHERS.md)
+- **Collection & Function** — `toSatisfyAll()`, `toIncludeSameMembers()`, `toContainKeys()`, `toContainEntry()`, `toBeEmptyObject()`, `toResolve()`, `toReject()`, `toThrowWithMessage()`, and more — [📖 docs](../../docs/COLLECTION_MATCHERS.md)
 
 ## Links
 
@@ -158,8 +162,8 @@ Ordinary Expectly matchers also report thrown validation and locator API errors 
 - Object uniqueness compares current values using Node's deep strict equality, including Dates, Maps, Sets, bigint, and cycles. There is no cache across assertions. Property order does not matter; prototypes and explicit `undefined` properties do. This comparison can take quadratic time for large arrays.
 - Regex assertions test from index zero without modifying the supplied expression's `lastIndex`, including global and sticky expressions.
 - Partial matching supports shared references but rejects circular plain objects and arrays in either input with a clear error, including under `.not`.
-- Numeric comparisons reject `NaN` and infinities. Sum, average and median use an absolute tolerance of `Number.EPSILON` near zero and a relative tolerance of `Number.EPSILON` at larger magnitudes. Empty-array behavior remains unchanged.
-- Consecutive months compare calendar months, independent of the day of month. ISO validation checks calendar and clock components; it accepts the existing timestamp format with optional milliseconds and optional `Z`.
+- Numeric comparisons reject `NaN` and infinities. Sum, average, median and range tolerate the rounding error of the whole computation, which grows with the number of values and their magnitude, so `[0.01, 2.03, 1.2]` sums to `3.24`; pass `{ tolerance }` for an explicit absolute bound. Empty arrays have no average or median and never match.
+- Consecutive months compare calendar months, independent of the day of month. ISO validation rejects impossible calendar dates such as `2026-02-30`; see the [date matchers](../../docs/DATE_MATCHERS.md) for the accepted formats.
 - A `pollAndReturn()` assertion object can be reused or invoked concurrently; each matcher invocation captures its own successful value.
 
 CI tests packaged libraries against the minimum supported Playwright version, 1.40, as well as the project's current version. The minimum-version declaration check uses TypeScript 5.9 because TypeScript 7 rejects legacy syntax in Playwright 1.40's own declarations.

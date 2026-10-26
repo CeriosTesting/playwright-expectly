@@ -1,4 +1,5 @@
-import { expectly, withReturn } from "@cerios/playwright-expectly";
+import { expectly, isISOInstant, parseISODate, withReturn } from "@cerios/playwright-expectly";
+import type { ISODateString, ISOInstantString } from "@cerios/playwright-expectly";
 import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
 import { expect, test } from "@playwright/test";
 
@@ -37,4 +38,31 @@ test("browser matchers and locator failures", async ({ page }) => {
 	expect(error).toBeInstanceOf(Error);
 	expect((error as Error).stack).toContain("consumer.spec.ts");
 	expect((error as Error).stack).not.toMatch(/[/\\](?:src|dist)[/\\]/);
+});
+
+test("locator polling, counts, ordering, styles and page state", async ({ page }) => {
+	await page.setContent("<ul><li style='color: rgb(255, 0, 0)'>a</li><li>b</li></ul>");
+	await expectly(page.locator("li")).toHaveCountBetween(1, 2);
+	await expectly(page.locator("li")).toHaveTextsInAscendingOrder();
+	await expectly(page.locator("li").first()).toHaveStyles({ color: "rgb(255, 0, 0)" });
+	// A missing element fails both forms, as Playwright's own locator assertions do.
+	await expect(expectly(page.locator("#absent")).not.toHaveHref("/x", { timeout: 100 })).rejects.toThrow(
+		"element(s) not found",
+	);
+	await page.context().addCookies([{ name: "consent", value: "granted", url: "https://example.com" }]);
+	await expectly(page).toHaveCookie("consent", "granted");
+	expectly([1, 2, 3]).toIncludeSameMembers([3, 2, 1]);
+	expectly([2, 4]).toSatisfyAll((value) => value % 2 === 0);
+});
+
+test("date and time matchers, ISO types and the Temporal polyfill", () => {
+	const day = "2026-10-25" satisfies ISODateString;
+	const createdAt: unknown = "2026-10-25T12:00:00Z";
+	if (!isISOInstant(createdAt)) throw new Error("expected an ISO instant");
+	const instant: ISOInstantString = createdAt;
+	expectly(instant).toBeSameInstant("2026-10-25T13:00:00+01:00");
+	expectly(instant).toBeWithinLast({ minutes: 5 }, { now: "2026-10-25T12:04:00Z" });
+	expectly(parseISODate(day)).toBeSameDay(instant, { timeZone: "Europe/Amsterdam" });
+	expectly("2026-10-25T02:30:00+02:00[Europe/Amsterdam]").toBeBefore("2026-10-25T02:30:00+01:00[Europe/Amsterdam]");
+	expect(() => parseISODate(String("2026-02-30"))).toThrow(TypeError);
 });

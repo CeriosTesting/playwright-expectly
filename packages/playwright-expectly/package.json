@@ -1,7 +1,7 @@
 {
 	"name": "@cerios/playwright-expectly",
 	"version": "1.4.1",
-	"description": "Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions like toBeAlphanumeric, toHaveAscendingOrder, toBeInTheFuture, and 50+ more matchers.",
+	"description": "Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions like toBeAlphanumeric, toHaveAscendingOrder, toBeInTheFuture, and 130+ more matchers.",
 	"keywords": [
 		"array-validation",
 		"assertions",
@@ -70,11 +70,13 @@
 		"release": "changeset publish --provenance"
 	},
 	"dependencies": {
-		"@cerios/playwright-expectly-core": "*"
+		"@cerios/playwright-expectly-core": "*",
+		"temporal-polyfill": "^1.0.6"
 	},
 	"devDependencies": {
 		"@arethetypeswrong/cli": "^0.18.5",
 		"@changesets/cli": "^3.0.3",
+		"@js-temporal/polyfill": "^0.5.1",
 		"@playwright/test": "^1.64.1",
 		"@types/node": "^26.6.5",
 		"husky": "^9.1.7",

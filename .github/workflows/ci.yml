@@ -65,6 +65,19 @@ jobs:
       - name: Run tests
         run: npm run test
 
+      # CI runs in UTC; date specs must not depend on the machine zone, west or east of UTC.
+      - name: Run date tests in other machine time zones
+        if: matrix.node-version == 24
+        run: |
+          for zone in America/New_York Pacific/Kiritimati; do
+            TZ=$zone npx playwright test --config=playwright.config.ts --project=expectly expectly-date date-time
+          done
+
+      # Exercises engine-provided Temporal values; Expectly only prefers the global when it conforms to the spec.
+      - name: Run expectly tests with native Temporal
+        if: matrix.node-version == 24
+        run: node --harmony-temporal node_modules/@playwright/test/cli.js test --config=playwright.config.ts --project=expectly
+
   minimum-playwright:
     name: Published packages (Playwright 1.40)
     runs-on: ubuntu-22.04

@@ -1,8 +1,10 @@
-import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
+import type { LocatorPollResult, LocatorSnapshot } from "@cerios/playwright-expectly-core";
+import { locatorNotFoundMessage, pollLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
-import type { Expect } from "@playwright/test";
+import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import type { UrlValidationOptions, UUIDVersion } from "../matchers/text-validation-utils";
 import { matchesPattern } from "../matchers/text-validation-utils";
 import {
 	getUUIDFormatDescription,
@@ -17,6 +19,35 @@ import {
 	toTitleCase,
 } from "../matchers/text-validation-utils";
 
+type TextPollResult = { pass: boolean; actual: string; snapshot: LocatorSnapshot<string> | undefined };
+
+function textResult({ pass, snapshot }: LocatorPollResult<string>): TextPollResult {
+	return { pass, actual: snapshot?.found ? snapshot.value : "", snapshot };
+}
+
+/** Polls the element's `innerText` until `check` gives the desired result. */
+async function pollInnerText(
+	state: ExpectMatcherState,
+	locator: Locator,
+	options: PollOptions | undefined,
+	check: (text: string) => boolean,
+): Promise<TextPollResult> {
+	return textResult(
+		await pollLocators(state, options, [locator], (actionOptions) => locator.innerText(actionOptions), check),
+	);
+}
+
+/** Splits matcher options from polling options. */
+function pollOptions(options: (PollOptions & object) | undefined): PollOptions | undefined {
+	if (!options) return undefined;
+	return { timeout: options.timeout, intervals: options.intervals };
+}
+
+/** Whitespace normalization used for direct text, applied to both sides. */
+function normalizeWhitespace(text: string): string {
+	return text.trim().replace(/\s+/g, " ");
+}
+
 /**
  * Text content validation matchers for Playwright locators.
  * These matchers validate the text content of elements.
@@ -24,24 +55,12 @@ import {
 export const expectlyLocatorTextMatchers = withMatcherState({
 	async toStartWith(locator: Locator, expected: string, options?: PollOptions) {
 		const assertionName = "toStartWith";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return actual.startsWith(expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, (text) => text.startsWith(expected));
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -80,24 +99,12 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toEndWith(locator: Locator, expected: string, options?: PollOptions) {
 		const assertionName = "toEndWith";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return actual.endsWith(expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, (text) => text.endsWith(expected));
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -136,24 +143,14 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toMatchPattern(locator: Locator, pattern: RegExp, options?: PollOptions) {
 		const assertionName = "toMatchPattern";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return matchesPattern(actual, pattern);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		// Validate before polling so a wrong argument fails immediately.
+		matchesPattern("", pattern);
+		const result = await pollInnerText(this, locator, options, (text) => matchesPattern(text, pattern));
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -189,24 +186,12 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toBeValidEmail(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeValidEmail";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isValidEmail(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, isValidEmail);
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -239,26 +224,14 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			actual,
 		};
 	},
-	async toBeValidUrl(locator: Locator, options?: PollOptions) {
+	async toBeValidUrl(locator: Locator, options?: PollOptions & UrlValidationOptions) {
 		const assertionName = "toBeValidUrl";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isValidUrl(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, pollOptions(options), (text) => isValidUrl(text, options));
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -286,26 +259,15 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			actual,
 		};
 	},
-	async toBeAlphanumeric(locator: Locator, options?: PollOptions) {
+	async toBeAlphanumeric(locator: Locator, options?: PollOptions & { unicode?: boolean }) {
 		const assertionName = "toBeAlphanumeric";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isAlphanumeric(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const unicode = options?.unicode ?? false;
+		const result = await pollInnerText(this, locator, pollOptions(options), (text) => isAlphanumeric(text, unicode));
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -340,24 +302,12 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toBeNumericString(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeNumericString";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isNumericString(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, isNumericString);
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -392,24 +342,12 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toBeUpperCase(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeUpperCase";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isUpperCase(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, isUpperCase);
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -445,24 +383,12 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toBeLowerCase(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeLowerCase";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isLowerCase(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, isLowerCase);
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -498,24 +424,12 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 	},
 	async toBeTitleCase(locator: Locator, options?: PollOptions) {
 		const assertionName = "toBeTitleCase";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isTitleCase(actual);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, isTitleCase);
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -549,26 +463,14 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			actual,
 		};
 	},
-	async toBeUUID(locator: Locator, version?: 1 | 3 | 4 | 5, options?: PollOptions) {
+	async toBeUUID(locator: Locator, version?: UUIDVersion, options?: PollOptions) {
 		const assertionName = "toBeUUID";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				return isValidUUID(actual, version);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const result = await pollInnerText(this, locator, options, (text) => isValidUUID(text, version));
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, version ? String(version) : undefined, {
 				isNot: this.isNot,
 			});
@@ -607,31 +509,33 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 
 	async toHaveDirectText(locator: Locator, expectedText: string, options?: PollOptions) {
 		const assertionName = "toHaveDirectText";
-		let pass: boolean = false;
-		let actual: string = "";
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.evaluate((el) =>
-					Array.from(el.childNodes)
-						.filter((n) => n.nodeType === Node.TEXT_NODE)
-						.map((n) => n.textContent)
-						.join("")
-						.trim()
-						.replace(/\s+/g, " "),
-				);
-				return actual === expectedText;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		// The element's text is whitespace-normalized, so the expected text must be too.
+		const expected = normalizeWhitespace(expectedText);
+		const result = textResult(
+			await pollLocators(
+				this,
+				options,
+				[locator],
+				async (actionOptions) =>
+					normalizeWhitespace(
+						await locator.evaluate(
+							(el) =>
+								Array.from(el.childNodes)
+									.filter((n) => n.nodeType === Node.TEXT_NODE)
+									.map((n) => n.textContent)
+									.join(""),
+							undefined,
+							actionOptions,
+						),
+					),
+				(text) => text === expected,
+			),
+		);
+		const { pass, actual } = result;
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, result.snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
@@ -640,7 +544,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 				return (
 					hint +
 					"\n\n" +
-					`Expected direct text to not be: ${this.utils.printExpected(expectedText)}\n` +
+					`Expected direct text to not be: ${this.utils.printExpected(expected)}\n` +
 					`Received: ${this.utils.printReceived(actual)}`
 				);
 			}
@@ -649,7 +553,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 				return (
 					hint +
 					"\n\n" +
-					`Expected direct text to be: ${this.utils.printExpected(expectedText)}\n` +
+					`Expected direct text to be: ${this.utils.printExpected(expected)}\n` +
 					`Received: ${this.utils.printReceived(actual)}`
 				);
 			}
@@ -661,7 +565,7 @@ export const expectlyLocatorTextMatchers = withMatcherState({
 			message,
 			pass,
 			name: assertionName,
-			expected: expectedText,
+			expected,
 			actual,
 		};
 	},

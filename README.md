@@ -3,16 +3,18 @@
 [![npm version](https://badge.fury.io/js/%40cerios%2Fplaywright-expectly.svg)](https://www.npmjs.com/package/@cerios/playwright-expectly)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions.
+Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, locators, and page state. Simplify your E2E tests with intuitive assertions.
 
 ## Features
 
-- 🎯 **50+ Custom Matchers** - Extensive validation for all data types
-- 🔤 **String Validation** - Email, URL, UUID, alphanumeric, and more
+- 🎯 **130+ Custom Matchers** - Extensive validation for all data types
+- 🔤 **String Validation** - Email, URL, UUID, alphanumeric, hexadecimal, case-insensitive equality, and more
 - 🔢 **Number Arrays** - Sorting, statistics, ranges, and patterns
-- 📅 **Date Operations** - Comparisons, ranges, quarters, and business logic
-- 🎨 **Locator Assertions** - DOM element validation and text formatting
+- 📅 **Date & Time** - `Date`, ISO strings and Temporal; time zones, DST, nanosecond precision, durations
+- 🎨 **Locator Assertions** - DOM element validation, text formatting, count ranges, sorted texts, and computed styles
+- 🍪 **Page State** - Retrying cookie, `localStorage` and `sessionStorage` assertions
 - 📦 **Object Arrays** - Sorting, uniqueness, and property validation
+- 🧺 **Collections & Functions** - Array members, object keys and entries, promises, and thrown errors
 - 🤖 **Fuzzy Matching** - AI-generated text validation with configurable similarity threshold (separate package)
 - 💪 **Type-Safe** - Full TypeScript support
 - ⚡ **Lightweight** - Only Playwright required. @cerios/playwright-expectly-fuzzy uses `fuzzball` as an optional dependency
@@ -70,7 +72,7 @@ import { expectly } from "@cerios/playwright-expectly";
 
 expectly("user@example.com").toBeValidEmail();
 expectly([1, 2, 3, 4, 5]).toHaveAscendingOrder();
-expectly(new Date()).toBeInTheFuture(new Date("2020-01-01"));
+expectly(subscription.expiresAt).toBeInTheFuture();
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
@@ -150,7 +152,7 @@ import "@cerios/playwright-expectly";
 
 ## Upgrading from 1.x
 
-Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzzy` contains two breaking changes:
+Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzzy` contains these breaking changes:
 
 1. **The Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`.** The old name replaced Playwright's built-in numeric `toBeCloseTo` on every extended `expect`, so numeric assertions such as `expect(0.1 + 0.2).toBeCloseTo(0.3, 5)` failed with `Invalid actual date`. Playwright's numeric `toBeCloseTo` now works untouched next to the Date matcher.
 
@@ -180,6 +182,14 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
    export { test };
    ```
 
+3. **Date matchers are rebuilt on Temporal** and accept `Date`, strict ISO 8601 strings and Temporal values. Results that used to be approximate or environment-dependent are now exact:
+   - `toBeValidISODate()` validates calendar dates (`YYYY-MM-DD`); use the new `toBeValidISODateTime()` for datetimes.
+   - `toMatchTimeZone()` is removed. It checked the machine's offset, not the value's; use `toHaveOffset()` or `toHaveTimeZone()`.
+   - `toHaveDateRange()` and `toHaveDateGapsLargerThan()` use exact calendar arithmetic instead of 30.44-day months, 365.25-day years and a ±1 day tolerance.
+   - `toHaveUniqueDates(true)` becomes `toHaveUniqueDates({ ignoreTime: true })`.
+
+   See [Upgrading the date matchers](./docs/DATE_MATCHERS.md#upgrading-from-1x) for the full list.
+
 ## Available Matchers
 
 ### String Matchers
@@ -189,15 +199,17 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
 - `toBeUUID(version?)` - Validate UUID (optionally specific version)
 - `toBeAlphanumeric()` - Only letters and numbers
 - `toBeNumericString()` - Only digits
+- `toBeHexadecimal({ prefix })` - Hexadecimal string, optionally with `0x`
 - `toStartWith(prefix)` / `toEndWith(suffix)` - String boundaries
 - `toMatchPattern(regex)` - Regular expression matching
+- `toEqualCaseInsensitive(text)` / `toEqualIgnoringWhitespace(text)` - Lenient equality
 
 [📖 View all string matchers →](./docs/STRING_MATCHERS.md)
 
 ### Number Array Matchers
 
 - `toHaveAscendingOrder()` / `toHaveDescendingOrder()` - Sort validation
-- `toHaveAverage(value)` / `toHaveMedian(value)` - Statistical validation
+- `toHaveSum(value, { tolerance })` / `toHaveAverage(value)` / `toHaveMedian(value)` - Statistics with floating-point tolerance
 - `toHaveMin(value)` / `toHaveMax(value)` - Boundary validation
 - `toBeAllPositive()` / `toBeAllNegative()` - Sign validation
 - `toBeMonotonic()` - Consistent direction
@@ -207,12 +219,17 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
 
 ### Date Matchers
 
-- `toBeDateCloseTo(date, deviation)` - Within time deviation
-- `toBeInTheFuture(refDate?)` / `toBeInThePast(refDate?)` - Temporal validation
-- `toBeSameDay(date)` / `toBeSameMonth(date)` / `toBeSameYear(date)` - Date comparison
-- `toBeInQuarter(quarter)` - Quarter validation
-- `toBeLeapYear()` - Leap year check
-- `toHaveConsecutiveDates(unit)` - Sequential dates
+Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfilled), with nanosecond precision and explicit time zones.
+
+- `toBeBefore(date)` / `toBeAfter(date)` / `toBeSameInstant(date)` - Chronology
+- `toBeWithinLast(duration)` / `toBeWithinNext(duration)` - Relative to now
+- `toBeWithinDurationAfter(start, limit)` - Event timing
+- `toBeSameDay(date, { timeZone })` / `toBeToday()` / `toBeWeekday()` - Calendar
+- `toBeWithinTimeOfDay(start, end)` / `toBeSameHour(date)` / `toBeAtEndOfDay()` - Clock
+- `toBeValidISODateTime()` / `toHaveOffset(offset)` / `toHaveTimeZone(zone)` - Validation
+- `toHaveMaximumDateGap(duration)` / `toHaveDateRange(duration)` - Collections
+- `toBeShorterThan(duration)` / `toBeDurationBetween(min, max)` - Durations
+- `parseISOInstant()` / `isISOInstant()` and `ISOInstantString`-style types - Typed ISO strings
 
 [📖 View all date matchers →](./docs/DATE_MATCHERS.md)
 
@@ -224,8 +241,18 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
 - `toBeUpperCase()` / `toBeLowerCase()` - Case validation
 - `toBeTitleCase()` - Title case format
 - `toHaveSrc(value)` / `toHaveHref(value)` / `toHaveAlt(value)` - Attribute validation
+- `toHaveStyles({ ... })` - Several computed CSS properties at once
+- `toHaveCountGreaterThan(n)` / `toHaveCountBetween(min, max)` - Retrying element count ranges
+- `toHaveTextsInAscendingOrder()` / `toHaveTextsInDescendingOrder()` - Sorted table columns and lists
 
 [📖 View all locator matchers →](./docs/LOCATOR_MATCHERS.md)
+
+### Page Matchers
+
+- `toHaveCookie(name, value?, { domain, path })` - Cookie on a `Page` or `BrowserContext`
+- `toHaveLocalStorageItem(key, value?)` / `toHaveSessionStorageItem(key, value?)` - Web storage on a `Page`
+
+[📖 View all page matchers →](./docs/PAGE_MATCHERS.md)
 
 ### Object Array Matchers
 
@@ -247,12 +274,23 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
 ### Generic Matchers
 
 - `toBeInteger()` / `toBeFloat()` - Number type validation
+- `toBeEven()` / `toBeOdd()` / `toBeFinite()` - Number value validation
 - `toBeAnyOf(...values)` - Multiple value matching
+- `toSatisfy(predicate)` - Custom predicate
 - `toEqualPartially(expected, options)` - Partial object and array matching with configurable array modes
 - `toBeNullish()` - Null or undefined check
 - `toBePrimitive()` / `toBeArray()` / `toBeObject()` - Type checking
 
 [📖 View all generic matchers →](./docs/GENERIC_MATCHERS.md)
+
+### Collection and Function Matchers
+
+- `toSatisfyAll(predicate)` / `toSatisfyAny(predicate)` - Array predicates
+- `toIncludeSameMembers(values)` / `toIncludeAllMembers(values)` / `toIncludeAnyMembers(values)` - Members in any order
+- `toContainKey(key)` / `toContainKeys(keys)` / `toContainAllKeys(keys)` / `toContainEntry(entry)` / `toBeEmptyObject()` - Object keys and entries
+- `toResolve()` / `toReject()` / `toThrowWithMessage(type, message)` - Promises and thrown errors
+
+[📖 View all collection and function matchers →](./docs/COLLECTION_MATCHERS.md)
 
 ### Fuzzy Matchers (`@cerios/playwright-expectly-fuzzy`)
 
@@ -289,12 +327,15 @@ test("validate sorted data", async () => {
 ### Date Comparisons
 
 ```typescript
-test("validate dates", async () => {
-	const now = new Date();
-	const tomorrow = new Date(now.getTime() + 86400000);
+import { expectly, parseISOInstant } from "@cerios/playwright-expectly";
 
-	expectly(tomorrow).toBeInTheFuture(now);
-	expectly(tomorrow).toBeDateCloseTo(now, { hours: 24 });
+test("validate dates", async () => {
+	const order = await api.getOrder(456);
+	const createdAt = parseISOInstant(order.createdAt); // validated, typed ISO string
+
+	expectly(createdAt).toBeWithinLast({ minutes: 5 });
+	expectly(order.completedAt).toBeWithinDurationAfter(createdAt, { seconds: 15 });
+	expectly(order.deliveryDate).toBeWeekday({ timeZone: "Europe/Amsterdam" });
 });
 ```
 
@@ -365,7 +406,7 @@ import { expectlyDate } from "@cerios/playwright-expectly";
 
 expectlyString("test@example.com").toBeValidEmail();
 expectlyNumberArray([1, 2, 3]).toHaveAscendingOrder();
-expectlyDate(new Date()).toBeInTheFuture(new Date("2020-01-01"));
+expectlyDate("2026-10-25").toBeAfter("2026-10-20");
 ```
 
 ### Negation
@@ -382,11 +423,13 @@ await expectly(page.locator(".text")).not.toBeNumericString();
 
 - [📖 String Matchers](./docs/STRING_MATCHERS.md) - Email, URL, UUID, alphanumeric validation
 - [📖 Number Array Matchers](./docs/NUMBER_ARRAY_MATCHERS.md) - Sorting, statistics, range checks
-- [📖 Date Matchers](./docs/DATE_MATCHERS.md) - Date comparisons, quarters, business days
-- [📖 Locator Matchers](./docs/LOCATOR_MATCHERS.md) - DOM element text and attribute validation
+- [📖 Date Matchers](./docs/DATE_MATCHERS.md) - Dates, datetimes, time zones, durations and typed ISO strings
+- [📖 Locator Matchers](./docs/LOCATOR_MATCHERS.md) - DOM element text, attribute, style, count and order validation
+- [📖 Page Matchers](./docs/PAGE_MATCHERS.md) - Cookies, `localStorage` and `sessionStorage`
 - [📖 Object Array Matchers](./docs/OBJECT_ARRAY_MATCHERS.md) - Sorting and uniqueness by property
 - [📖 String Array Matchers](./docs/STRING_ARRAY_MATCHERS.md) - Alphabetical sorting and uniqueness
 - [📖 Generic Matchers](./docs/GENERIC_MATCHERS.md) - Type checking and partial matching
+- [📖 Collection and Function Matchers](./docs/COLLECTION_MATCHERS.md) - Array members, object keys and entries, promises and thrown errors
 - [📖 Fuzzy Matchers](./docs/FUZZY_MATCHERS.md) - AI-generated text validation with fuzzy string matching
 
 ## Contributing

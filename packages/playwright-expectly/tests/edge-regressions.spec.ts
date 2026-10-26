@@ -80,10 +80,10 @@ test("ISO validation rejects normalization of invalid dates", () => {
 		"2025-01-01T24:00:00Z",
 		"2025-01-01T12:60:00Z",
 	]) {
-		expectlyDate(invalid).not.toBeValidISODate();
+		expectlyDate(invalid).not.toBeValidISODateTime();
 	}
 	for (const valid of ["2024-02-29T23:59:59.999Z", "2000-02-29T00:00:00", "0000-02-29T00:00:00Z"])
-		expectlyDate(valid).toBeValidISODate();
+		expectlyDate(valid).toBeValidISODateTime();
 });
 
 test("partial matching rejects cycles explicitly but allows shared references", () => {
@@ -122,6 +122,7 @@ for (const fails of [false, true]) {
 	test(`visible-count handles are disposed on ${fails ? "failure" : "success"}`, async () => {
 		let disposals = 0;
 		const locator = {
+			count: (): Promise<number> => Promise.resolve(1),
 			elementHandles: () =>
 				Promise.resolve([
 					{

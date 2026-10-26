@@ -1,9 +1,133 @@
-import { withMatcherState, runPolledMatcher } from "@cerios/playwright-expectly-core";
+import type { LocatorSnapshot } from "@cerios/playwright-expectly-core";
+import { locatorNotFoundMessage, pollLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
-import type { Expect } from "@playwright/test";
+import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
 
+import type { ExpectlyMatcherResult } from "../matchers/matcher-result";
 import { matchesPattern } from "../matchers/text-validation-utils";
+
+function attributeMatches(actual: string | null, expected: string | RegExp): boolean {
+	if (typeof expected === "string") {
+		return actual === expected;
+	}
+	return actual !== null && matchesPattern(actual, expected);
+}
+
+/** The attribute value, or `null` when the attribute (or the element) is missing. */
+function attributeValue(snapshot: LocatorSnapshot<string | null> | undefined): string | null {
+	return snapshot?.found ? snapshot.value : null;
+}
+
+/** Shared implementation for matchers that compare one attribute with a string or pattern. */
+async function attributeMatcher(
+	state: ExpectMatcherState,
+	assertionName: string,
+	attribute: string,
+	locator: Locator,
+	expected: string | RegExp,
+	options: PollOptions | undefined,
+): Promise<ExpectlyMatcherResult> {
+	const { pass, snapshot } = await pollLocators(
+		state,
+		options,
+		[locator],
+		(actionOptions) => locator.getAttribute(attribute, actionOptions),
+		(actual) => attributeMatches(actual, expected),
+	);
+	const actual = attributeValue(snapshot);
+
+	const message = (): string => {
+		const notFound = locatorNotFoundMessage(state, assertionName, snapshot);
+		if (notFound) return notFound;
+		const hint = state.utils.matcherHint(assertionName, undefined, undefined, {
+			isNot: state.isNot,
+		});
+
+		if (pass && state.isNot) {
+			return (
+				hint +
+				"\n\n" +
+				`Expected element to not have ${attribute}: ${state.utils.printExpected(expected)}\n` +
+				`Received: ${state.utils.printReceived(actual)}`
+			);
+		}
+
+		if (!pass && !state.isNot) {
+			return (
+				hint +
+				"\n\n" +
+				`Expected element to have ${attribute}: ${state.utils.printExpected(expected)}\n` +
+				`Received: ${state.utils.printReceived(actual ?? `(no ${attribute} attribute)`)}`
+			);
+		}
+
+		return hint;
+	};
+
+	return {
+		message,
+		pass,
+		name: assertionName,
+		expected,
+		actual,
+	};
+}
+
+/** Shared implementation for matchers that check a boolean attribute is present. */
+async function booleanAttributeMatcher(
+	state: ExpectMatcherState,
+	assertionName: string,
+	attribute: string,
+	locator: Locator,
+	options: PollOptions | undefined,
+): Promise<ExpectlyMatcherResult> {
+	const { pass, snapshot } = await pollLocators(
+		state,
+		options,
+		[locator],
+		(actionOptions) => locator.getAttribute(attribute, actionOptions),
+		(actual) => actual !== null,
+	);
+
+	const message = (): string => {
+		const notFound = locatorNotFoundMessage(state, assertionName, snapshot);
+		if (notFound) return notFound;
+		const hint = state.utils.matcherHint(assertionName, undefined, undefined, {
+			isNot: state.isNot,
+		});
+
+		if (pass && state.isNot) {
+			return `${hint}\n\nExpected element to not be ${attribute}\nBut it has the ${attribute} attribute`;
+		}
+
+		if (!pass && !state.isNot) {
+			return `${hint}\n\nExpected element to be ${attribute}\nBut it does not have the ${attribute} attribute`;
+		}
+
+		return hint;
+	};
+
+	return {
+		message,
+		pass,
+		name: assertionName,
+	};
+}
+
+export type StylesOptions = PollOptions & {
+	/** Read the styles of the `::before` or `::after` pseudo-element. */
+	pseudo?: "::before" | "::after";
+};
+
+function styleMatches(actual: string, expected: string | RegExp): boolean {
+	return typeof expected === "string" ? actual === expected : matchesPattern(actual, expected);
+}
+
+/** Expected properties whose computed value differs. */
+function styleMismatches(actual: Record<string, string>, expected: Record<string, string | RegExp>): string[] {
+	return Object.keys(expected).filter((name) => !styleMatches(actual[name] ?? "", expected[name]));
+}
 
 /**
  * Element attribute matchers for Playwright locators.
@@ -11,260 +135,37 @@ import { matchesPattern } from "../matchers/text-validation-utils";
  */
 export const expectlyLocatorAttributesMatchers = withMatcherState({
 	async toHavePlaceholder(locator: Locator, expected: string | RegExp, options?: PollOptions) {
-		const assertionName = "toHavePlaceholder";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute("placeholder");
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to not have placeholder: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to have placeholder: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual ?? "(no placeholder attribute)")}`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-			expected,
-			actual,
-		};
+		return attributeMatcher(this, "toHavePlaceholder", "placeholder", locator, expected, options);
 	},
 	async toHaveHref(locator: Locator, expected: string | RegExp, options?: PollOptions) {
-		const assertionName = "toHaveHref";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute("href");
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to not have href: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to have href: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual ?? "(no href attribute)")}`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-			expected,
-			actual,
-		};
+		return attributeMatcher(this, "toHaveHref", "href", locator, expected, options);
 	},
 	async toHaveSrc(locator: Locator, expected: string | RegExp, options?: PollOptions) {
-		const assertionName = "toHaveSrc";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute("src");
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to not have src: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to have src: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual ?? "(no src attribute)")}`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-			expected,
-			actual,
-		};
+		return attributeMatcher(this, "toHaveSrc", "src", locator, expected, options);
 	},
 	async toHaveAlt(locator: Locator, expected: string | RegExp, options?: PollOptions) {
-		const assertionName = "toHaveAlt";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute("alt");
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to not have alt: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to have alt: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual ?? "(no alt attribute)")}`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-			expected,
-			actual,
-		};
+		return attributeMatcher(this, "toHaveAlt", "alt", locator, expected, options);
 	},
 	async toHaveDataAttribute(locator: Locator, name: string, expected?: string | RegExp, options?: PollOptions) {
 		const assertionName = "toHaveDataAttribute";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
 		const attrName = name.startsWith("data-") ? name : `data-${name}`;
 
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute(attrName);
-				if (expected === undefined) {
-					return actual !== null;
-				}
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+		const { pass, snapshot } = await pollLocators(
+			this,
+			options,
+			[locator],
+			(actionOptions) => locator.getAttribute(attrName, actionOptions),
+			(actual) => (expected === undefined ? actual !== null : attributeMatches(actual, expected)),
+		);
+		const actual = attributeValue(snapshot);
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(
 				assertionName,
 				undefined,
-				expected === undefined ? `"${name}"` : `"${name}", ${JSON.stringify(expected)}`,
+				expected === undefined ? `"${name}"` : `"${name}", ${this.utils.printExpected(expected)}`,
 				{
 					isNot: this.isNot,
 				},
@@ -311,107 +212,56 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 		};
 	},
 	async toHaveAriaLabel(locator: Locator, expected: string | RegExp, options?: PollOptions) {
-		const assertionName = "toHaveAriaLabel";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute("aria-label");
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to not have aria-label: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
-			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to have aria-label: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual ?? "(no aria-label attribute)")}`
-				);
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-			expected,
-			actual,
-		};
+		return attributeMatcher(this, "toHaveAriaLabel", "aria-label", locator, expected, options);
 	},
 	async toHaveTarget(locator: Locator, expected: string | RegExp, options?: PollOptions) {
-		const assertionName = "toHaveTarget";
-		let pass: boolean = false;
-		let actual: string | null = null;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.getAttribute("target");
-				if (typeof expected === "string") {
-					return actual === expected;
-				}
-				return actual !== null && matchesPattern(actual, expected);
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
+		return attributeMatcher(this, "toHaveTarget", "target", locator, expected, options);
+	},
+	async toBeRequired(locator: Locator, options?: PollOptions) {
+		return booleanAttributeMatcher(this, "toBeRequired", "required", locator, options);
+	},
+	async toBeReadOnly(locator: Locator, options?: PollOptions) {
+		return booleanAttributeMatcher(this, "toBeReadOnly", "readonly", locator, options);
+	},
+	async toHaveStyles(locator: Locator, expected: Record<string, string | RegExp>, options?: StylesOptions) {
+		const assertionName = "toHaveStyles";
+		if (typeof expected !== "object" || expected === null || Object.keys(expected).length === 0) {
+			throw new TypeError(`${assertionName}: expected a non-empty object of CSS properties`);
 		}
+		const names = Object.keys(expected);
+		const pseudo = options?.pseudo ?? null;
+
+		const { pass, snapshot } = await pollLocators(
+			this,
+			options && { timeout: options.timeout, intervals: options.intervals },
+			[locator],
+			(actionOptions) =>
+				locator.evaluate(
+					(element, [properties, pseudoElement]) => {
+						const style = getComputedStyle(element, pseudoElement);
+						// getPropertyValue also reads custom properties (`--brand-color`), unlike style[name].
+						return Object.fromEntries(properties.map((name) => [name, style.getPropertyValue(name).trim()]));
+					},
+					[names, pseudo] as const,
+					actionOptions,
+				),
+			// `.not` passes when at least one property differs.
+			(actual) => styleMismatches(actual, expected).length === 0,
+		);
+		const actual = snapshot?.found ? snapshot.value : {};
 
 		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to not have target: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual)}`
-				);
+			const notFound = locatorNotFoundMessage(this, assertionName, snapshot);
+			if (notFound) return notFound;
+			const hint = this.utils.matcherHint(assertionName, undefined, undefined, { isNot: this.isNot });
+			if (this.isNot) {
+				return `${hint}\n\nExpected element to not have all of these styles: ${this.utils.printExpected(expected)}\nReceived: ${this.utils.printReceived(actual)}`;
 			}
-
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected element to have target: ${this.utils.printExpected(expected)}\n` +
-					`Received: ${this.utils.printReceived(actual ?? "(no target attribute)")}`
-				);
-			}
-
-			return hint;
+			const lines = styleMismatches(actual, expected).map(
+				(name) =>
+					`  ${name}: expected ${this.utils.printExpected(expected[name])}, received ${this.utils.printReceived(actual[name] ?? "")}`,
+			);
+			return `${hint}\n\nExpected element${pseudo ? ` ${pseudo}` : ""} to have styles\n${lines.join("\n")}`;
 		};
 
 		return {
@@ -420,90 +270,6 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			name: assertionName,
 			expected,
 			actual,
-		};
-	},
-	async toBeRequired(locator: Locator, options?: PollOptions) {
-		const assertionName = "toBeRequired";
-		let pass: boolean = false;
-		let hasAttribute: boolean = false;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				const requiredAttr = await locator.getAttribute("required");
-				hasAttribute = requiredAttr !== null;
-				return hasAttribute;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return `${hint}\n\nExpected element to not be required\nBut it has the required attribute`;
-			}
-
-			if (!pass && !this.isNot) {
-				return `${hint}\n\nExpected element to be required\nBut it does not have the required attribute`;
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
-		};
-	},
-	async toBeReadOnly(locator: Locator, options?: PollOptions) {
-		const assertionName = "toBeReadOnly";
-		let pass: boolean = false;
-		let hasAttribute: boolean = false;
-		let locatorError: Error | undefined;
-
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				const readonlyAttr = await locator.getAttribute("readonly");
-				hasAttribute = readonlyAttr !== null;
-				return hasAttribute;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
-
-		const message = (): string => {
-			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
-				isNot: this.isNot,
-			});
-
-			if (pass && this.isNot) {
-				return `${hint}\n\nExpected element to not be readonly\nBut it has the readonly attribute`;
-			}
-
-			if (!pass && !this.isNot) {
-				return `${hint}\n\nExpected element to be readonly\nBut it does not have the readonly attribute`;
-			}
-
-			return hint;
-		};
-
-		return {
-			message,
-			pass,
-			name: assertionName,
 		};
 	},
 });

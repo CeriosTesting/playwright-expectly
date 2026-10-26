@@ -2,6 +2,8 @@
 
 Statistical and sorting matchers for arrays of numbers.
 
+These matchers require an array of numbers. Any other value throws a `TypeError` that names the received type, such as `toHaveSum: received value must be a number array, got: number`. `NaN` and `Infinity`, in the array or as an expected value, throw a `TypeError` too, because they cannot be compared or ordered.
+
 ## Available Matchers
 
 - [toHaveAscendingOrder()](#tohaveascendingorder)
@@ -20,6 +22,8 @@ Statistical and sorting matchers for arrays of numbers.
 - [toBeMonotonic()](#tobemonotonic)
 - [toHaveUniqueValues()](#tohaveuniquevalues)
 - [toHaveConsecutiveIntegers()](#tohaveconsecutiveintegers)
+
+See also [Floating-Point Tolerance](#floating-point-tolerance) for `toHaveSum()`, `toHaveAverage()`, `toHaveMedian()` and `toHaveRange()`.
 
 ## toHaveAscendingOrder()
 
@@ -50,9 +54,32 @@ expectly(rankings).toHaveDescendingOrder();
 expectly(leaderboardScores).toHaveDescendingOrder();
 ```
 
+## Floating-Point Tolerance
+
+`toHaveSum()`, `toHaveAverage()`, `toHaveMedian()` and `toHaveRange()` tolerate the rounding error of the whole floating-point computation. The allowed error grows with the number of values and their magnitude, so exact decimal expectations pass:
+
+```typescript
+expectly([0.01, 2.03, 1.2]).toHaveSum(3.24); // the raw sum is 3.2399999999999993
+expectly(Array(100).fill(0.1)).toHaveSum(10); // the raw sum is 9.99999999999998
+expectly([0.1, 0.2]).toHaveAverage(0.15);
+```
+
+Pass `{ tolerance }` for an explicit absolute bound instead. It must be a non-negative finite number:
+
+```typescript
+// Accept a total that is off by at most one cent
+expectly(lineTotals).toHaveSum(99.99, { tolerance: 0.01 });
+
+// Measurements within 0.5 of the expected average
+expectly([9.8, 10.1, 10.4]).toHaveAverage(10, { tolerance: 0.5 });
+
+// Exact comparison
+expectly([0.1, 0.2]).not.toHaveSum(0.3, { tolerance: 0 });
+```
+
 ## toHaveSum()
 
-Asserts that an array of numbers sums to the expected value.
+Asserts that an array of numbers sums to the expected value. Rounding errors are tolerated ([Floating-Point Tolerance](#floating-point-tolerance)); pass `{ tolerance }` for an explicit bound.
 
 ```typescript
 // Validate cart total
@@ -61,11 +88,16 @@ expectly(itemPrices).toHaveSum(31.49);
 
 // Check vote count
 expectly([45, 32, 23]).toHaveSum(100);
+
+// Explicit tolerance
+expectly([10.99, 5.5, 15.0]).toHaveSum(31.5, { tolerance: 0.05 });
 ```
 
 ## toHaveAverage()
 
-Asserts that an array has the expected average (mean).
+Asserts that an array has the expected average (mean). Rounding errors are tolerated; pass `{ tolerance }` for an explicit bound.
+
+An empty array has no average, so it never matches (and `.not` always passes), like `toHaveMin()` and `toHaveMax()`.
 
 ```typescript
 // Validate test scores average
@@ -74,11 +106,19 @@ expectly(scores).toHaveAverage(87.5);
 
 // Check rating average
 expectly(ratings).toHaveAverage(4.5);
+
+// Within half a star
+expectly(ratings).toHaveAverage(4.5, { tolerance: 0.5 });
+
+// Empty arrays never match
+expectly([]).not.toHaveAverage(0);
 ```
 
 ## toHaveMedian()
 
-Asserts that an array has the expected median (middle value).
+Asserts that an array has the expected median (middle value). For an even number of values, the median is the mean of the two middle values. Rounding errors are tolerated; pass `{ tolerance }` for an explicit bound.
+
+An empty array has no median, so it never matches.
 
 ```typescript
 // Validate median salary
@@ -87,11 +127,17 @@ expectly(salaries).toHaveMedian(70000);
 
 // Check median response time
 expectly(responseTimes).toHaveMedian(250);
+
+// Even number of values
+expectly([10, 20, 30, 40]).toHaveMedian(25);
+
+// Empty arrays never match
+expectly([]).not.toHaveMedian(0);
 ```
 
 ## toHaveMin() / toHaveMax()
 
-Asserts that an array's minimum or maximum value equals the expected number.
+Asserts that an array's minimum or maximum value equals the expected number. An empty array has no minimum or maximum and never matches.
 
 ```typescript
 // Validate lowest price
@@ -108,7 +154,7 @@ expectly(scores).toHaveMax(95);
 
 ## toHaveRange()
 
-Asserts that an array's range (max - min) equals the expected number.
+Asserts that an array's range (max - min) equals the expected number. Rounding errors are tolerated; pass `{ tolerance }` for an explicit bound. An empty array has no range and never matches.
 
 ```typescript
 // Validate data spread
@@ -117,11 +163,17 @@ expectly(values).toHaveRange(20); // 30 - 10 = 20
 
 // Check temperature variation
 expectly(dailyTemps).toHaveRange(15);
+
+// Decimal values
+expectly([0.1, 0.3]).toHaveRange(0.2); // the raw difference is 0.19999999999999998
+
+// Explicit tolerance
+expectly(dailyTemps).toHaveRange(15, { tolerance: 0.5 });
 ```
 
 ## toBeAllBetween()
 
-Asserts that all numbers fall within the specified range (inclusive).
+Asserts that all numbers fall within the specified range (inclusive). Throws a `RangeError` when `min` is greater than `max`, so swapped arguments cannot make `.not` pass by accident.
 
 ```typescript
 // Validate percentages
@@ -130,6 +182,10 @@ expectly(percentages).toBeAllBetween(0, 100);
 
 // Check scores within range
 expectly(testScores).toBeAllBetween(60, 100);
+
+// Swapped bounds throw
+expectly(percentages).toBeAllBetween(100, 0);
+// RangeError: toBeAllBetween: min (100) must not be greater than max (0)
 ```
 
 ## toBeAllPositive() / toBeAllNegative()
@@ -223,6 +279,8 @@ expectly([1, 3, 2, 4]).not.toBeMonotonic();
 
 Asserts that all numbers are unique (no duplicates).
 
+Values are compared like a `Set` does (SameValueZero), so `0` and `-0` count as duplicates.
+
 ```typescript
 // Validate unique IDs
 const userIds = [101, 202, 303, 404];
@@ -230,6 +288,9 @@ expectly(userIds).toHaveUniqueValues();
 
 // Check for duplicates
 expectly([1, 2, 2, 3]).not.toHaveUniqueValues();
+
+// 0 and -0 are the same value
+expectly([0, -0]).not.toHaveUniqueValues();
 ```
 
 ## toHaveConsecutiveIntegers()

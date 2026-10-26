@@ -4,12 +4,15 @@ import { withMatcherState } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import { assertReceivedType } from "./matchers/common-utils";
+
 /**
  * Expectly Custom matchers for object array validations.
  */
 export const expectlyObjectArrayMatchers = withMatcherState({
 	toHaveOnlyUniqueObjects(actual: object[]) {
 		const assertionName = "toHaveOnlyUniqueObjects";
+		assertReceivedType(assertionName, actual, "array");
 		const duplicateObjects = getDuplicateObjects(actual);
 		const pass = duplicateObjects.length === 0;
 
@@ -38,6 +41,7 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 	},
 	toHaveObjectsInAscendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInAscendingOrderBy";
+		assertReceivedType(assertionName, actual, "array");
 		const validation = validateSortOrder(actual, propertyName, "ascending");
 		const pass = validation.isValid;
 
@@ -77,6 +81,7 @@ export const expectlyObjectArrayMatchers = withMatcherState({
 	},
 	toHaveObjectsInDescendingOrderBy(actual: object[], propertyName: string) {
 		const assertionName = "toHaveObjectsInDescendingOrderBy";
+		assertReceivedType(assertionName, actual, "array");
 		const validation = validateSortOrder(actual, propertyName, "descending");
 		const pass = validation.isValid;
 
@@ -150,15 +155,15 @@ function validateSortOrder(
 		const currentObj = arr[i];
 		const nextObj = arr[i + 1];
 
-		// Check if property exists on both objects
-		if (!Object.prototype.hasOwnProperty.call(currentObj, propertyName)) {
+		// Check if property exists on both objects (own, inherited or a getter)
+		if (!hasProperty(currentObj, propertyName)) {
 			return {
 				isValid: false,
 				errorMessage: `Property "${propertyName}" not found on object at index ${i}`,
 			};
 		}
 
-		if (!Object.prototype.hasOwnProperty.call(nextObj, propertyName)) {
+		if (!hasProperty(nextObj, propertyName)) {
 			return {
 				isValid: false,
 				errorMessage: `Property "${propertyName}" not found on object at index ${i + 1}`,
@@ -194,24 +199,69 @@ function validateSortOrder(
 			};
 		}
 
+		assertOrderable(currentValue, propertyName, i);
+		assertOrderable(nextValue, propertyName, i + 1);
+		const comparison = compareOrderable(currentValue, nextValue);
+
 		// Perform comparison based on order
 		if (order === "ascending") {
-			if (currentValue > nextValue) {
+			if (comparison > 0) {
 				return {
 					isValid: false,
-					errorMessage: `Found out of order at indices ${i} and ${i + 1}: ${JSON.stringify(currentValue)} > ${JSON.stringify(nextValue)}`,
+					errorMessage: `Found out of order at indices ${i} and ${i + 1}: ${formatValue(currentValue)} > ${formatValue(nextValue)}`,
 				};
 			}
 		} else {
 			// descending
-			if (currentValue < nextValue) {
+			if (comparison < 0) {
 				return {
 					isValid: false,
-					errorMessage: `Found out of order at indices ${i} and ${i + 1}: ${JSON.stringify(currentValue)} < ${JSON.stringify(nextValue)}`,
+					errorMessage: `Found out of order at indices ${i} and ${i + 1}: ${formatValue(currentValue)} < ${formatValue(nextValue)}`,
 				};
 			}
 		}
 	}
 
 	return { isValid: true, errorMessage: "" };
+}
+
+function hasProperty(value: unknown, propertyName: string): boolean {
+	return value !== null && value !== undefined && propertyName in Object(value);
+}
+
+/**
+ * Only values with a total order can be sorted: `<` and `>` are both false for NaN, Invalid Date and
+ * plain objects, which would make any order look valid.
+ */
+function assertOrderable(value: unknown, propertyName: string, index: number): void {
+	let problem: string | undefined;
+	if (typeof value === "number" && Number.isNaN(value)) {
+		problem = "NaN";
+	} else if (value instanceof Date) {
+		if (Number.isNaN(value.getTime())) problem = "an Invalid Date";
+	} else if (typeof value === "object" && value !== null) {
+		problem = `a ${value.constructor?.name ?? "object"}`;
+	} else if (typeof value === "function" || typeof value === "symbol") {
+		problem = `a ${typeof value}`;
+	}
+	if (problem) {
+		throw new TypeError(
+			`Property "${propertyName}" at index ${index} is ${problem}, which cannot be ordered. ` +
+				"Sort by numbers, strings, bigints, booleans or valid Dates.",
+		);
+	}
+}
+
+function compareOrderable(left: unknown, right: unknown): number {
+	const leftValue = left instanceof Date ? left.getTime() : (left as number | string | bigint | boolean);
+	const rightValue = right instanceof Date ? right.getTime() : (right as number | string | bigint | boolean);
+	if (leftValue < rightValue) return -1;
+	if (leftValue > rightValue) return 1;
+	return 0;
+}
+
+function formatValue(value: unknown): string {
+	if (value instanceof Date) return value.toISOString();
+	if (typeof value === "bigint") return `${value}n`;
+	return JSON.stringify(value);
 }

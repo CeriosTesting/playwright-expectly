@@ -2,8 +2,10 @@ import type { ExpectMatcherState } from "@playwright/test";
 
 // Only remove our implementation frames and Playwright's runner frames. Keep user helpers,
 // including helpers in other dependencies, and support source maps as well as published bundles.
+// Our frames are anchored to the scoped package or the workspace folder, so user folders that
+// happen to be called "playwright-expectly/src" keep their frames.
 const implementationFrame =
-	/[/\\]playwright-expectly(?:-core|-fuzzy)?[/\\](?:src|dist)[/\\]|[/\\](?:playwright|playwright-core|@playwright[/\\]test)[/\\](?:lib|src)[/\\]/;
+	/[/\\](?:@cerios|packages)[/\\]playwright-expectly(?:-core|-fuzzy)?[/\\](?:src|dist)[/\\]|[/\\](?:playwright|playwright-core|@playwright[/\\]test)[/\\](?:lib|src)[/\\]/;
 
 function callerStack(boundary: (...args: unknown[]) => unknown): Error {
 	const captured = new Error();

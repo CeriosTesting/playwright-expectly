@@ -2,6 +2,8 @@ import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import { expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
+import { expectlyLocatorCountMatchers } from "./expectly-locator-count";
+import { expectlyLocatorOrderMatchers } from "./expectly-locator-order";
 import { expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";
 import { expectlyLocatorStateMatchers } from "./expectly-locator-state";
 import { expectlyLocatorTextMatchers } from "./expectly-locator-text";
@@ -17,11 +19,15 @@ export const expectlyLocatorMatchers = {
 	...expectlyLocatorPositioningMatchers,
 	...expectlyLocatorStateMatchers,
 	...expectlyLocatorVisibilityMatchers,
+	...expectlyLocatorCountMatchers,
+	...expectlyLocatorOrderMatchers,
 } as typeof expectlyLocatorTextMatchers &
 	typeof expectlyLocatorAttributesMatchers &
 	typeof expectlyLocatorPositioningMatchers &
 	typeof expectlyLocatorStateMatchers &
-	typeof expectlyLocatorVisibilityMatchers;
+	typeof expectlyLocatorVisibilityMatchers &
+	typeof expectlyLocatorCountMatchers &
+	typeof expectlyLocatorOrderMatchers;
 
 /**
  * Unified expectly locator matchers.
@@ -33,6 +39,11 @@ export const expectlyLocatorMatchers = {
 export const expectlyLocator: Expect<{}> = baseExpect.extend<typeof expectlyLocatorMatchers>(expectlyLocatorMatchers);
 
 export { expectlyLocatorAttributes, expectlyLocatorAttributesMatchers } from "./expectly-locator-attributes";
+export type { StylesOptions } from "./expectly-locator-attributes";
+export { expectlyLocatorCount, expectlyLocatorCountMatchers } from "./expectly-locator-count";
+export type { CountOptions } from "./expectly-locator-count";
+export { expectlyLocatorOrder, expectlyLocatorOrderMatchers } from "./expectly-locator-order";
+export type { TextOrderOptions } from "./expectly-locator-order";
 export { expectlyLocatorPositioning, expectlyLocatorPositioningMatchers } from "./expectly-locator-positioning";
 export { expectlyLocatorState, expectlyLocatorStateMatchers } from "./expectly-locator-state";
 export { expectlyLocatorText, expectlyLocatorTextMatchers } from "./expectly-locator-text";

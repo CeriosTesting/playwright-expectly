@@ -2,25 +2,28 @@ import { withMatcherState } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import type { StringOrderOptions } from "./matchers/common-utils";
 import {
+	assertReceivedType,
 	checkMonotonic,
 	findDuplicates,
 	findStrictAscendingViolation,
 	findStrictDescendingViolation,
 	sortedExpected,
-	validateFiniteNumbers,
+	stringComparator,
 } from "./matchers/common-utils";
 
 /**
  * Expectly Custom matchers for string array validations.
  */
 export const expectlyStringArrayMatchers = withMatcherState({
-	toHaveAscendingOrder(actual: string[]) {
+	toHaveAscendingOrder(actual: string[], options?: StringOrderOptions) {
 		const assertionName = "toHaveAscendingOrder";
+		assertReceivedType(assertionName, actual, "string array");
 		let pass: boolean;
 		let matcherResult: { actual?: unknown } | undefined;
 
-		const expected: string[] = sortedExpected(actual, "ascending");
+		const expected: string[] = sortedExpected(actual, "ascending", stringComparator(options));
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = { actual };
@@ -59,12 +62,13 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			actual: matcherResult?.actual,
 		};
 	},
-	toHaveDescendingOrder(actual: string[]) {
+	toHaveDescendingOrder(actual: string[], options?: StringOrderOptions) {
 		const assertionName = "toHaveDescendingOrder";
+		assertReceivedType(assertionName, actual, "string array");
 		let pass: boolean;
 		let matcherResult: { actual?: unknown } | undefined;
 
-		const expected: string[] = sortedExpected(actual, "descending");
+		const expected: string[] = sortedExpected(actual, "descending", stringComparator(options));
 		try {
 			baseExpect(actual).toEqual(expected);
 			matcherResult = { actual };
@@ -103,9 +107,10 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			actual: matcherResult?.actual,
 		};
 	},
-	toHaveStrictlyAscendingOrder(actual: string[]) {
+	toHaveStrictlyAscendingOrder(actual: string[], options?: StringOrderOptions) {
 		const assertionName = "toHaveStrictlyAscendingOrder";
-		const firstViolationIndex = findStrictAscendingViolation(actual);
+		assertReceivedType(assertionName, actual, "string array");
+		const firstViolationIndex = findStrictAscendingViolation(actual, stringComparator(options));
 		const pass = firstViolationIndex === -1;
 
 		const message = (): string => {
@@ -141,9 +146,10 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			name: assertionName,
 		};
 	},
-	toHaveStrictlyDescendingOrder(actual: string[]) {
+	toHaveStrictlyDescendingOrder(actual: string[], options?: StringOrderOptions) {
 		const assertionName = "toHaveStrictlyDescendingOrder";
-		const firstViolationIndex = findStrictDescendingViolation(actual);
+		assertReceivedType(assertionName, actual, "string array");
+		const firstViolationIndex = findStrictDescendingViolation(actual, stringComparator(options));
 		const pass = firstViolationIndex === -1;
 
 		const message = (): string => {
@@ -179,9 +185,9 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			name: assertionName,
 		};
 	},
-	toBeMonotonic(actual: string[]) {
-		validateFiniteNumbers(actual);
+	toBeMonotonic(actual: string[], options?: StringOrderOptions) {
 		const assertionName = "toBeMonotonic";
+		assertReceivedType(assertionName, actual, "string array");
 
 		if (actual.length <= 1) {
 			return {
@@ -194,7 +200,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 			};
 		}
 
-		const { isAscending, isDescending } = checkMonotonic(actual);
+		const { isAscending, isDescending } = checkMonotonic(actual, stringComparator(options));
 		const pass = isAscending || isDescending;
 
 		const message = (): string => {
@@ -231,6 +237,7 @@ export const expectlyStringArrayMatchers = withMatcherState({
 	},
 	toHaveUniqueValues(actual: string[]) {
 		const assertionName = "toHaveUniqueValues";
+		assertReceivedType(assertionName, actual, "string array");
 		const duplicates = findDuplicates(actual);
 		const pass = duplicates.size === 0;
 

@@ -7,3 +7,4 @@ export { expectlyFuzzy, expectlyFuzzyMatchers } from "./expectly-fuzzy";
 // Individual matcher exports for granular usage
 export { expectlyFuzzyString, expectlyFuzzyStringMatchers } from "./expectly-fuzzy-string";
 export { expectlyFuzzyLocator, expectlyFuzzyLocatorMatchers } from "./expectly-fuzzy-locator";
+export type { FuzzyOptions } from "./fuzzy-score";

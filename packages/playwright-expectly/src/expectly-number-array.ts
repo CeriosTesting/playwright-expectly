@@ -2,9 +2,11 @@ import { withMatcherState } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import type { NumericToleranceOptions } from "./matchers/common-utils";
 import {
+	assertReceivedType,
 	checkMonotonic,
-	numbersEqual,
+	numbersClose,
 	validateFiniteNumbers,
 	findDuplicates,
 	findNonMatching,
@@ -19,8 +21,9 @@ import {
  */
 export const expectlyNumberArrayMatchers = withMatcherState({
 	toHaveAscendingOrder(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveAscendingOrder";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		let pass: boolean;
 		let matcherResult: { actual?: unknown } | undefined;
 
@@ -64,8 +67,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveDescendingOrder(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveDescendingOrder";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		let pass: boolean;
 		let matcherResult: { actual?: unknown } | undefined;
 
@@ -108,15 +112,18 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			actual: matcherResult?.actual,
 		};
 	},
-	toHaveSum(actual: number[], expected: number) {
+	toHaveSum(actual: number[], expected: number, options?: NumericToleranceOptions) {
 		validateFiniteNumbers([expected]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveSum";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		let sum = 0;
+		let magnitude = 0;
 		for (let i = 0; i < actual.length; i++) {
 			sum += actual[i];
+			magnitude += Math.abs(actual[i]);
 		}
-		const pass = numbersEqual(sum, expected);
+		const pass = numbersClose(sum, expected, { operations: actual.length, magnitude }, options);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -153,16 +160,22 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			actual: sum,
 		};
 	},
-	toHaveAverage(actual: number[], expected: number) {
+	toHaveAverage(actual: number[], expected: number, options?: NumericToleranceOptions) {
 		validateFiniteNumbers([expected]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveAverage";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		let sum = 0;
+		let magnitude = 0;
 		for (let i = 0; i < actual.length; i++) {
 			sum += actual[i];
+			magnitude += Math.abs(actual[i]);
 		}
-		const average = actual.length > 0 ? sum / actual.length : 0;
-		const pass = numbersEqual(average, expected);
+		// An empty array has no average, so it never matches (like toHaveMin and toHaveMax).
+		const average = actual.length > 0 ? sum / actual.length : Number.NaN;
+		const pass =
+			actual.length > 0 &&
+			numbersClose(average, expected, { operations: actual.length + 1, magnitude: magnitude / actual.length }, options);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -183,7 +196,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected average: ${this.utils.printExpected(expected)}\n` +
-					`Received average: ${this.utils.printReceived(average)}\n\n` +
+					`Received average: ${actual.length > 0 ? this.utils.printReceived(average) : "(an empty array has no average)"}\n\n` +
 					`Array (${actual.length} elements): ${this.utils.printReceived(actual)}`
 				);
 			}
@@ -199,18 +212,20 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			actual: average,
 		};
 	},
-	toHaveMedian(actual: number[], expected: number) {
+	toHaveMedian(actual: number[], expected: number, options?: NumericToleranceOptions) {
 		validateFiniteNumbers([expected]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveMedian";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const sorted = [...actual].sort((a, b) => a - b);
+		// An empty array has no median, so it never matches (like toHaveMin and toHaveMax).
 		const median =
 			sorted.length === 0
-				? 0
+				? Number.NaN
 				: sorted.length % 2 === 0
 					? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
 					: sorted[Math.floor(sorted.length / 2)];
-		const pass = numbersEqual(median, expected);
+		const pass = numbersClose(median, expected, { operations: 2, magnitude: Math.abs(median) }, options);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -231,7 +246,7 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 					hint +
 					"\n\n" +
 					`Expected median: ${this.utils.printExpected(expected)}\n` +
-					`Received median: ${this.utils.printReceived(median)}\n\n` +
+					`Received median: ${actual.length > 0 ? this.utils.printReceived(median) : "(an empty array has no median)"}\n\n` +
 					`Array (${actual.length} elements): ${this.utils.printReceived(actual)}`
 				);
 			}
@@ -249,8 +264,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toHaveMin(actual: number[], expected: number) {
 		validateFiniteNumbers([expected]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveMin";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const { min } = getMinMax(actual);
 		const pass = min === expected;
 
@@ -291,8 +307,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toHaveMax(actual: number[], expected: number) {
 		validateFiniteNumbers([expected]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveMax";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const { max } = getMinMax(actual);
 		const pass = max === expected;
 
@@ -331,13 +348,19 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			actual: max,
 		};
 	},
-	toHaveRange(actual: number[], expected: number) {
+	toHaveRange(actual: number[], expected: number, options?: NumericToleranceOptions) {
 		validateFiniteNumbers([expected]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveRange";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const { min, max } = getMinMax(actual);
 		const range = max - min;
-		const pass = range === expected;
+		const pass = numbersClose(
+			range,
+			expected,
+			{ operations: 1, magnitude: Math.max(Math.abs(min), Math.abs(max)) },
+			options,
+		);
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, String(expected), {
@@ -376,8 +399,12 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllBetween(actual: number[], min: number, max: number) {
 		validateFiniteNumbers([min, max]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllBetween";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
+		if (min > max) {
+			throw new RangeError(`${assertionName}: min (${min}) must not be greater than max (${max})`);
+		}
 		const outOfRange = findNonMatching(actual, (val) => val >= min && val <= max);
 		const pass = outOfRange.length === 0;
 
@@ -416,8 +443,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllPositive(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllPositive";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const nonPositive = findNonMatching(actual, (val) => val > 0);
 		const pass = nonPositive.length === 0;
 
@@ -455,8 +483,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllNegative(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllNegative";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const nonNegative = findNonMatching(actual, (val) => val < 0);
 		const pass = nonNegative.length === 0;
 
@@ -494,8 +523,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeAllIntegers(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllIntegers";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const nonIntegers = findNonMatching(actual, (val) => Number.isInteger(val));
 		const pass = nonIntegers.length === 0;
 
@@ -529,8 +559,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllGreaterThan(actual: number[], value: number) {
 		validateFiniteNumbers([value]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllGreaterThan";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const notGreater = findNonMatching(actual, (val) => val > value);
 		const pass = notGreater.length === 0;
 
@@ -570,8 +601,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 	},
 	toBeAllLessThan(actual: number[], value: number) {
 		validateFiniteNumbers([value]);
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeAllLessThan";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const notLess = findNonMatching(actual, (val) => val < value);
 		const pass = notLess.length === 0;
 
@@ -610,8 +642,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveStrictlyAscendingOrder(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveStrictlyAscendingOrder";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const firstViolationIndex = findStrictAscendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
@@ -649,8 +682,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveStrictlyDescendingOrder(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveStrictlyDescendingOrder";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const firstViolationIndex = findStrictDescendingViolation(actual);
 		const pass = firstViolationIndex === -1;
 
@@ -688,8 +722,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toBeMonotonic(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toBeMonotonic";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 
 		if (actual.length <= 1) {
 			return {
@@ -738,8 +773,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveUniqueValues(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveUniqueValues";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 		const duplicates = findDuplicates(actual);
 		const pass = duplicates.size === 0;
 
@@ -777,8 +813,9 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		};
 	},
 	toHaveConsecutiveIntegers(actual: number[]) {
-		validateFiniteNumbers(actual);
 		const assertionName = "toHaveConsecutiveIntegers";
+		assertReceivedType(assertionName, actual, "number array");
+		validateFiniteNumbers(actual);
 
 		if (actual.length === 0) {
 			return {

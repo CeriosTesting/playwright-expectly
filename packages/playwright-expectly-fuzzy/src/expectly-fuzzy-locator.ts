@@ -1,41 +1,35 @@
-import { runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
+import { locatorNotFoundMessage, pollLocators, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { Expect } from "@playwright/test";
 import { expect as baseExpect, Locator } from "@playwright/test";
-import * as fuzz from "fuzzball";
+
+import { type FuzzyOptions, fuzzyScore, validateThreshold } from "./fuzzy-score";
 
 /**
  * Expectly Custom matcher for fuzzy locator text validation.
  */
 export const expectlyFuzzyLocatorMatchers = withMatcherState({
-	async toMatchFuzzy(locator: Locator, expected: string, threshold = 80, options?: PollOptions) {
+	async toMatchFuzzy(locator: Locator, expected: string, threshold = 80, options?: PollOptions & FuzzyOptions) {
 		const assertionName = "toMatchFuzzy";
-		let pass: boolean = false;
-		let actual: string = "";
 		let score: number = 0;
-		let locatorError: Error | undefined;
 
-		if (typeof threshold !== "number" || !Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
-			throw new Error(
-				`${assertionName}: threshold must be a finite number between 0 and 100, got: ${String(threshold)}`,
-			);
-		}
+		validateThreshold(assertionName, threshold);
 
-		pass = await runPolledMatcher(this, options, async () => {
-			try {
-				actual = await locator.innerText();
-				score = fuzz.token_sort_ratio(actual, expected);
+		const { pass, snapshot } = await pollLocators(
+			this,
+			options && { timeout: options.timeout, intervals: options.intervals },
+			[locator],
+			(actionOptions) => locator.innerText(actionOptions),
+			(text) => {
+				score = fuzzyScore(text, expected, options);
 				return score >= threshold;
-			} catch (e: unknown) {
-				locatorError = e instanceof Error ? e : new Error(String(e));
-				throw e;
-			}
-		});
-		if (locatorError) {
-			throw locatorError;
-		}
+			},
+		);
+		const actual = snapshot?.found ? snapshot.value : "";
 
 		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, snapshot);
+			if (notFound) return notFound;
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
