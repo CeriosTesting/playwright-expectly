@@ -70,7 +70,7 @@
 		"release": "changeset publish --provenance"
 	},
 	"dependencies": {
-		"@cerios/playwright-expectly-core": "*",
+		"@cerios/playwright-expectly-core": "^1.1.0",
 		"temporal-polyfill": "^1.0.6"
 	},
 	"devDependencies": {

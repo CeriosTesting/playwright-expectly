@@ -58,7 +58,7 @@
 		"test": "playwright test --config=../../playwright.config.ts --project=expectly-fuzzy"
 	},
 	"dependencies": {
-		"@cerios/playwright-expectly-core": "*",
+		"@cerios/playwright-expectly-core": "^1.1.0",
 		"fuzzball": "^2.2.6"
 	},
 	"devDependencies": {
