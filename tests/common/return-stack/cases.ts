@@ -38,3 +38,18 @@ test("detached", async () => {
 test("success", async () => {
 	await wrapped.pollAndReturn(() => 1, options).toBe(1); // call:success
 });
+
+test("soft-pass", async () => {
+	const assertion = wrapped.soft((): number => {
+		throw new Error("not yet");
+	});
+	const value = await assertion.toPassAndReturn(options); // call:soft-pass
+	test.info().annotations.push({ type: "returned", description: JSON.stringify(value ?? null) });
+	test.info().annotations.push({ type: "continued", description: "yes" });
+});
+
+test("soft-poll", async () => {
+	const value = await wrapped.soft.pollAndReturn(() => 1, options).toBe(2); // call:soft-poll
+	test.info().annotations.push({ type: "returned", description: JSON.stringify(value ?? null) });
+	test.info().annotations.push({ type: "continued", description: "yes" });
+});

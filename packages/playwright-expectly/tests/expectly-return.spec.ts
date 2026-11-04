@@ -142,26 +142,55 @@ test("returns data from successful asynchronous callbacks without repeating them
 	expect(passCalls).toBe(2);
 });
 
-test("return-aware assertions reject soft failures and preserve custom messages", async () => {
-	const soft = withReturn(expect.configure({ soft: true, message: "configured failure" }));
+function checkSoftReturnTypes(): void {
+	const softPoll: Promise<string | undefined> = expectly.soft.pollAndReturn(() => "x").toBe("x");
+	const softNotPoll: Promise<string | undefined> = expectly.soft.pollAndReturn(() => "x").not.toBeUUID(4);
+	const softPass: Promise<number | undefined> = expectly.soft(() => 1).toPassAndReturn();
+	const configuredSoft: Promise<number | undefined> = expectly
+		.configure({ soft: true })(() => 1)
+		.toPassAndReturn();
+	const hardAgain: Promise<number> = expectly.soft
+		.configure({ soft: false })
+		.pollAndReturn(() => 1)
+		.toBe(1);
+	const keepsSoft: Promise<number | undefined> = expectly.soft
+		.configure({ timeout: 1 })
+		.pollAndReturn(() => 1)
+		.toBe(1);
+	// @ts-expect-error Soft assertions may resolve without a passing value.
+	const notNarrowed: Promise<number> = expectly.soft(() => 1).toPassAndReturn();
+	const hard: Promise<number> = expectly(() => 1).toPassAndReturn();
+	void [softPoll, softNotPoll, softPass, configuredSoft, hardAgain, keepsSoft, notNarrowed, hard];
+}
+
+void checkSoftReturnTypes;
+
+test("soft return-aware assertions are available and return passing values", async () => {
+	expect(await expectly.soft.pollAndReturn(() => 42).toBe(42)).toBe(42);
+	expect(await expectly.soft(() => 42).toPassAndReturn({ timeout: 100 })).toBe(42);
+	const configured = withReturn(expect).configure({ soft: true, message: "configured" });
+	expect(await configured.pollAndReturn(() => "READY").not.toBe("PENDING")).toBe("READY");
+	expect(await configured(() => "ok").toPassAndReturn({ timeout: 100 })).toBe("ok");
+	const softExtended = expectly.soft.extend({
+		toExceed(received: number, minimum: number): MatcherReturnType {
+			return { pass: received > minimum, message: () => "expected a larger number" };
+		},
+	});
+	expect(await softExtended.pollAndReturn(() => 2).toExceed(1)).toBe(2);
+	expect(test.info().errors).toHaveLength(0);
+});
+
+test("non-soft return-aware assertions reject failures and preserve custom messages", async () => {
+	// Soft failures would fail this test; the reporter fixture in expectly-return-stack.spec.ts covers them.
 	await expect(
-		soft
-			.pollAndReturn(() => "PENDING", {
-				timeout: 30,
-				intervals: [1],
-				message: "order was not ready",
-			})
+		expectly
+			.configure({ soft: false })
+			.pollAndReturn(() => "PENDING", { timeout: 30, intervals: [1], message: "order was not ready" })
 			.toBe("READY"),
 	).rejects.toThrow("order was not ready");
 	await expect(
-		soft((): number => {
+		expectly((): number => {
 			throw new Error("not yet");
 		}, "callback never succeeded").toPassAndReturn({ timeout: 30, intervals: [1] }),
 	).rejects.toThrow("callback never succeeded");
-	await expect(soft.pollAndReturn(() => 0, { timeout: 30, intervals: [1] }).toBe(1)).rejects.toThrow(
-		"configured failure",
-	);
-	expect(test.info().errors).toHaveLength(0);
-	expect(await soft.pollAndReturn(() => 42).toBe(42)).toBe(42);
-	expect(await soft(() => 42).toPassAndReturn({ timeout: 100 })).toBe(42);
 });
