@@ -9,9 +9,10 @@ Shared internal utilities used by the [`@cerios/playwright-expectly`](https://ww
 
 ## What's inside
 
-- **`withMatcherState(matchers)`** — wraps a plain matcher-function object so each matcher has typed access to Playwright's matcher state (`this.isNot`, `this.utils`, etc.) inside `expect.extend()`-style definitions.
-- **`runPolledMatcher(...)`** — shared polling loop used by locator-based matchers that need to retry until a condition is met or a timeout is reached (mirrors Playwright's own web-first assertion polling behavior).
-- **`PollOptions`** — shared TypeScript type for `{ timeout?: number }`-style options accepted by polling matchers.
+- **`withMatcherState(matchers)`** — wraps a plain matcher-function object so each matcher has typed access to Playwright's matcher state (`this.isNot`, `this.utils`, etc.) inside `expect.extend()`-style definitions, and keeps error stacks pointing at the user's call site.
+- **`runPolledMatcher(state, options, poll, { target, until })`** — shared polling loop with the timing of Playwright's `expect.poll()`, without the nested report steps `expect.poll()` would add. When the `target` page or context closes (as it does when the test times out), polling stops at once and the matcher's failure message gets a note saying so, so the matcher still reports the last value it saw.
+- **`pollLocators(...)`**, **`locatorNotFoundMessage(...)`**, **`hasElements(locator)`**, **`assertLocators(...)`** — locator polling with Playwright's semantics for missing elements, and the shared "element(s) not found" failure message.
+- **`PollOptions`**, **`PolledMatcherOptions`**, **`Closeable`**, **`MatcherReturnType`** — shared TypeScript types for polling matchers.
 
 ## Usage (for `@cerios/playwright-expectly*` package authors)
 

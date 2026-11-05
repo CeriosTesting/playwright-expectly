@@ -4,6 +4,7 @@ import type { Expect } from "@playwright/test";
 import type { ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import { isEqual, isStrictEqual } from "./matchers/equality";
 import type { PartialMatchOptions } from "./types/matcher-types";
 
 const MAX_RECEIVED_ARRAY_LINES = 100;
@@ -23,12 +24,7 @@ export const expectlyAnyMatchers = withMatcherState({
 			const receivedIsStructured = isStructuredValue(received);
 
 			if (possibilityIsStructured || receivedIsStructured) {
-				try {
-					baseExpect(received).toStrictEqual(possibility);
-					return true;
-				} catch {
-					return false;
-				}
+				return isStrictEqual(received, possibility);
 			}
 
 			return Object.is(received, possibility);
@@ -346,7 +342,7 @@ export const expectlyAnyMatchers = withMatcherState({
 
 		// Extract only the expected fields from actual for comparison
 		const actualSubset = extractMatchingStructure(actual, expected, extractionState, "$");
-		const comparison = compareExtractedSubset(actualSubset, expected);
+		const comparison = compareExtractedSubset(this.utils, actualSubset, expected);
 		const finalComparison = applyExtractionStateConstraints(comparison, extractionState);
 
 		const message = (): string => {
@@ -371,11 +367,7 @@ export const expectlyAnyMatchers = withMatcherState({
 					return buildArrayFailureMessage(this, hint, expected, actualSubset, extractionState);
 				}
 
-				// Parse the error to extract just the diff portion
-				const diffMatch = finalComparison.comparisonError.match(/(?:- Expected.*\n[\s\S]*)/);
-				const diffOnly = diffMatch ? diffMatch[0] : finalComparison.comparisonError;
-
-				return `${hint} // partial match (${extractionState.arrayMode})\n\n${diffOnly}`;
+				return `${hint} // partial match (${extractionState.arrayMode})\n\n${finalComparison.comparisonError}`;
 			}
 
 			return hint;
@@ -621,16 +613,19 @@ function getValidatedPartialMatchOptions(options: PartialMatchOptions | undefine
 	}
 }
 
-function compareExtractedSubset(actualSubset: unknown, expected: unknown): { pass: boolean; comparisonError: string } {
-	try {
-		baseExpect(actualSubset).toEqual(expected);
+function compareExtractedSubset(
+	utils: ExpectMatcherState["utils"],
+	actualSubset: unknown,
+	expected: unknown,
+): { pass: boolean; comparisonError: string } {
+	if (isEqual(actualSubset, expected)) {
 		return { pass: true, comparisonError: "" };
-	} catch (error: unknown) {
-		return {
-			pass: false,
-			comparisonError: error instanceof Error ? error.message : String(error),
-		};
 	}
+	// The same diff `toEqual` prints, so failure output reads like a regular assertion.
+	return {
+		pass: false,
+		comparisonError: utils.printDiffOrStringify(expected, actualSubset, "Expected", "Received", true),
+	};
 }
 
 function applyExtractionStateConstraints(
@@ -742,12 +737,7 @@ function isAsymmetricMatcher(value: unknown): boolean {
 }
 
 function scoreExactMatch(actual: unknown, expected: unknown): number {
-	try {
-		baseExpect(actual).toEqual(expected);
-		return 1;
-	} catch {
-		return 0;
-	}
+	return isEqual(actual, expected) ? 1 : 0;
 }
 
 function getMatchPercentageFromUnits(expected: unknown, matchedUnits: number): number {
@@ -1349,37 +1339,9 @@ function buildExactOrderArraySubset(
 			continue;
 		}
 
-		try {
-			const pairState = createIsolatedExtractionState(state);
-			const extractedItem = extractMatchingStructure(actualItem, expectedItem, pairState, indexedPath);
-			baseExpect(extractedItem).toEqual(expectedItem);
-			if (!pairState.allArrayItemsMatchedOneToOne || !pairState.allExplicitUndefinedKeysExist) {
-				mergeExtractionState(state, pairState);
-				registerUnmatchedExpectedIndex(
-					state,
-					report,
-					path,
-					index,
-					expectedItem,
-					undefined,
-					undefined,
-					undefined,
-					getDeepestNestedMismatchPath(pairState),
-				);
-				result.push(extractedItem);
-				continue;
-			}
-
-			mergeExtractionState(state, pairState);
-			report.matchedPairs.push({
-				expectedIndex: index,
-				actualIndex: index,
-				expectedItem,
-				actualItem,
-				extractedActual: extractedItem,
-			});
-			result.push(extractedItem);
-		} catch {
+		const pairState = createIsolatedExtractionState(state);
+		const extractedItem = extractMatchingStructure(actualItem, expectedItem, pairState, indexedPath);
+		if (!isEqual(extractedItem, expectedItem)) {
 			const diagnosticState = createIsolatedExtractionState(state);
 			const diagnosticItem = extractMatchingStructure(actualItem, expectedItem, diagnosticState, indexedPath);
 			mergeExtractionState(state, diagnosticState);
@@ -1395,7 +1357,35 @@ function buildExactOrderArraySubset(
 				getDeepestNestedMismatchPath(diagnosticState),
 			);
 			result.push(diagnosticItem);
+			continue;
 		}
+
+		if (!pairState.allArrayItemsMatchedOneToOne || !pairState.allExplicitUndefinedKeysExist) {
+			mergeExtractionState(state, pairState);
+			registerUnmatchedExpectedIndex(
+				state,
+				report,
+				path,
+				index,
+				expectedItem,
+				undefined,
+				undefined,
+				undefined,
+				getDeepestNestedMismatchPath(pairState),
+			);
+			result.push(extractedItem);
+			continue;
+		}
+
+		mergeExtractionState(state, pairState);
+		report.matchedPairs.push({
+			expectedIndex: index,
+			actualIndex: index,
+			expectedItem,
+			actualItem,
+			extractedActual: extractedItem,
+		});
+		result.push(extractedItem);
 	}
 
 	return result;
@@ -1421,24 +1411,18 @@ function buildPairCandidates(
 			const actualItem = actualArray[actualIndex];
 			if (!isStructuredValue(actualItem) && !isStructuredValue(expectedItem) && !Object.is(actualItem, expectedItem))
 				continue;
-			try {
-				const pairState = createIsolatedExtractionState(state);
-				const extractedItem = extractMatchingStructure(
-					actualItem,
-					expectedItem,
-					pairState,
-					`${path}[${expectedIndex}]`,
-				);
-				baseExpect(extractedItem).toEqual(expectedItem);
-				if (!pairState.allArrayItemsMatchedOneToOne || !pairState.allExplicitUndefinedKeysExist) {
-					continue;
-				}
-				candidateActualIndexesByExpected[expectedIndex].push(actualIndex);
-				extractedByPair[expectedIndex][actualIndex] = extractedItem;
-				pairStateByExpectedAndActual[expectedIndex][actualIndex] = pairState;
-			} catch {
-				// This pair does not match; keep searching.
+			const pairState = createIsolatedExtractionState(state);
+			const extractedItem = extractMatchingStructure(actualItem, expectedItem, pairState, `${path}[${expectedIndex}]`);
+			if (
+				!isEqual(extractedItem, expectedItem) ||
+				!pairState.allArrayItemsMatchedOneToOne ||
+				!pairState.allExplicitUndefinedKeysExist
+			) {
+				continue;
 			}
+			candidateActualIndexesByExpected[expectedIndex].push(actualIndex);
+			extractedByPair[expectedIndex][actualIndex] = extractedItem;
+			pairStateByExpectedAndActual[expectedIndex][actualIndex] = pairState;
 		}
 	}
 

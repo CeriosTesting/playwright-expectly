@@ -3,20 +3,11 @@ import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import { assertReceivedType } from "./matchers/common-utils";
+import { isEqual } from "./matchers/equality";
 import type { ExpectlyMatcherResult } from "./matchers/matcher-result";
 
-/** `toEqual` semantics, including asymmetric matchers such as `expect.any(Number)`. */
-function deepEquals(actual: unknown, expected: unknown): boolean {
-	try {
-		baseExpect(actual).toEqual(expected);
-		return true;
-	} catch {
-		return false;
-	}
-}
-
 function containsEqual(values: readonly unknown[], expected: unknown): boolean {
-	return values.some((value) => deepEquals(value, expected));
+	return values.some((value) => isEqual(value, expected));
 }
 
 /** Pairs every expected member with a distinct received member, so duplicates must appear as often. */
@@ -24,7 +15,7 @@ function unmatchedMembers(received: readonly unknown[], expected: readonly unkno
 	const used = new Set<number>();
 	const unmatched: unknown[] = [];
 	for (const member of expected) {
-		const index = received.findIndex((value, i) => !used.has(i) && deepEquals(value, member));
+		const index = received.findIndex((value, i) => !used.has(i) && isEqual(value, member));
 		if (index === -1) unmatched.push(member);
 		else used.add(index);
 	}
@@ -229,7 +220,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		return result(
 			this,
 			assertionName,
-			has && deepEquals(received[key], value),
+			has && isEqual(received[key], value),
 			`have entry ${this.utils.printExpected(key)}: ${this.utils.printExpected(value)}`,
 			() =>
 				has
@@ -244,7 +235,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		assertObject(assertionName, received);
 		assertArgumentArray(assertionName, "entries", entries);
 		const mismatched = entries.filter(
-			([key, value]) => !Object.prototype.hasOwnProperty.call(received, key) || !deepEquals(received[key], value),
+			([key, value]) => !Object.prototype.hasOwnProperty.call(received, key) || !isEqual(received[key], value),
 		);
 		return result(
 			this,

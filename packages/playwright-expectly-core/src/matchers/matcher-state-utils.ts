@@ -1,5 +1,7 @@
 import type { ExpectMatcherState } from "@playwright/test";
 
+import { takeMatcherNotes } from "./matcher-notes";
+
 // Only remove our implementation frames and Playwright's runner frames. Keep user helpers,
 // including helpers in other dependencies, and support source maps as well as published bundles.
 // Our frames are anchored to the scoped package or the workspace folder, so user folders that
@@ -29,6 +31,18 @@ function rethrowAtCaller(error: unknown, captured: Error): never {
 	throw error;
 }
 
+function hasMessage(value: unknown): value is { message: () => string } {
+	return typeof value === "object" && value !== null && typeof (value as { message?: unknown }).message === "function";
+}
+
+/** Appends the notes helpers left for this invocation (see matcher-notes.ts) to the failure message. */
+function withNotes(state: ExpectMatcherState, result: unknown): unknown {
+	const notes = takeMatcherNotes(state);
+	if (notes.length === 0 || !hasMessage(result)) return result;
+	const { message } = result;
+	return { ...result, message: (): string => `${message()}\n\n${notes.join("\n")}` };
+}
+
 // oxlint-disable-next-line typescript/no-explicit-any
 export const withMatcherState = <T extends Record<string, (...args: any[]) => any>>(
 	matchers: T & ThisType<ExpectMatcherState>,
@@ -40,8 +54,13 @@ export const withMatcherState = <T extends Record<string, (...args: any[]) => an
 				try {
 					const result: unknown = Reflect.apply(matcher, this, args);
 					// Leave synchronous matchers synchronous, including synchronous throws.
-					if (result instanceof Promise) return result.catch((error: unknown) => rethrowAtCaller(error, stack));
-					return result;
+					if (result instanceof Promise) {
+						return result.then(
+							(value: unknown) => withNotes(this, value),
+							(error: unknown) => rethrowAtCaller(error, stack),
+						);
+					}
+					return withNotes(this, result);
 				} catch (error) {
 					return rethrowAtCaller(error, stack);
 				}

@@ -83,6 +83,14 @@ test.describe("locator polling - strict mode", () => {
 		await page.setContent('<a href="/a">A</a><a href="/b">B</a>');
 		const error = await getRejectedError(expectlyLocator(page.locator("a")).not.toHaveHref("/c", { timeout: 2000 }));
 		expect(error.message).toMatch(/strict mode violation/);
+		// The element-existence probe is not strict; the violation comes from the matcher's own read.
+		expect(error.message).toMatch(/^locator\.getAttribute:/);
+	});
+
+	test("should throw a strict mode violation for multiple hidden matches", async ({ page }) => {
+		await page.setContent('<a href="/a" hidden>A</a><a href="/b" hidden>B</a>');
+		const error = await getRejectedError(expectlyLocator(page.locator("a")).toHaveHref("/a", { timeout: 2000 }));
+		expect(error.message).toMatch(/^locator\.getAttribute: Error: strict mode violation/);
 	});
 });
 
@@ -169,5 +177,37 @@ test.describe("locator polling - small fixes", () => {
 		await page.setContent("<p>One</p>");
 		const error = await getRejectedError(expectlyLocator(page.locator("p")).not.toHaveCountVisible(-1));
 		expect(error.message).toContain("count must be a non-negative integer");
+	});
+});
+
+test.describe("locator polling - page closed while polling", () => {
+	test("should stop at once and report the last value seen", async ({ page }) => {
+		await page.setContent("<div>one</div>");
+		// Attach the handler before closing: the rejection arrives while close() is still pending.
+		const rejected = getRejectedError(expectlyLocator(page.locator("div")).toStartWith("never", { timeout: 10000 }));
+		await page.waitForTimeout(300);
+		const closedAt = Date.now();
+		await page.close();
+		const error = await rejected;
+		// This is what lets the matcher's result reach the report when a test timeout closes the page.
+		expect(Date.now() - closedAt).toBeLessThan(1000);
+		expect(error.message).toMatch(/Expected locator text to start with: .*"never"/);
+		expect(error.message).toMatch(/Received: .*"one"/);
+		expect(error.message).not.toMatch(/Target page/);
+		// Reporters such as Allure show this error on its own, so it says why polling stopped early.
+		expect(error.message).toMatch(/Polling stopped after \d+ms of 10000ms: the page was closed\./);
+	});
+});
+
+test.describe("toBeStable - page closed while polling", () => {
+	test("should fail the .not form too, since stability could not be determined", async ({ page }) => {
+		await page.setContent("<div>one</div>");
+		await page.evaluate(() => setInterval(() => (document.querySelector("div")!.textContent = String(Date.now())), 50));
+		const rejected = getRejectedError(expectlyLocator(page.locator("div")).not.toBeStable({ timeout: 10000 }));
+		await page.waitForTimeout(300);
+		await page.close();
+		const error = await rejected;
+		expect(error.message).toContain("Could not determine whether the locator content is stable");
+		expect(error.message).toMatch(/Polling stopped after \d+ms of 10000ms: the page was closed\./);
 	});
 });
