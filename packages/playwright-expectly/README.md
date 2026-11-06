@@ -149,9 +149,24 @@ export const expect = withReturn(baseExpect.extend(expectlyMatchers));
 const uuid = await expect.pollAndReturn(() => fetchUuid()).toBeUUID(4);
 ```
 
-Subsequent `.configure()` and `.extend()` calls preserve the return-aware methods and custom matcher types. When using `mergeExpects()`, wrap its result with `withReturn()`.
+Subsequent `.soft`, `.configure()` and `.extend()` calls preserve the return-aware methods and custom matcher types. When using `mergeExpects()`, wrap its result with `withReturn()`.
 
-**Failure behavior:** return-aware assertions always throw on failure, including when the wrapped expect uses `soft: true`. This prevents returning a value that did not pass, or `undefined` when no callback succeeded. Regular assertions retain their configured behavior. Inside `toPassAndReturn()` callbacks, use throwing assertions for conditions that must trigger retries; soft assertions do not throw.
+**Failure behavior:** by default, return-aware assertions throw on failure, like other Playwright assertions.
+
+**Soft assertions:** use `.soft` or `.configure({ soft: true })`. A failure is then recorded and the test continues, as with native soft assertions. Because the assertion did not pass, the result may not be a passing value:
+
+- `toPassAndReturn()` resolves with `undefined`, because no attempt succeeded.
+- `pollAndReturn()` resolves with the last polled value, which did not satisfy the matcher. It resolves with `undefined` if the callback never returned a value.
+
+```typescript
+const order = await expectly.soft.pollAndReturn(() => fetchOrder()).toMatchObject({ status: "COMPLETED" });
+const readyOrder = await expectly.soft(() => fetchReadyOrder()).toPassAndReturn({ timeout: 5_000 });
+// Both are typed `Order | undefined`; the test is already marked as failed when a check did not pass.
+```
+
+Soft return types are `T | undefined`. TypeScript can only track this when the soft flag is set on the wrapped instance (`expectly.soft`, `withReturn(expect).configure({ soft: true })`). `withReturn(expect.configure({ soft: true }))` behaves the same at runtime, but its types still say `T`.
+
+Regular assertions retain their configured behavior. Inside `toPassAndReturn()` callbacks, use throwing assertions for conditions that must trigger retries; soft assertions do not throw.
 
 **Failure locations:** return-aware assertions appear as boxed Playwright steps. The assertion step and reported failure point to the line where your test invokes the matcher, including detached matcher calls. Native retry steps remain nested underneath for diagnostics and may show internal implementation locations when expanded. Caught errors also point to the invocation while retaining their original message, matcher details, and cause. Regular assertions keep their native reporting.
 

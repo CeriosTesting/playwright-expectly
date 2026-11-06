@@ -39,7 +39,17 @@ test("reports failures and assertion boundaries at user call sites", () => {
 	expect(result.error, result.stderr).toBeUndefined();
 	expect(result.status, result.stderr).toBe(1);
 	const reports = JSON.parse(result.stdout) as ReportedTest[];
-	expect(reports).toHaveLength(6);
+	expect(reports).toHaveLength(8);
+	// Soft failures are recorded, the test continues, and the call resolves with what it has.
+	const softReturns: Record<string, string> = { "soft-pass": "null", "soft-poll": "1" };
+	for (const [title, returned] of Object.entries(softReturns)) {
+		const report = reports.find((candidate) => candidate.title === title);
+		expect(report?.errors, title).toHaveLength(1);
+		expect(report?.annotations, title).toEqual([
+			{ type: "returned", description: returned },
+			{ type: "continued", description: "yes" },
+		]);
+	}
 	for (const report of reports) {
 		const line = source.findIndex((text) => text.includes(`// call:${report.title}`)) + 1;
 		expect(line).toBeGreaterThan(0);

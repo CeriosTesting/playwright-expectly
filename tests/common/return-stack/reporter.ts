@@ -8,6 +8,7 @@ export type ReportedTest = {
 	title: string;
 	status: TestResult["status"];
 	errors: TestResult["errors"];
+	annotations: TestResult["annotations"];
 	steps: ReportedStep[];
 };
 
@@ -29,6 +30,7 @@ export default class StackReporter implements Reporter {
 			title: test.title,
 			status: result.status,
 			errors: result.errors,
+			annotations: result.annotations,
 			steps: result.steps.map(reportStep),
 		});
 	}
