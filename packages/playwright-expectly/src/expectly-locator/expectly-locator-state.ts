@@ -91,7 +91,8 @@ async function pollForStability(
 	let checks = 0;
 
 	// `.not.toBeStable()` means the content kept changing for the whole timeout, so stability is awaited under
-	// `.not` as well (`until: true`) instead of returning at the first change.
+	// `.not` as well (`until: true`) instead of returning at the first change, and the time left after the last
+	// read is waited out (`waitFullTimeout`) so that the form does not pass early or miss the page closing.
 	const stable = await runPolledMatcher(
 		state,
 		{ timeout, intervals: [checkInterval] },
@@ -119,7 +120,7 @@ async function pollForStability(
 			}
 			return stableSince !== null && Date.now() - stableSince >= stabilityDuration;
 		},
-		{ target: locator.page(), until: true },
+		{ target: locator.page(), until: true, waitFullTimeout: true },
 	);
 
 	return { stable, found: checks > 0, interrupted: !stable && locator.page().isClosed(), checks };
