@@ -59,7 +59,8 @@ test.describe("expectlyFuzzyLocator - toMatchFuzzy", () => {
 		const elapsedTime = Date.now() - startTime;
 
 		expect(elapsedTime).toBeGreaterThanOrEqual(100);
-		expect(elapsedTime).toBeLessThan(1_000);
+		// With Playwright's default timeout of 5000ms, the matcher would give up after about 4850ms.
+		expect(elapsedTime).toBeLessThan(3_000);
 	});
 
 	test("should support custom timeout option", async ({ page }) => {

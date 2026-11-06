@@ -1,6 +1,6 @@
-import { assertLocators, withMatcherState } from "@cerios/playwright-expectly-core";
+import { assertLocators, hasElements, runPolledMatcher, withMatcherState } from "@cerios/playwright-expectly-core";
 import { PollOptions } from "@cerios/playwright-expectly-core";
-import type { Expect } from "@playwright/test";
+import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect, errors, Locator } from "@playwright/test";
 
 type StabilityOptions = Pick<PollOptions, "timeout"> & {
@@ -71,72 +71,59 @@ function isTimeoutError(error: unknown): boolean {
 }
 
 interface StabilityPollResult {
-	pass: boolean;
+	/** Whether the content stayed unchanged for the stability duration. */
+	stable: boolean;
 	/** Whether the element was found at least once. */
 	found: boolean;
-	errorMessage?: string;
+	/** Whether polling stopped early because the page was closed. */
+	interrupted: boolean;
+	/** How many times the content was read. */
+	checks: number;
 }
 
 async function pollForStability(
+	state: ExpectMatcherState,
 	locator: Locator,
 	{ checkInterval, stabilityDuration, timeout }: StabilitySettings,
 ): Promise<StabilityPollResult> {
 	let lastSnapshot: string | null = null;
-	let stableStartTime: number | null = null;
-	let successfulChecks = 0;
-	const deadline = timeout ? Date.now() + timeout : Infinity;
+	let stableSince: number | null = null;
+	let checks = 0;
 
-	while (Date.now() < deadline) {
-		let currentSnapshot: string | null = null;
-		// A missing or detaching element restarts the stability window; other errors (such as strict mode
-		// violations) are not retryable and are thrown.
-		if ((await locator.count()) > 0) {
-			try {
-				currentSnapshot = await locator.innerHTML({ timeout: checkInterval });
-			} catch (e: unknown) {
-				if (!isTimeoutError(e)) throw e;
+	// `.not.toBeStable()` means the content kept changing for the whole timeout, so stability is awaited under
+	// `.not` as well (`until: true`) instead of returning at the first change, and the time left after the last
+	// read is waited out (`waitFullTimeout`) so that the form does not pass early or miss the page closing.
+	const stable = await runPolledMatcher(
+		state,
+		{ timeout, intervals: [checkInterval] },
+		async () => {
+			let snapshot: string | null = null;
+			// A missing or detaching element restarts the stability window; other errors (such as strict mode
+			// violations) are not retryable and are thrown.
+			if (await hasElements(locator)) {
+				try {
+					snapshot = await locator.innerHTML({ timeout: checkInterval });
+				} catch (error: unknown) {
+					if (!isTimeoutError(error)) throw error;
+				}
 			}
-		}
-
-		if (currentSnapshot === null) {
-			lastSnapshot = null;
-			stableStartTime = null;
-		} else {
-			successfulChecks++;
-			if (lastSnapshot === null || currentSnapshot !== lastSnapshot) {
-				lastSnapshot = currentSnapshot;
-				stableStartTime = Date.now();
-			} else if (Date.now() - (stableStartTime ?? Date.now()) >= stabilityDuration) {
-				return { pass: true, found: true };
+			if (snapshot === null) {
+				lastSnapshot = null;
+				stableSince = null;
+				return false;
 			}
-		}
+			checks++;
+			if (snapshot !== lastSnapshot) {
+				lastSnapshot = snapshot;
+				stableSince = Date.now();
+				return false;
+			}
+			return stableSince !== null && Date.now() - stableSince >= stabilityDuration;
+		},
+		{ target: locator.page(), until: true, waitFullTimeout: true },
+	);
 
-		// Do not sleep past the deadline.
-		const remaining = deadline - Date.now();
-		if (remaining <= 0) break;
-		await new Promise((resolve) => setTimeout(resolve, Math.min(checkInterval, remaining)));
-	}
-
-	if (successfulChecks === 0) {
-		return {
-			pass: false,
-			found: false,
-			errorMessage:
-				`Locator was not found or never became available within ${timeout}ms.\n` +
-				`Stability duration required: ${stabilityDuration}ms\n` +
-				`Check interval: ${checkInterval}ms`,
-		};
-	}
-
-	return {
-		pass: false,
-		found: true,
-		errorMessage:
-			`Locator content did not stabilize within ${timeout}ms.\n` +
-			`Content was checked ${successfulChecks} time(s) but kept changing.\n` +
-			`Stability duration required: ${stabilityDuration}ms\n` +
-			`Check interval: ${checkInterval}ms`,
-	};
+	return { stable, found: checks > 0, interrupted: !stable && locator.page().isClosed(), checks };
 }
 
 /**
@@ -148,25 +135,30 @@ export const expectlyLocatorStateMatchers = withMatcherState({
 		const assertionName = "toBeStable";
 		assertLocators([locator]);
 		const settings = resolveStabilitySettings(options, this.timeout);
-		const { stabilityDuration, timeout } = settings;
+		const { stabilityDuration, checkInterval, timeout } = settings;
 
 		validateStabilityOptions(settings);
 
-		const result = await pollForStability(locator, settings);
-		const { errorMessage } = result;
-		// Like Playwright's assertions, an element that never appears fails the `.not` form too.
-		const pass = result.found ? result.pass : this.isNot;
+		const result = await pollForStability(this, locator, settings);
+		// Like Playwright's assertions, an element that never appears fails the `.not` form too; so does polling
+		// that was cut short by the page closing, since stability could not be determined either way.
+		const pass = result.interrupted || !result.found ? this.isNot : result.stable;
 
 		const message = (): string => {
 			const hint = this.utils.matcherHint(assertionName, undefined, undefined, {
 				isNot: this.isNot,
 			});
+			const settingsText = `Stability duration required: ${stabilityDuration}ms\nCheck interval: ${checkInterval}ms`;
 
-			if (errorMessage && (!result.found || (!pass && !this.isNot))) {
-				return `${hint}\n\n${errorMessage}`;
+			if (result.interrupted) {
+				return `${hint}\n\nCould not determine whether the locator content is stable.\n${settingsText}`;
 			}
 
-			if (pass && this.isNot) {
+			if (!result.found) {
+				return `${hint}\n\nLocator was not found or never became available within ${timeout}ms.\n${settingsText}`;
+			}
+
+			if (this.isNot) {
 				return (
 					hint +
 					"\n\n" +
@@ -175,16 +167,10 @@ export const expectlyLocatorStateMatchers = withMatcherState({
 				);
 			}
 
-			if (!pass && !this.isNot) {
-				return (
-					hint +
-					"\n\n" +
-					`Expected locator content to be stable for ${stabilityDuration}ms within ${timeout}ms\n` +
-					`But content kept changing`
-				);
-			}
-
-			return hint;
+			return (
+				`${hint}\n\nLocator content did not stabilize within ${timeout}ms.\n` +
+				`Content was checked ${result.checks} time(s) but kept changing.\n${settingsText}`
+			);
 		};
 
 		return {

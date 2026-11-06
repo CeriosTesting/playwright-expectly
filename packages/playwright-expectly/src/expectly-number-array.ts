@@ -15,6 +15,7 @@ import {
 	getMinMax,
 	sortedExpected,
 } from "./matchers/common-utils";
+import { isEqual } from "./matchers/equality";
 
 /**
  * Expectly Custom matchers for number array validations.
@@ -24,30 +25,8 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 		const assertionName = "toHaveAscendingOrder";
 		assertReceivedType(assertionName, actual, "number array");
 		validateFiniteNumbers(actual);
-		let pass: boolean;
-		let matcherResult: { actual?: unknown } | undefined;
-
 		const expected: number[] = sortedExpected(actual, "ascending");
-		try {
-			baseExpect(actual).toEqual(expected);
-			matcherResult = { actual };
-			pass = true;
-		} catch (e: unknown) {
-			matcherResult = undefined;
-			if (
-				e !== null &&
-				e !== undefined &&
-				typeof e === "object" &&
-				"matcherResult" in e &&
-				e.matcherResult !== null &&
-				e.matcherResult !== undefined &&
-				typeof e.matcherResult === "object" &&
-				"actual" in e.matcherResult
-			) {
-				matcherResult = { actual: e.matcherResult.actual };
-			}
-			pass = false;
-		}
+		const pass = isEqual(actual, expected);
 
 		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -56,44 +35,22 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			"\n\n" +
 			`Expected array to ${this.isNot ? "not " : ""}be in ascending order\n\n` +
 			`Expected: ${this.utils.printExpected(expected)}\n` +
-			`Received: ${this.utils.printReceived(matcherResult?.actual ?? actual)}`;
+			`Received: ${this.utils.printReceived(actual)}`;
 
 		return {
 			message,
 			pass,
 			name: assertionName,
 			expected,
-			actual: matcherResult?.actual,
+			actual,
 		};
 	},
 	toHaveDescendingOrder(actual: number[]) {
 		const assertionName = "toHaveDescendingOrder";
 		assertReceivedType(assertionName, actual, "number array");
 		validateFiniteNumbers(actual);
-		let pass: boolean;
-		let matcherResult: { actual?: unknown } | undefined;
-
 		const expected: number[] = sortedExpected(actual, "descending");
-		try {
-			baseExpect(actual).toEqual(expected);
-			matcherResult = { actual };
-			pass = true;
-		} catch (e: unknown) {
-			matcherResult = undefined;
-			if (
-				e !== null &&
-				e !== undefined &&
-				typeof e === "object" &&
-				"matcherResult" in e &&
-				e.matcherResult !== null &&
-				e.matcherResult !== undefined &&
-				typeof e.matcherResult === "object" &&
-				"actual" in e.matcherResult
-			) {
-				matcherResult = { actual: e.matcherResult.actual };
-			}
-			pass = false;
-		}
+		const pass = isEqual(actual, expected);
 
 		const message = (): string =>
 			this.utils.matcherHint(assertionName, undefined, undefined, {
@@ -102,14 +59,14 @@ export const expectlyNumberArrayMatchers = withMatcherState({
 			"\n\n" +
 			`Expected array to ${this.isNot ? "not " : ""}be in descending order\n\n` +
 			`Expected: ${this.utils.printExpected(expected)}\n` +
-			`Received: ${this.utils.printReceived(matcherResult?.actual ?? actual)}`;
+			`Received: ${this.utils.printReceived(actual)}`;
 
 		return {
 			message,
 			pass,
 			name: assertionName,
 			expected,
-			actual: matcherResult?.actual,
+			actual,
 		};
 	},
 	toHaveSum(actual: number[], expected: number, options?: NumericToleranceOptions) {

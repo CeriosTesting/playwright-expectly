@@ -52,6 +52,17 @@ function isNavigationError(error: unknown): boolean {
 
 type StorageArea = "localStorage" | "sessionStorage";
 
+/**
+ * Reads a web storage item through `page.localStorage` / `page.sessionStorage` when this Playwright version
+ * has them: those reads are getters, which reporters leave out, so polling adds no steps under the matcher.
+ * Older versions fall back to `page.evaluate()`, which is reported as an "Evaluate" step.
+ */
+async function readStorageItem(page: Page, area: StorageArea, key: string): Promise<string | null> {
+	const storage = (page as Partial<Pick<Page, StorageArea>>)[area];
+	if (typeof storage?.getItem === "function") return await storage.getItem(key);
+	return await page.evaluate(([storage, item]) => window[storage].getItem(item), [area, key] as const);
+}
+
 async function storageMatcher(
 	state: ExpectMatcherState,
 	assertionName: string,
@@ -65,15 +76,20 @@ async function storageMatcher(
 	if (typeof key !== "string") throw new TypeError(`${assertionName}: key must be a string`);
 	let actual: string | null = null;
 
-	const pass = await runPolledMatcher(state, options, async () => {
-		try {
-			actual = await page.evaluate(([storage, item]) => window[storage].getItem(item), [area, key] as const);
-		} catch (error) {
-			if (!isNavigationError(error)) throw error;
-			actual = null;
-		}
-		return valueMatches(actual, expected);
-	});
+	const pass = await runPolledMatcher(
+		state,
+		options,
+		async () => {
+			try {
+				actual = await readStorageItem(page, area, key);
+			} catch (error) {
+				if (!isNavigationError(error)) throw error;
+				actual = null;
+			}
+			return valueMatches(actual, expected);
+		},
+		{ target: page },
+	);
 
 	const message = (): string => {
 		const hint = state.utils.matcherHint(assertionName, undefined, JSON.stringify(key), { isNot: state.isNot });
@@ -122,6 +138,7 @@ export const expectlyPageMatchers = withMatcherState({
 				);
 				return candidates.some((cookie) => valueMatches(cookie.value, expected));
 			},
+			{ target: context },
 		);
 
 		const message = (): string => {

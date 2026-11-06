@@ -71,6 +71,7 @@
 	},
 	"dependencies": {
 		"@cerios/playwright-expectly-core": "^1.1.0",
+		"@jest/expect-utils": "^30.5.2",
 		"temporal-polyfill": "^1.0.6"
 	},
 	"devDependencies": {
