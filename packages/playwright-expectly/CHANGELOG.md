@@ -1,5 +1,28 @@
 # @cerios/playwright-expectly
 
+## 2.1.0
+
+### Minor Changes
+
+- 915218c: Support soft `toPassAndReturn()` and `pollAndReturn()`.
+
+  - **Fix:** `expectly.soft(callback).toPassAndReturn()` threw `TypeError: toPassAndReturn is not a function`, and `expectly.soft.pollAndReturn()` threw `TypeError: ... is not a function`. `.soft` returned Playwright's native soft expect, which does not have the return-aware methods. It now keeps them, also on instances wrapped with `withReturn()`, and supports chained `.configure()` and `.extend()`.
+  - **Behaviour change:** soft return-aware assertions (`.soft` or `configure({ soft: true })`) now behave like native soft assertions. Previously they always threw on failure. Now they record the failure and let the test continue: `toPassAndReturn()` resolves with `undefined`, and `pollAndReturn()` resolves with the last polled value. Non-soft assertions still throw.
+  - **Types:** soft instances return `Promise<T | undefined>`. `configure({ soft: true | false })` updates the return type accordingly.
+
+### Patch Changes
+
+- a82d988: Matchers no longer add nested `expect` steps to test reports. `toEqualPartially`, `toBeAnyOf`, `toIncludeSameMembers`, `toIncludeAllMembers`, `toIncludeAnyMembers`, `toContainEntry`, `toContainEntries` and the array `toHaveAscendingOrder`/`toHaveDescendingOrder` compared values with `expect(...).toEqual()` internally, so reporters such as Allure listed an `Expect "toEqual"` step, often marked failed, for every comparison. They now use the same equality check through `@jest/expect-utils`, a new dependency of `@cerios/playwright-expectly`. Locator, page and fuzzy locator matchers polled with `expect.poll()`, which nested an `Expect "poll toBe"` step with one `Expect "toBe"` step per attempt. Core now polls with its own loop, with the same timeout and interval behaviour.
+
+  Browser reads inside matchers also add fewer steps. The element-existence check in locator matchers and `toBeStable` now asks `isVisible()` first and only calls `count()` for hidden or missing elements. Reporters leave out getter calls like `isVisible()`, but every `count()` was listed as a "Query count" step. The check runs on `.first()`, so multiple matches still fail with the same strict mode violation from the matcher's own read. `toHaveLocalStorageItem` and `toHaveSessionStorageItem` read through `page.localStorage` / `page.sessionStorage` on Playwright versions that have them, instead of `page.evaluate()`. For matchers on visible elements and for web storage, the matcher's own step is now the only one reported.
+
+  When the test times out before a matcher does, the matcher now reports the last value it saw, next to the test timeout error, as Playwright's own matchers do. Playwright closes the page when a test times out, and polling now stops the moment the page or context closes instead of at its next read, which came too late to be reported. A note at the end of the failure message says so, for example `Polling stopped after 1302ms of 10000ms: the page was closed because the test timeout of 1500ms was exceeded.`, since reporters such as Allure show a matcher's error on its own. `toBeStable` polls the same way now and fails both forms when polling is cut short, instead of throwing a closed-page error. The core `runPolledMatcher` takes `{ target, until, waitFullTimeout }` as an optional fourth argument for this.
+
+  A matcher whose first read does not finish before the timeout no longer reports a value it never read, such as `Received: "(no src attribute)"` for an element that has the attribute. Attribute, text, positioning and fuzzy locator matchers now say `No value was received.` Every polling matcher also appends a note, for example `The first read did not finish within the 200ms timeout; any received value shown above was not read from the page.`
+
+- Updated dependencies [a82d988]
+  - @cerios/playwright-expectly-core@1.1.1
+
 ## 2.0.1
 
 ### Patch Changes
