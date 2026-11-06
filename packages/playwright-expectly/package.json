@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly",
-	"version": "2.0.1",
+	"version": "2.1.0",
 	"description": "Comprehensive Playwright test matchers for strings, numbers, dates, arrays, objects, and locators. Simplify your E2E tests with intuitive assertions like toBeAlphanumeric, toHaveAscendingOrder, toBeInTheFuture, and 130+ more matchers.",
 	"keywords": [
 		"array-validation",
@@ -65,12 +65,12 @@
 		"prepare": "husky",
 		"test": "playwright test --config=../../playwright.config.ts --project=expectly",
 		"update-all-packages": "npx npm-check-updates -u && npm i",
-		"version-packages": "changeset version",
+		"version-packages": "changeset version && npm install --package-lock-only --ignore-scripts",
 		"version-packages:prepare-release": "npm run version-packages && npm run format",
 		"release": "changeset publish --provenance"
 	},
 	"dependencies": {
-		"@cerios/playwright-expectly-core": "^1.1.0",
+		"@cerios/playwright-expectly-core": "^1.1.1",
 		"@jest/expect-utils": "^30.5.2",
 		"temporal-polyfill": "^1.0.6"
 	},

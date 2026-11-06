@@ -1,6 +1,6 @@
 {
 	"name": "@cerios/playwright-expectly-fuzzy",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"description": "Fuzzy string matching matchers for Playwright using fuzzball. Ideal for validating AI-generated text where wording may vary.",
 	"keywords": [
 		"ai-testing",
@@ -58,7 +58,7 @@
 		"test": "playwright test --config=../../playwright.config.ts --project=expectly-fuzzy"
 	},
 	"dependencies": {
-		"@cerios/playwright-expectly-core": "^1.1.0",
+		"@cerios/playwright-expectly-core": "^1.1.1",
 		"fuzzball": "^2.2.6"
 	},
 	"devDependencies": {
