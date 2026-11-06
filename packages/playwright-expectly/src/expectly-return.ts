@@ -10,16 +10,28 @@ export type PollAndReturnOptions = Parameters<typeof baseExpect.poll>[1];
 /** Exactly the options accepted by Playwright's toPass(). */
 export type ToPassAndReturnOptions = Parameters<ReturnType<typeof baseExpect<() => void>>["toPass"]>[0];
 
-/** Replace each poll matcher's void result with the last successfully polled value. */
-type ReturnValueMatchers<TMatchers, TValue, TRegisteredMatchers = {}> = {
-	[K in keyof TMatchers]: K extends "not"
-		? ReturnValueMatchers<TMatchers[K], TValue, TRegisteredMatchers>
-		: TMatchers[K] extends (...args: infer TArgs) => unknown
-			? (...args: TArgs) => Promise<TValue>
-			: never;
-} & CustomPollMatchers<TRegisteredMatchers, TValue>;
+/** Soft assertions resolve after a failure, so they may not have a passing value to return. */
+export type ReturnResult<T, TSoft extends boolean = false> = TSoft extends true ? T | undefined : T;
 
-type CustomPollMatchers<TMatchers, TValue> = {
+/** Derives the soft flag that configure() produces from its configuration argument. */
+type ConfiguredSoft<TConfig, TSoft extends boolean> = TConfig extends { soft: true }
+	? true
+	: TConfig extends { soft: false }
+		? false
+		: "soft" extends keyof TConfig
+			? boolean
+			: TSoft;
+
+/** Replace each poll matcher's void result with the last successfully polled value. */
+type ReturnValueMatchers<TMatchers, TValue, TRegisteredMatchers = {}, TResult = TValue> = {
+	[K in keyof TMatchers]: K extends "not"
+		? ReturnValueMatchers<TMatchers[K], TValue, TRegisteredMatchers, TResult>
+		: TMatchers[K] extends (...args: infer TArgs) => unknown
+			? (...args: TArgs) => Promise<TResult>
+			: never;
+} & CustomPollMatchers<TRegisteredMatchers, TValue, TResult>;
+
+type CustomPollMatchers<TMatchers, TValue, TResult = TValue> = {
 	[
 		K in keyof TMatchers as TMatchers[K] extends (
 			this: ExpectMatcherState,
@@ -29,25 +41,33 @@ type CustomPollMatchers<TMatchers, TValue> = {
 			? K
 			: never
 	]: TMatchers[K] extends (this: ExpectMatcherState, received: TValue, ...args: infer TArgs) => unknown
-		? (...args: TArgs) => Promise<TValue>
+		? (...args: TArgs) => Promise<TResult>
 		: never;
 };
 
-/** Preserves native and registered matcher arguments, return values, and `.not` chaining. */
-export type PollAndReturnMatchers<T, TMatchers = {}> = ReturnValueMatchers<
+/**
+ * Preserves native and registered matcher arguments, return values, and `.not` chaining.
+ * Soft matchers resolve with the last polled value, or `undefined` if none was produced.
+ */
+export type PollAndReturnMatchers<T, TMatchers = {}, TSoft extends boolean = false> = ReturnValueMatchers<
 	ReturnType<typeof baseExpect.poll<T>>,
 	Awaited<T>,
-	TMatchers
+	TMatchers,
+	ReturnResult<Awaited<T>, TSoft>
 >;
 
-/** Keeps existing function assertions, but adds a return-aware variant of toPass(). */
+/**
+ * Keeps existing function assertions, but adds a return-aware variant of toPass().
+ * A soft toPassAndReturn() resolves with `undefined` when no attempt succeeded.
+ */
 export type ToPassAndReturnMatchers<
 	T,
 	TMatchers = {},
 	TCallback extends () => unknown = () => T | Promise<T>,
+	TSoft extends boolean = false,
 > = ReturnType<typeof baseExpect<TCallback>> &
 	RegisteredMatcherChain<TCallback, TMatchers> & {
-		toPassAndReturn(options?: ToPassAndReturnOptions): Promise<Awaited<T>>;
+		toPassAndReturn(options?: ToPassAndReturnOptions): Promise<ReturnResult<Awaited<T>, TSoft>>;
 	};
 
 /** Keep this structural: inferred Playwright internals cannot be emitted in our declarations. */
@@ -69,19 +89,27 @@ type RegisteredMatcherChain<TActual, TMatchers, TResult = void> = {
  * Extended expect interface that retains Playwright's call signatures.
  * It can wrap expectly, baseExpect, or an expect created with extend().
  */
-export type ExpectWithReturn<TMatchers = {}> = {
+export type ExpectWithReturn<TMatchers = {}, TSoft extends boolean = false> = {
 	<TCallback extends () => unknown>(
 		callback: TCallback,
 		messageOrOptions?: string | { message?: string },
-	): ToPassAndReturnMatchers<ReturnType<TCallback>, TMatchers, TCallback>;
+	): ToPassAndReturnMatchers<ReturnType<TCallback>, TMatchers, TCallback, TSoft>;
 
 	pollAndReturn<T>(
 		callback: () => T | Promise<T>,
 		messageOrOptions?: PollAndReturnOptions,
-	): PollAndReturnMatchers<T, TMatchers>;
+	): PollAndReturnMatchers<T, TMatchers, TSoft>;
+
+	/**
+	 * Soft expect instances retain the two return-aware methods. Their failures are
+	 * recorded without stopping the test, so they may resolve with `undefined`.
+	 */
+	soft: ExpectWithReturn<TMatchers, true>;
 
 	/** Configured expect instances retain the two return-aware methods. */
-	configure(configuration: Parameters<Expect<TMatchers>["configure"]>[0]): ExpectWithReturn<TMatchers>;
+	configure<TConfig extends Parameters<Expect<TMatchers>["configure"]>[0]>(
+		configuration: TConfig,
+	): ExpectWithReturn<TMatchers, ConfiguredSoft<TConfig, TSoft>>;
 
 	/** Matcher extensions retain the two return-aware methods. */
 	extend<
@@ -98,7 +126,7 @@ export type ExpectWithReturn<TMatchers = {}> = {
 		>,
 	>(
 		matchers: TMore,
-	): ExpectWithReturn<TMatchers & TMore>;
+	): ExpectWithReturn<TMatchers & TMore, TSoft>;
 } & Expect<TMatchers>;
 
 /** Capture at invocation (not property access), including source-mapped caller locations. */
@@ -178,7 +206,9 @@ function proxyPollMatchers<T>(
  * Always delegates retries, timeout behavior and reporting to native Playwright.
  * Returns the successful callback value, so callers no longer need to capture it
  * in a `let` declared outside the poll or `toPass` callback.
- * Return-aware assertions always throw on failure, even when configured as soft.
+ * Soft return-aware assertions (`.soft` or `configure({ soft: true })`) record a
+ * failure and resolve, like native soft assertions: `toPassAndReturn()` with
+ * `undefined` and `pollAndReturn()` with the last polled value.
  *
  * @example
  * const expect = withReturn(baseExpect.extend(expectlyMatchers));
@@ -208,11 +238,9 @@ export function withReturn<TMatchers>(nativeExpect: Expect<TMatchers>): ExpectWi
 								const capturedCallback = async (): Promise<void> => {
 									lastSuccessfulValue = await callback();
 								};
-								// Preserve configuration and extensions, but require a passing assertion.
-								const assertion = Reflect.apply(target.configure({ soft: false }), thisArg, [
-									capturedCallback,
-									...args.slice(1),
-								]) as {
+								// Preserve configuration (including soft) and extensions. A soft
+								// failure resolves without a successful value, like native toPass().
+								const assertion = Reflect.apply(target, thisArg, [capturedCallback, ...args.slice(1)]) as {
 									toPass: (options?: ToPassAndReturnOptions) => Promise<void>;
 								};
 								await assertion.toPass(options);
@@ -230,20 +258,26 @@ export function withReturn<TMatchers>(nativeExpect: Expect<TMatchers>): ExpectWi
 					callback: () => T | Promise<T>,
 					options?: PollAndReturnOptions,
 				): PollAndReturnMatchers<T, TMatchers> => {
-					const configured = target.configure({ soft: false });
+					// Preserve configuration (including soft). A soft failure resolves
+					// with the last polled value, or undefined if none was produced.
 					const createAttempt = (): { poll: object; value: () => Awaited<T> } => {
 						let lastValue!: Awaited<T>;
-						const poll = configured.poll(async () => {
+						const poll = target.poll(async () => {
 							lastValue = await callback();
 							return lastValue;
 						}, options);
 						return { poll, value: () => lastValue };
 					};
-					return proxyPollMatchers(configured.poll(callback, options), createAttempt) as PollAndReturnMatchers<
+					return proxyPollMatchers(target.poll(callback, options), createAttempt) as PollAndReturnMatchers<
 						T,
 						TMatchers
 					>;
 				};
+			}
+			if (key === "soft") {
+				// In older Playwright (e.g. 1.40), `expect.soft` is only callable (no poll/configure/extend),
+				// so build the soft instance through configure(), as the current getter does.
+				return withReturn(target.configure({ soft: true }));
 			}
 			if (key === "configure" || key === "extend") {
 				const method = Reflect.get(target, key, receiver) as (...args: unknown[]) => Expect<TMatchers>;

@@ -21,6 +21,9 @@ test("return-aware retries and typed extensions", async () => {
 	expect(await custom.pollAndReturn(() => 2).not.toExceed(3)).toBe(2);
 	expect(await custom(() => 42).toPassAndReturn({ timeout: 100 })).toBe(42);
 	await expect(custom.pollAndReturn(() => 1, { timeout: 30, intervals: [1] }).toExceed(2)).rejects.toThrow();
+	const softValue: number | undefined = await custom.soft.pollAndReturn(() => 2).toExceed(1);
+	expect(softValue).toBe(2);
+	expect(await expectly.soft(() => 42).toPassAndReturn({ timeout: 100 })).toBe(42);
 });
 
 test("browser matchers and locator failures", async ({ page }) => {
