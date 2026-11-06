@@ -18,7 +18,7 @@ type ConfiguredSoft<TConfig, TSoft extends boolean> = TConfig extends { soft: tr
 	? true
 	: TConfig extends { soft: false }
 		? false
-		: TConfig extends { soft: boolean }
+		: "soft" extends keyof TConfig
 			? boolean
 			: TSoft;
 
