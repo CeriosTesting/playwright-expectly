@@ -14,6 +14,25 @@ export type {
 	ToPassAndReturnOptions,
 } from "./expectly-return";
 
+// Duplicate matcher name detection (also available as "npx playwright-expectly check-matchers")
+export {
+	assertNoDuplicateMatchers,
+	DuplicateMatcherError,
+	findDuplicateMatchers,
+	formatDuplicateMatcherReport,
+	playwrightBuiltinMatcherNames,
+} from "./matcher-duplicates";
+export type {
+	DuplicateMatcherReport,
+	ExpectLike,
+	FindDuplicateMatchersOptions,
+	MatcherDictionary,
+	MatcherFunction,
+	MatcherNameConflict,
+	MatcherSource,
+	MatcherSourceSummary,
+} from "./matcher-duplicates";
+
 // Individual matcher exports for granular usage
 export { expectlyAny, expectlyAnyMatchers } from "./expectly-any";
 export { expectlyCollection, expectlyCollectionMatchers } from "./expectly-collection";

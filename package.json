@@ -9,6 +9,7 @@
 	"scripts": {
 		"build": "npm run --workspaces build",
 		"changeset": "changeset",
+		"check-exports": "npm run --workspaces --if-present check-exports",
 		"deps:check": "syncpack lint",
 		"deps:fix": "syncpack fix",
 		"deps:update": "npx npm-check-updates --workspaces -u --dep prod,dev,optional,peer,packageManager --install never && npm install --workspaces",

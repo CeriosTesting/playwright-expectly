@@ -6,6 +6,7 @@ import { expect as baseExpect, ExpectMatcherState, Locator } from "@playwright/t
 import { expectlyFuzzyLocatorMatchers } from "./expectly-fuzzy-locator";
 import { expectlyFuzzyStringMatchers } from "./expectly-fuzzy-string";
 import type { FuzzyOptions } from "./fuzzy-score";
+import { tagMatcherOrigin } from "./matcher-origin";
 
 function isLocatorMatcherTarget(received: string | Locator): received is Locator {
 	return (
@@ -51,6 +52,8 @@ export const expectlyFuzzyMatchers = {
 } as Omit<typeof expectlyFuzzyStringMatchers, OverlappingFuzzyMatcherNames> &
 	Omit<typeof expectlyFuzzyLocatorMatchers, OverlappingFuzzyMatcherNames> &
 	typeof expectlyFuzzySharedMatchers;
+
+tagMatcherOrigin(expectlyFuzzyMatchers, "@cerios/playwright-expectly-fuzzy");
 
 /**
  * Expectly Fuzzy - standalone merged expect instance with all fuzzy matchers.

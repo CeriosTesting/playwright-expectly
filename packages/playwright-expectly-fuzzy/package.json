@@ -55,6 +55,7 @@
 	},
 	"scripts": {
 		"build": "tsdown",
+		"check-exports": "attw --pack .",
 		"test": "playwright test --config=../../playwright.config.ts --project=expectly-fuzzy"
 	},
 	"dependencies": {

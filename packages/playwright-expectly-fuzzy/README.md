@@ -46,9 +46,9 @@ export const test = base;
 Combining with `@cerios/playwright-expectly` (or your own matchers) via `mergeExpects()` — recommended when composing 2+ matcher sources:
 
 ```typescript
+// tests/support/expect.ts
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
-// tests/support/expect.ts
 import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 const expectlyExpect = baseExpect.extend(expectlyMatchers);

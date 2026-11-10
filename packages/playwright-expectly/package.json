@@ -32,6 +32,9 @@
 		"url": "git+https://github.com/CeriosTesting/playwright-expectly.git",
 		"directory": "packages/playwright-expectly"
 	},
+	"bin": {
+		"playwright-expectly": "./dist/cli.cjs"
+	},
 	"files": [
 		"dist"
 	],

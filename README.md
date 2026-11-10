@@ -15,9 +15,11 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 - 🍪 **Page State** - Retrying cookie, `localStorage` and `sessionStorage` assertions
 - 📦 **Object Arrays** - Sorting, uniqueness, and property validation
 - 🧺 **Collections & Functions** - Array members, object keys and entries, promises, and thrown errors
+- 🔁 **Return-Aware Retries** - `pollAndReturn()` and `toPassAndReturn()` give you the value that passed
+- 🔍 **Duplicate Check** - `npx playwright-expectly check-matchers` finds matcher names that silently override each other
 - 🤖 **Fuzzy Matching** - AI-generated text validation with configurable similarity threshold (separate package)
 - 💪 **Type-Safe** - Full TypeScript support
-- ⚡ **Lightweight** - Only Playwright required. @cerios/playwright-expectly-fuzzy uses `fuzzball` as an optional dependency
+- ⚡ **Lightweight** - Only Playwright required. The separate fuzzy package adds `fuzzball`
 
 ## Installation
 
@@ -30,6 +32,10 @@ For fuzzy matching support (AI-generated text) — [`@cerios/playwright-expectly
 ```bash
 npm install @cerios/playwright-expectly-fuzzy --save-dev
 ```
+
+> **Peer dependency:** requires `@playwright/test` 1.40 or newer.
+>
+> Upgrading from 1.x? See [Upgrading from 1.x](#upgrading-from-1x).
 
 ## Quick Start
 
@@ -63,6 +69,12 @@ test("extended expect example", async ({ page }) => {
 
 This returned-value pattern is the important part: the value returned by `.extend(...)` is the fully typed `expect` that carries the Expectly matchers, and it composes cleanly with `mergeExpects()`. Expectly never overrides a Playwright built-in matcher, so Playwright's own matchers (including numeric `toBeCloseTo`) keep working on it unchanged.
 
+If your `playwright.config` is JavaScript or is not included in your `tsconfig.json`, add one ambient import in a `.d.ts` or shared test file so IntelliSense picks up the matcher types:
+
+```typescript
+import "@cerios/playwright-expectly";
+```
+
 ### Standalone `expectly`
 
 Use `expectly` directly when you do not want to re-export Playwright's `expect`:
@@ -76,16 +88,16 @@ expectly(subscription.expiresAt).toBeInTheFuture();
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
-#### Combining multiple matcher sources
+## Combining Matcher Sources
 
 If you also use `@cerios/playwright-expectly-fuzzy`, your own custom matchers, or multiple fixture files, combine them in that one `tests/support/expect.ts` module. Two equally valid ways to do this:
 
 **`mergeExpects()`** — combines already-built `Expect` instances. Use this when composing 2+ independent matcher sources (recommended for multiple packages):
 
 ```typescript
+// tests/support/expect.ts
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
-// tests/support/expect.ts
 import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 // Each matcher set is applied via `.extend()`, capturing the return value, then combined.
@@ -110,9 +122,9 @@ export const test = base;
 **`.extend()` directly** — layer multiple matcher sets (or your own custom matchers) in one call:
 
 ```typescript
+// tests/support/expect.ts
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy"; // optional
-// tests/support/expect.ts
 import { expect as baseExpect, test as base } from "@playwright/test";
 
 // MUST capture the return value — never call `.extend()` and discard it.
@@ -126,7 +138,21 @@ export const expect = baseExpect.extend({
 export const test = base;
 ```
 
+You can also extend with only the matcher families you need:
+
+```typescript
+import { expectlyDateMatchers, expectlyStringMatchers } from "@cerios/playwright-expectly";
+import { expect as baseExpect } from "@playwright/test";
+
+export const expect = baseExpect.extend({
+	...expectlyStringMatchers,
+	...expectlyDateMatchers,
+});
+```
+
 > **Common mistake:** `mergeTests()` combines Playwright _fixture_ (`test`) objects, not matchers. Don't pass `expectlyMatchers` (a raw matcher-function dictionary) into `mergeTests()` or `mergeExpects()` — only pass real `Expect` instances (the result of `.extend()`) like `expectlyExpect` above.
+
+### Multiple fixture files
 
 If you have several fixture files (page objects, auth, API clients, etc.), give each its own `test.extend()` module, then combine them with `mergeTests()` in the same `tests/support` index alongside the merged `expect`:
 
@@ -144,51 +170,17 @@ export { expect };
 
 Then every spec file imports `test`/`expect` from `tests/support` — never straight from `@playwright/test`.
 
-If your `playwright.config` is JavaScript or is not included in your `tsconfig.json`, add one ambient import in a `.d.ts` or shared test file so IntelliSense picks up the matcher types:
+### Checking for duplicate matcher names
 
-```typescript
-import "@cerios/playwright-expectly";
+When two sources define the same matcher name, the later `.extend()` or spread silently wins and Playwright does not warn. Point the `check-matchers` command at the module that builds your `expect`:
+
+```bash
+npx playwright-expectly check-matchers ./tests/support/expect.ts
 ```
 
-## Upgrading from 1.x
+It loads the module the way Playwright loads test files, compares every exported matcher object and expect instance with the installed Expectly packages, and reports names defined twice with a different implementation and names that override a Playwright built-in matcher. It exits with 1 when it finds something, so it fits in CI. The same check is available in code as `assertNoDuplicateMatchers()` and `findDuplicateMatchers()`.
 
-Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzzy` contains these breaking changes:
-
-1. **The Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`.** The old name replaced Playwright's built-in numeric `toBeCloseTo` on every extended `expect`, so numeric assertions such as `expect(0.1 + 0.2).toBeCloseTo(0.3, 5)` failed with `Invalid actual date`. Playwright's numeric `toBeCloseTo` now works untouched next to the Date matcher.
-
-   ```typescript
-   // Before (1.x)
-   expect(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
-
-   // After (2.x)
-   expect(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
-   ```
-
-2. **`setupExpectly()` and `setupExpectlyFuzzy()` are removed.** They were deprecated in 1.x. Replace them with a `tests/support/expect.ts` module as shown in [Quick Start](#quick-start):
-
-   ```typescript
-   import { setupExpectly } from "@cerios/playwright-expectly";
-   // Before (1.x)
-   import { expect, test } from "@playwright/test";
-
-   setupExpectly();
-   export { expect, test };
-
-   import { expectlyMatchers } from "@cerios/playwright-expectly";
-   // After (2.x)
-   import { expect as baseExpect, test } from "@playwright/test";
-
-   export const expect = baseExpect.extend(expectlyMatchers);
-   export { test };
-   ```
-
-3. **Date matchers are rebuilt on Temporal** and accept `Date`, strict ISO 8601 strings and Temporal values. Results that used to be approximate or environment-dependent are now exact:
-   - `toBeValidISODate()` validates calendar dates (`YYYY-MM-DD`); use the new `toBeValidISODateTime()` for datetimes.
-   - `toMatchTimeZone()` is removed. It checked the machine's offset, not the value's; use `toHaveOffset()` or `toHaveTimeZone()`.
-   - `toHaveDateRange()` and `toHaveDateGapsLargerThan()` use exact calendar arithmetic instead of 30.44-day months, 365.25-day years and a ±1 day tolerance.
-   - `toHaveUniqueDates(true)` becomes `toHaveUniqueDates({ ignoreTime: true })`.
-
-   See [Upgrading the date matchers](./docs/DATE_MATCHERS.md#upgrading-from-1x) for the full list.
+[📖 Options, output, JSON and the code API →](./docs/CHECK_MATCHERS.md)
 
 ## Available Matchers
 
@@ -304,6 +296,7 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 
 ```typescript
 import { expectly } from "@cerios/playwright-expectly";
+import { test } from "@playwright/test";
 
 test("validate user input", async () => {
 	expectly("john.doe@example.com").toBeValidEmail();
@@ -351,62 +344,37 @@ test("validate form elements", async ({ page }) => {
 
 ## Advanced Usage
 
-### Extend in one place (global)
+### Returning values from retrying assertions
 
-Use this when you want all tests to use the extra matchers without importing `expectly` everywhere.
-
-```typescript
-import { expectlyMatchers } from "@cerios/playwright-expectly";
-// e.g. tests/support/expect.ts
-import { expect as baseExpect, test } from "@playwright/test";
-
-export const expect = baseExpect.extend(expectlyMatchers);
-export { test };
-```
-
-### Exported matcher objects
-
-All matcher objects are exported, so you can extend `expect` with everything or only specific families.
+`expectly.pollAndReturn(callback)` resolves with the value that passed the matcher, and `expectly(callback).toPassAndReturn()` with the result of the first callback attempt that completed without throwing:
 
 ```typescript
-import { expectlyDateMatchers, expectlyMatchers, expectlyStringMatchers } from "@cerios/playwright-expectly";
-import { expect as baseExpect } from "@playwright/test";
+const order = await expectly
+	.pollAndReturn(() => fetchOrder(), { timeout: 5_000 })
+	.toMatchObject({ status: "COMPLETED" });
 
-// All matchers
-const expect = baseExpect.extend(expectlyMatchers);
-
-// Or only selected matcher families
-const expectStringsAndDates = baseExpect.extend({
-	...expectlyStringMatchers,
-	...expectlyDateMatchers,
-});
+const readyOrder = await expectly(async () => {
+	const current = await fetchOrder();
+	expectly(current.status).toBe("COMPLETED");
+	return current;
+}).toPassAndReturn({ timeout: 5_000 });
 ```
 
-### Use expectly families directly
+Wrap your own expect with `withReturn()` to get both methods on it. Soft variants (`expectly.soft…`) record the failure and resolve with `undefined` or the last polled value.
 
-Use this when you want a smaller, explicit API per matcher family.
+[📖 Options, soft assertions, types and failure locations →](./docs/RETURNING_VALUES.md)
+
+### Matcher families
+
+Every matcher family is exported twice: as a ready-to-use expect (`expectlyString`, `expectlyDate`, …) for a smaller, explicit API, and as a matcher object (`expectlyStringMatchers`, `expectlyDateMatchers`, …) for `.extend()` (see [Combining Matcher Sources](#combining-matcher-sources)).
 
 ```typescript
 import { expectlyDate, expectlyLocator, expectlyNumberArray, expectlyString } from "@cerios/playwright-expectly";
 
 expectlyString("ABC123").toBeAlphanumeric();
 expectlyNumberArray([10, 20, 30]).toHaveAscendingOrder();
-expectlyDate(new Date()).toBeSameYear(new Date("2026-01-01"));
-await expectlyLocator(page.locator(".email")).toBeValidEmail();
-```
-
-### Individual Matcher Imports
-
-For tree-shaking optimization, import only what you need:
-
-```typescript
-import { expectlyString } from "@cerios/playwright-expectly";
-import { expectlyNumberArray } from "@cerios/playwright-expectly";
-import { expectlyDate } from "@cerios/playwright-expectly";
-
-expectlyString("test@example.com").toBeValidEmail();
-expectlyNumberArray([1, 2, 3]).toHaveAscendingOrder();
 expectlyDate("2026-10-25").toBeAfter("2026-10-20");
+await expectlyLocator(page.locator(".email")).toBeValidEmail();
 ```
 
 ### Negation
@@ -418,6 +386,48 @@ expectly("not-an-email").not.toBeValidEmail();
 expectly([5, 3, 1]).not.toHaveAscendingOrder();
 await expectly(page.locator(".text")).not.toBeNumericString();
 ```
+
+## Upgrading from 1.x
+
+Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzzy` contains these breaking changes:
+
+1. **The Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`.** The old name replaced Playwright's built-in numeric `toBeCloseTo` on every extended `expect`, so numeric assertions such as `expect(0.1 + 0.2).toBeCloseTo(0.3, 5)` failed with `Invalid actual date`. Playwright's numeric `toBeCloseTo` now works untouched next to the Date matcher.
+
+   ```typescript
+   // Before (1.x)
+   expect(responseDate).toBeCloseTo(expectedDate, { seconds: 30 });
+
+   // After (2.x)
+   expect(responseDate).toBeDateCloseTo(expectedDate, { seconds: 30 });
+   ```
+
+2. **`setupExpectly()` and `setupExpectlyFuzzy()` are removed.** They were deprecated in 1.x. Replace them with a `tests/support/expect.ts` module as shown in [Quick Start](#quick-start):
+
+   ```typescript
+   // Before (1.x)
+   import { setupExpectly } from "@cerios/playwright-expectly";
+   import { expect, test } from "@playwright/test";
+
+   setupExpectly();
+   export { expect, test };
+   ```
+
+   ```typescript
+   // After (2.x)
+   import { expectlyMatchers } from "@cerios/playwright-expectly";
+   import { expect as baseExpect, test } from "@playwright/test";
+
+   export const expect = baseExpect.extend(expectlyMatchers);
+   export { test };
+   ```
+
+3. **Date matchers are rebuilt on Temporal** and accept `Date`, strict ISO 8601 strings and Temporal values. Results that used to be approximate or environment-dependent are now exact:
+   - `toBeValidISODate()` validates calendar dates (`YYYY-MM-DD`); use the new `toBeValidISODateTime()` for datetimes.
+   - `toMatchTimeZone()` is removed. It checked the machine's offset, not the value's; use `toHaveOffset()` or `toHaveTimeZone()`.
+   - `toHaveDateRange()` and `toHaveDateGapsLargerThan()` use exact calendar arithmetic instead of 30.44-day months, 365.25-day years and a ±1 day tolerance.
+   - `toHaveUniqueDates(true)` becomes `toHaveUniqueDates({ ignoreTime: true })`.
+
+   See [Upgrading the date matchers](./docs/DATE_MATCHERS.md#upgrading-from-1x) for the full list.
 
 ## Documentation
 
@@ -431,6 +441,8 @@ await expectly(page.locator(".text")).not.toBeNumericString();
 - [📖 Generic Matchers](./docs/GENERIC_MATCHERS.md) - Type checking and partial matching
 - [📖 Collection and Function Matchers](./docs/COLLECTION_MATCHERS.md) - Array members, object keys and entries, promises and thrown errors
 - [📖 Fuzzy Matchers](./docs/FUZZY_MATCHERS.md) - AI-generated text validation with fuzzy string matching
+- [📖 Returning Values from Retrying Assertions](./docs/RETURNING_VALUES.md) - `pollAndReturn()`, `toPassAndReturn()` and `withReturn()`
+- [📖 Checking for Duplicate Matcher Names](./docs/CHECK_MATCHERS.md) - The `check-matchers` command and its code API
 
 ## Contributing
 
@@ -449,9 +461,3 @@ MIT © [Cerios](https://github.com/CeriosTesting)
 ---
 
 Built with ❤️ by [Cerios](https://github.com/CeriosTesting)
-
-### Values from retrying assertions
-
-Use `expectly.pollAndReturn(callback).toMatchObject(expected)` to obtain the value that passed a matcher, or `expectly(callback).toPassAndReturn({ timeout: 5_000 })` to obtain the result of a callback that completes without throwing. Both support async callbacks and return the successful value without another callback invocation.
-
-Wrap your own expect instance with the exported `withReturn()` helper; subsequent `.soft`, `.extend()` and `.configure()` calls retain these methods. Soft variants (`expectly.soft(callback).toPassAndReturn()`, `expectly.soft.pollAndReturn(callback)`) record a failure and let the test continue, resolving with `undefined` or the last polled value; their result type is `T | undefined`. See [usage examples and failure behavior](packages/playwright-expectly/README.md#returning-values-from-retrying-assertions).
