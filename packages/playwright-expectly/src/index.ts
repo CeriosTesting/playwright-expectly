@@ -4,14 +4,22 @@ import "./types/matcher-types";
 // Main export - the merged expect with all custom matchers
 export { expectly, expectlyMatchers } from "./expectly";
 
-// Return-aware native Playwright retries
+// Return-aware native Playwright retries and type-narrowing assertions
 export { withReturn } from "./expectly-return";
 export type {
 	ExpectWithReturn,
+	FalsyPart,
+	NarrowingAssertions,
+	NegatedNarrowingAssertions,
+	NegatedTypedAssertions,
 	PollAndReturnMatchers,
 	PollAndReturnOptions,
+	SoftNarrowingAssertions,
 	ToPassAndReturnMatchers,
 	ToPassAndReturnOptions,
+	TypedAssertionMessage,
+	TypedAssertions,
+	WithReturn,
 } from "./expectly-return";
 
 // Duplicate matcher name detection (also available as "npx playwright-expectly check-matchers")

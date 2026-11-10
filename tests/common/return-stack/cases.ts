@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 import { withReturn } from "../../../packages/playwright-expectly/src/expectly-return";
+import type { ExpectWithReturn } from "../../../packages/playwright-expectly/src/expectly-return";
 
 // The same reporter fixture can verify source imports and built CJS/ESM entries.
 const wrap = process.env.EXPECTLY_STACK_ENTRY
 	? (require(process.env.EXPECTLY_STACK_ENTRY) as { withReturn: typeof withReturn }).withReturn
 	: withReturn;
-const wrapped = wrap(expect);
+// Explicitly typed: type-narrowing assertions require it (TS2775).
+const wrapped: ExpectWithReturn = wrap(expect);
 const options = { timeout: 30, intervals: [1] };
 
 test("regular", () => {
@@ -51,5 +53,18 @@ test("soft-pass", async () => {
 test("soft-poll", async () => {
 	const value = await wrapped.soft.pollAndReturn(() => 1, options).toBe(2); // call:soft-poll
 	test.info().annotations.push({ type: "returned", description: JSON.stringify(value ?? null) });
+	test.info().annotations.push({ type: "continued", description: "yes" });
+});
+
+test("typed", () => {
+	wrapped.toBeDefined(undefined); // call:typed
+});
+
+test("typed-not", () => {
+	wrapped.not.toBeNull(null); // call:typed-not
+});
+
+test("typed-soft", () => {
+	wrapped.soft.toBeDefined(undefined); // call:typed-soft
 	test.info().annotations.push({ type: "continued", description: "yes" });
 });

@@ -364,6 +364,10 @@ Wrap your own expect with `withReturn()` to get both methods on it. Soft variant
 
 [📖 Options, soft assertions, types and failure locations →](./docs/RETURNING_VALUES.md)
 
+### Type-narrowing assertions
+
+`expectly.toBeDefined(value)` runs `expectly(value).toBeDefined()` and also tells TypeScript that `value` is defined, so no `if (!value) throw` is needed afterwards. The same works for `toBeUndefined`, `toBeNull`, `toBeTruthy` and `toBeFalsy`, and for their `.not` forms (`expectly.not.toBeNull(user)`). They run the native Playwright matchers, so failure messages and report steps are Playwright's own, located at your assertion line. Soft versions record the failure but do not narrow. For your own expect (merged with the fuzzy package or your own matchers, for example), wrap it with `withReturn()` and annotate it as `WithReturn<typeof yourExpect>`. See [type-narrowing assertions](packages/playwright-expectly/README.md#type-narrowing-assertions).
+
 ### Matcher families
 
 Every matcher family is exported twice: as a ready-to-use expect (`expectlyString`, `expectlyDate`, …) for a smaller, explicit API, and as a matcher object (`expectlyStringMatchers`, `expectlyDateMatchers`, …) for `.extend()` (see [Combining Matcher Sources](#combining-matcher-sources)).
