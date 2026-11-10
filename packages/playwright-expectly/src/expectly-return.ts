@@ -1,4 +1,7 @@
+import { createRequire } from "node:module";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { compileFunction } from "node:vm";
 
 import type { MatcherReturnType } from "@cerios/playwright-expectly-core";
 import { expect as baseExpect, test } from "@playwright/test";
@@ -85,11 +88,170 @@ type RegisteredMatcherChain<TActual, TMatchers, TResult = void> = {
 		: never;
 };
 
+/** The message argument accepted by `expect(value, messageOrOptions)`. */
+export type TypedAssertionMessage = string | { message?: string };
+
+/** Values that fail Playwright's `toBeTruthy()`. */
+type Falsy = false | 0 | 0n | "" | null | undefined;
+
+/**
+ * The part of `T` that can be falsy, like TypeScript's own `if (!value)` narrowing:
+ * `boolean` becomes `false`, while `string`, `number` and `bigint` stay as they are,
+ * because `""`, `0`, `NaN` and `0n` cannot be singled out. Always-truthy types are dropped.
+ */
+export type FalsyPart<T> = unknown extends T ? T : FalsyMember<T>;
+
+type FalsyMember<T> = T extends null | undefined | false
+	? T
+	: T extends string
+		? "" extends T
+			? T
+			: never
+		: T extends number
+			? 0 extends T
+				? T
+				: never
+			: T extends bigint
+				? 0n extends T
+					? T
+					: never
+				: never;
+
+/**
+ * Type-narrowing copies of Playwright's matchers, called on the expect object itself:
+ * `expect.toBeDefined(value)` runs `expect(value).toBeDefined()` and then tells the
+ * compiler that `value` is defined.
+ *
+ * TypeScript only narrows through an expect with an explicit type annotation (TS2775).
+ * `expectly` has one. When re-exporting it, write `export const expect: typeof expectly = expectly;`.
+ */
+export interface NarrowingAssertions {
+	/**
+	 * Runs `expect(value).toBeDefined()` and narrows `value` to exclude `undefined`.
+	 * Like Playwright, `null` passes; use `expect.not.toBeNull()` for that.
+	 *
+	 * @example
+	 * let name: string | undefined = getName();
+	 * expectly.toBeDefined(name);
+	 * name.toUpperCase(); // name: string
+	 */
+	toBeDefined<T>(value: T, message?: TypedAssertionMessage): asserts value is Exclude<T, undefined>;
+
+	/**
+	 * Runs `expect(value).toBeUndefined()` and narrows `value` to `undefined`.
+	 *
+	 * @example
+	 * expectly.toBeUndefined(user.deletedAt);
+	 */
+	toBeUndefined<T>(value: T, message?: TypedAssertionMessage): asserts value is T & undefined;
+
+	/**
+	 * Runs `expect(value).toBeNull()` and narrows `value` to `null`.
+	 *
+	 * @example
+	 * expectly.toBeNull(response.error);
+	 */
+	toBeNull<T>(value: T, message?: TypedAssertionMessage): asserts value is T & null;
+
+	/**
+	 * Runs `expect(value).toBeTruthy()` and narrows `value` like `if (value)` does:
+	 * `null`, `undefined`, `false`, `0`, `0n` and `""` are removed from its type.
+	 *
+	 * @example
+	 * const token: string | null = await getToken();
+	 * expectly.toBeTruthy(token);
+	 * token.length; // token: string
+	 */
+	toBeTruthy<T>(value: T, message?: TypedAssertionMessage): asserts value is Exclude<T, Falsy>;
+
+	/**
+	 * Runs `expect(value).toBeFalsy()` and narrows `value` like `if (!value)` does.
+	 *
+	 * @example
+	 * expectly.toBeFalsy(flags.enabled); // flags.enabled: false | undefined
+	 */
+	toBeFalsy<T>(value: T, message?: TypedAssertionMessage): asserts value is FalsyPart<T>;
+}
+
+/** Negated type-narrowing assertions: `expect.not.toBeNull(value)` runs `expect(value).not.toBeNull()`. */
+export interface NegatedNarrowingAssertions {
+	/** Runs `expect(value).not.toBeDefined()` and narrows `value` to `undefined`. */
+	toBeDefined<T>(value: T, message?: TypedAssertionMessage): asserts value is T & undefined;
+
+	/** Runs `expect(value).not.toBeUndefined()` and narrows `value` to exclude `undefined`. */
+	toBeUndefined<T>(value: T, message?: TypedAssertionMessage): asserts value is Exclude<T, undefined>;
+
+	/**
+	 * Runs `expect(value).not.toBeNull()` and narrows `value` to exclude `null`.
+	 *
+	 * @example
+	 * const user: User | null = await findUser(id);
+	 * expectly.not.toBeNull(user);
+	 * user.name; // user: User
+	 */
+	toBeNull<T>(value: T, message?: TypedAssertionMessage): asserts value is Exclude<T, null>;
+
+	/** Runs `expect(value).not.toBeTruthy()` and narrows `value` like `if (!value)` does. */
+	toBeTruthy<T>(value: T, message?: TypedAssertionMessage): asserts value is FalsyPart<T>;
+
+	/** Runs `expect(value).not.toBeFalsy()` and narrows `value` like `if (value)` does. */
+	toBeFalsy<T>(value: T, message?: TypedAssertionMessage): asserts value is Exclude<T, Falsy>;
+}
+
+/**
+ * Soft versions record a failure and let the test continue, so the value may still be
+ * anything afterwards: they run the same matcher but do not narrow.
+ */
+export type SoftNarrowingAssertions = {
+	[K in keyof NarrowingAssertions]: (value: unknown, message?: TypedAssertionMessage) => void;
+};
+
+/** Only an expect that is certainly not soft may narrow, since only it is certain to throw. */
+export type TypedAssertions<TSoft extends boolean = false> = [TSoft] extends [false]
+	? NarrowingAssertions
+	: SoftNarrowingAssertions;
+
+/** The negated counterpart of {@link TypedAssertions}, available on `expect.not`. */
+export type NegatedTypedAssertions<TSoft extends boolean = false> = [TSoft] extends [false]
+	? NegatedNarrowingAssertions
+	: SoftNarrowingAssertions;
+
+const TYPED_ASSERTIONS: ReadonlySet<PropertyKey> = new Set<keyof NarrowingAssertions>([
+	"toBeDefined",
+	"toBeUndefined",
+	"toBeNull",
+	"toBeTruthy",
+	"toBeFalsy",
+]);
+
 /**
  * Extended expect interface that retains Playwright's call signatures.
  * It can wrap expectly, baseExpect, or an expect created with extend().
  */
-export type ExpectWithReturn<TMatchers = {}, TSoft extends boolean = false> = {
+export type ExpectWithReturn<TMatchers = {}, TSoft extends boolean = false> = ExpectWithReturnMembers<
+	TMatchers,
+	TSoft
+> &
+	TypedAssertions<TSoft>;
+
+/**
+ * The type `withReturn()` gives a particular expect, for annotating your own exported expect.
+ * Type-narrowing assertions need that explicit annotation (TS2775), and this way it never
+ * has to list the matcher types, whatever you merged or extended.
+ *
+ * @example
+ * const merged = mergeExpects(expectly, expectlyFuzzy, myExpect);
+ * export const expect: WithReturn<typeof merged> = withReturn(merged);
+ */
+export type WithReturn<TExpect, TSoft extends boolean = false> =
+	TExpect extends Expect<infer TMatchers> ? ExpectWithReturn<TMatchers, TSoft> : never;
+
+/**
+ * An interface (not an intersection) so that `not` has a single declaration:
+ * TypeScript only narrows through `expect.not.toBeNull(value)` when every name in the
+ * call target is declared with an explicit type (TS2775).
+ */
+interface ExpectWithReturnMembers<TMatchers, TSoft extends boolean> extends Expect<TMatchers> {
 	<TCallback extends () => unknown>(
 		callback: TCallback,
 		messageOrOptions?: string | { message?: string },
@@ -127,7 +289,10 @@ export type ExpectWithReturn<TMatchers = {}, TSoft extends boolean = false> = {
 	>(
 		matchers: TMore,
 	): ExpectWithReturn<TMatchers & TMore, TSoft>;
-} & Expect<TMatchers>;
+
+	/** Playwright's asymmetric `expect.not` matchers, plus the negated type-narrowing assertions. */
+	not: NegatedTypedAssertions<TSoft> & Expect<TMatchers>["not"];
+}
 
 /** Capture at invocation (not property access), including source-mapped caller locations. */
 function assertionCallSite(boundary: (...args: never[]) => unknown): {
@@ -153,14 +318,94 @@ function isRunningTest(): boolean {
 	}
 }
 
+/** Keep the original error, message, matcher result and cause intact; only move its stack. */
+function rewriteStack(error: unknown, stack: string): void {
+	if (error instanceof Error && stack) error.stack = `${error.name}: ${error.message}\n${stack}`;
+}
+
 async function atCallSite<T>(body: () => Promise<T>, stack: string): Promise<T> {
 	try {
 		return await body();
 	} catch (error) {
-		// Keep the original error, message, matcher result and cause intact.
-		if (error instanceof Error && stack) error.stack = `${error.name}: ${error.message}\n${stack}`;
+		rewriteStack(error, stack);
 		throw error;
 	}
+}
+
+type TypedAssertionCall = (value: unknown, message?: TypedAssertionMessage) => void;
+type MatcherForwarder = (
+	expect: unknown,
+	name: string,
+	negated: boolean,
+	value: unknown,
+	message?: TypedAssertionMessage,
+) => void;
+
+/** Root of the `playwright` package that `@playwright/test` uses, resolved from this module's own file. */
+function playwrightPackageRoot(): string | undefined {
+	try {
+		// Read from a stack trace, so it works from the CJS and ESM builds and from TS sources.
+		const ownFile = assertionCallSite(playwrightPackageRoot).location?.file;
+		if (!ownFile) return undefined;
+		const testPackage = createRequire(ownFile).resolve("@playwright/test/package.json");
+		return path.dirname(createRequire(testPackage).resolve("playwright/package.json"));
+	} catch {
+		return undefined;
+	}
+}
+
+let matcherForwarder: MatcherForwarder | null | undefined;
+
+/**
+ * Playwright reports a matcher at the first stack frame outside its own package, which
+ * is the user's line when a test calls a matcher directly. A forwarding function of ours
+ * would be that frame instead. So the forwarder is compiled with a file name inside the
+ * Playwright package, and Playwright skips its frame like its own: steps, errors and soft
+ * errors point at the test's line, exactly as for a native matcher.
+ */
+function getMatcherForwarder(): MatcherForwarder | null {
+	if (matcherForwarder !== undefined) return matcherForwarder;
+	const root = playwrightPackageRoot();
+	matcherForwarder = root
+		? (compileFunction(
+				"const matchers = expect(value, message);\n(negated ? matchers.not : matchers)[name]();",
+				["expect", "name", "negated", "value", "message"],
+				{ filename: path.join(root, "lib", "expectly-typed-assertion.js") },
+			) as MatcherForwarder)
+		: null;
+	return matcherForwarder;
+}
+
+/**
+ * Runs the native matcher named `name` on `expect(value, message)`. It must stay
+ * synchronous: an assertion function has to throw before the next statement runs.
+ */
+function typedAssertion<TMatchers>(target: Expect<TMatchers>, name: string, negated: boolean): TypedAssertionCall {
+	// A bound function adds no stack frame of its own.
+	const forwarder = getMatcherForwarder();
+	if (forwarder) return forwarder.bind(undefined, target, name, negated);
+	// Fallback when Playwright cannot be resolved: the thrown error still points at the call.
+	return function assertTyped(value: unknown, message?: TypedAssertionMessage): void {
+		const caller = assertionCallSite(assertTyped);
+		const matchers: object = target(value, message);
+		const assertion = negated ? (Reflect.get(matchers, "not") as object) : matchers;
+		try {
+			(Reflect.get(assertion, name) as () => void).call(assertion);
+		} catch (error) {
+			rewriteStack(error, caller.stack);
+			throw error;
+		}
+	};
+}
+
+/** Adds the negated type-narrowing assertions next to Playwright's asymmetric `expect.not`. */
+function proxyNot<TMatchers>(target: Expect<TMatchers>, nativeNot: unknown): object {
+	return new Proxy(typeof nativeNot === "object" && nativeNot !== null ? nativeNot : {}, {
+		get(not, key, receiver) {
+			if (typeof key === "string" && TYPED_ASSERTIONS.has(key)) return typedAssertion(target, key, true);
+			return Reflect.get(not, key, receiver);
+		},
+	});
 }
 
 function proxyPollMatchers<T>(
@@ -209,6 +454,10 @@ function proxyPollMatchers<T>(
  * Soft return-aware assertions (`.soft` or `configure({ soft: true })`) record a
  * failure and resolve, like native soft assertions: `toPassAndReturn()` with
  * `undefined` and `pollAndReturn()` with the last polled value.
+ *
+ * Also adds type-narrowing assertions on the expect object (`expect.toBeDefined(value)`,
+ * `expect.not.toBeNull(value)`, ...; see {@link NarrowingAssertions}). They run the
+ * native matcher and tell the compiler what the value is afterwards. Soft ones do not narrow.
  *
  * @example
  * const expect = withReturn(baseExpect.extend(expectlyMatchers));
@@ -273,6 +522,12 @@ export function withReturn<TMatchers>(nativeExpect: Expect<TMatchers>): ExpectWi
 						TMatchers
 					>;
 				};
+			}
+			if (typeof key === "string" && TYPED_ASSERTIONS.has(key)) {
+				return typedAssertion(target, key, false);
+			}
+			if (key === "not") {
+				return proxyNot(target, Reflect.get(target, key, receiver));
 			}
 			if (key === "soft") {
 				// In older Playwright (e.g. 1.40), `expect.soft` is only callable (no poll/configure/extend),

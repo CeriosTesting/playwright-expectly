@@ -26,6 +26,17 @@ test("return-aware retries and typed extensions", async () => {
 	expect(await expectly.soft(() => 42).toPassAndReturn({ timeout: 100 })).toBe(42);
 });
 
+test("type-narrowing assertions", () => {
+	const name = ((): string | null | undefined => "Ada")();
+	expectly.toBeDefined(name);
+	expectly.not.toBeNull(name);
+	const narrowed: string = name;
+	expect(narrowed).toBe("Ada");
+	expect(() => expectly.toBeTruthy("")).toThrow();
+	expect(() => expectly.not.toBeNull(null, "user was not found")).toThrow("user was not found");
+	expect({ name: "Ada" }).toEqual({ name: expectly.not.stringContaining("Bob") });
+});
+
 test("browser matchers and locator failures", async ({ page }) => {
 	await page.setContent('<div data-value="hello">hello world</div>');
 	await expectly(page.locator("div")).toStartWith("hello");

@@ -119,6 +119,67 @@ export const test = base;
 
 MIT © Cerios
 
+## Type-narrowing assertions
+
+Playwright's `expect(name).toBeDefined()` checks the value, but TypeScript still sees `name` as possibly `undefined` afterwards. That is a TypeScript limit: a check can only narrow a variable that is passed straight to it, and in `expect(name).toBeDefined()` the variable goes to `expect()`. So Expectly adds copies of these matchers on the expect object itself:
+
+```typescript
+import { expectly } from "@cerios/playwright-expectly";
+
+const name: string | undefined = await getName();
+expectly.toBeDefined(name); // runs expectly(name).toBeDefined()
+name.toUpperCase(); // name: string, no `if (!name) throw` needed
+
+const user: User | null = await findUser(id);
+expectly.not.toBeNull(user, "user was not found"); // runs expectly(user, "user was not found").not.toBeNull()
+user.email; // user: User
+```
+
+| Assertion              | Narrows to                | `.not` narrows to         |
+| ---------------------- | ------------------------- | ------------------------- |
+| `toBeDefined(value)`   | `Exclude<T, undefined>`   | `undefined`               |
+| `toBeUndefined(value)` | `undefined`               | `Exclude<T, undefined>`   |
+| `toBeNull(value)`      | `null`                    | `Exclude<T, null>`        |
+| `toBeTruthy(value)`    | what `if (value)` leaves  | what `if (!value)` leaves |
+| `toBeFalsy(value)`     | what `if (!value)` leaves | what `if (value)` leaves  |
+
+Each one runs the native Playwright matcher, so pass/fail behavior, failure messages and report steps are Playwright's own. Reporting works exactly like a matcher call: the step, the failure and soft failures point at your assertion line. As in Playwright, `toBeDefined()` passes for `null`; use `expectly.not.toBeNull()` or `expectly.toBeTruthy()` to reject `null` too. The optional second argument is the same custom message that `expect(value, message)` accepts.
+
+**Soft assertions do not narrow.** `expectly.soft.toBeDefined(name)` (or one from `configure({ soft: true })`) records the failure and lets the test continue, so `name` may still be `undefined` afterwards and keeps its original type.
+
+**Your own expect: wrap it with `withReturn()` and annotate it with `WithReturn<typeof …>`.** TypeScript only narrows through an expect whose type is written out (error TS2775: "Assertions require every name in the call target to be declared with an explicit type annotation"). `expectly` already has one. `WithReturn<typeof yourExpect>` is that annotation for any expect, so you never list matcher types, whether you merge the fuzzy package, your own matchers, or anything else:
+
+```typescript
+// tests/support/expect.ts
+import { expectly, withReturn } from "@cerios/playwright-expectly";
+import type { WithReturn } from "@cerios/playwright-expectly";
+import { expectlyFuzzy } from "@cerios/playwright-expectly-fuzzy";
+import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
+
+const myExpect = baseExpect.extend({
+	toBeEven(received: number) {
+		return { pass: received % 2 === 0, message: () => `expected ${received} to be even` };
+	},
+});
+
+const merged = mergeExpects(baseExpect, expectly, expectlyFuzzy, myExpect);
+export const expect: WithReturn<typeof merged> = withReturn(merged);
+export const test = base;
+```
+
+```typescript
+import { expect, test } from "./support/expect";
+
+test("narrowing with all matchers", async () => {
+	const order: Order | undefined = await findOrder(id);
+	expect.toBeDefined(order); // order: Order
+	expect(order.total).toBeEven();
+	expect(order.label).toMatchFuzzy("express delivery");
+});
+```
+
+Apply `withReturn()` last, to the final expect: `mergeExpects()` and Playwright's own `extend()` return a plain Playwright expect. `.soft`, `.configure()` and `.extend()` on the wrapped expect keep the assertions and the right types.
+
 ## Returning values from retrying assertions
 
 `expectly.pollAndReturn()` returns the value that satisfied the matcher. `expectly(callback).toPassAndReturn()` returns the result of the first callback attempt that completes without throwing. Both support synchronous and asynchronous callbacks without calling them again after success.
