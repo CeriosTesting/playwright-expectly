@@ -1,5 +1,11 @@
 # @cerios/playwright-expectly-fuzzy
 
+## 2.0.3
+
+### Patch Changes
+
+- 7936cb5: Tag the fuzzy matchers with their origin, so `npx playwright-expectly check-matchers` recognises this package as one implementation when it is loaded through both its CommonJS and ESM builds.
+
 ## 2.0.2
 
 ### Patch Changes

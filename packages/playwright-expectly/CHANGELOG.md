@@ -1,5 +1,22 @@
 # @cerios/playwright-expectly
 
+## 2.2.0
+
+### Minor Changes
+
+- 7936cb5: Add `npx playwright-expectly check-matchers` and `findDuplicateMatchers()` to detect matcher names that are defined more than once.
+
+  - **Feature:** when `expectlyMatchers`, `expectlyFuzzyMatchers` and your own matchers are combined with `.extend()` or `mergeExpects()`, a name that two sources define silently keeps the later implementation. `npx playwright-expectly check-matchers ./tests/support/expect.ts` loads the module the way Playwright loads test files, takes every exported matcher object and expect instance as a source next to the installed Expectly packages, and reports names whose implementations differ as well as names that override a Playwright built-in matcher. Exit code 1 flags findings and 2 usage or load errors; `module#export` selects one export, `--json` prints the report as JSON and `--no-packages` leaves the installed packages out.
+  - **API:** `findDuplicateMatchers()`, `assertNoDuplicateMatchers()` (throws `DuplicateMatcherError`), `formatDuplicateMatcherReport()` and `playwrightBuiltinMatcherNames()`, with the types `DuplicateMatcherReport`, `MatcherNameConflict`, `MatcherSource`, `MatcherDictionary`, `MatcherFunction`, `ExpectLike`, `MatcherSourceSummary` and `FindDuplicateMatchersOptions`.
+  - **Behaviour:** the same function in several sources, or the same package loaded twice (its CommonJS and ESM builds), is not a duplicate; Expectly matchers carry an origin tag for this.
+  - **Caveat:** Playwright 1.60 and newer expose the matchers of an expect instance. On older versions an expect instance is listed as not inspectable; export the matcher objects that build it and compare those.
+
+- 9cc3968: Add type-narrowing assertions: `expectly.toBeDefined(value)`, `toBeUndefined`, `toBeNull`, `toBeTruthy` and `toBeFalsy`, each with a `.not` form (`expectly.not.toBeNull(value)`).
+
+  - **Feature:** `expect(name).toBeDefined()` does not tell TypeScript that `name` is defined, so tests needed an extra `if (!name) throw`. The new assertions take the value directly and narrow its type afterwards, e.g. `expectly.toBeDefined(name)` turns `string | undefined` into `string`. They run the native Playwright matcher, so behavior, failure messages and report steps are unchanged, and steps and failures (soft ones too) are reported at the assertion line like any matcher call. An optional second argument is the custom message.
+  - **Availability:** on `expectly` and on every expect wrapped with `withReturn()`, including after `.soft`, `.configure()` and `.extend()`. Playwright's asymmetric `expect.not` matchers keep working.
+  - **Types:** soft instances (`.soft`, `configure({ soft: true })`) run the same check but do not narrow, because the test continues after a failure. TypeScript only narrows through an expect with an explicit type annotation (TS2775); `expectly` has one, and for your own expect (for example merged with `expectlyFuzzy` and your own matchers) use `WithReturn<typeof yourExpect>`, so no matcher types need to be listed. New exported types: `WithReturn`, `NarrowingAssertions`, `NegatedNarrowingAssertions`, `SoftNarrowingAssertions`, `TypedAssertions`, `NegatedTypedAssertions`, `TypedAssertionMessage`, `FalsyPart`.
+
 ## 2.1.0
 
 ### Minor Changes
