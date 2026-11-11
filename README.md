@@ -192,6 +192,7 @@ It loads the module the way Playwright loads test files, compares every exported
 - `toBeAlphanumeric()` - Only letters and numbers
 - `toBeNumericString()` - Only digits
 - `toBeHexadecimal({ prefix })` - Hexadecimal string, optionally with `0x`
+- `toBeValidJSON(expected?)` - Valid JSON, optionally equal to a (partial) value
 - `toStartWith(prefix)` / `toEndWith(suffix)` - String boundaries
 - `toMatchPattern(regex)` - Regular expression matching
 - `toEqualCaseInsensitive(text)` / `toEqualIgnoringWhitespace(text)` - Lenient equality
@@ -213,13 +214,13 @@ It loads the module the way Playwright loads test files, compares every exported
 
 Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfilled), with nanosecond precision and explicit time zones.
 
-- `toBeBefore(date)` / `toBeAfter(date)` / `toBeSameInstant(date)` - Chronology
-- `toBeWithinLast(duration)` / `toBeWithinNext(duration)` - Relative to now
+- `toBeBefore(date)` / `toBeOnOrBefore(date)` / `toBeAfter(date)` / `toBeOnOrAfter(date)` / `toBeSameInstant(date)` - Chronology
+- `toBeWithinLast(duration)` / `toBeWithinNext(duration)` / `toBeOlderThan(duration)` / `toBeNewerThan(duration)` - Relative to now
 - `toBeWithinDurationAfter(start, limit)` - Event timing
-- `toBeSameDay(date, { timeZone })` / `toBeToday()` / `toBeWeekday()` - Calendar
+- `toBeSameDay(date, { timeZone })` / `toBeSameWeek(date)` / `toBeToday()` / `toBeThisMonth()` / `toBeInWeek(week)` / `toBeInYear(year)` / `toBeWeekday()` - Calendar
 - `toBeWithinTimeOfDay(start, end)` / `toBeSameHour(date)` / `toBeAtEndOfDay()` - Clock
 - `toBeValidISODateTime()` / `toHaveOffset(offset)` / `toHaveTimeZone(zone)` - Validation
-- `toHaveMaximumDateGap(duration)` / `toHaveDateRange(duration)` - Collections
+- `toHaveMaximumDateGap(duration)` / `toHaveDateRange(duration)` / `toHaveEarliestDate(date)` / `toHaveLatestDate(date)` - Collections
 - `toBeShorterThan(duration)` / `toBeDurationBetween(min, max)` - Durations
 - `parseISOInstant()` / `isISOInstant()` and `ISOInstantString`-style types - Typed ISO strings
 
@@ -233,6 +234,7 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 - `toBeUpperCase()` / `toBeLowerCase()` - Case validation
 - `toBeTitleCase()` - Title case format
 - `toHaveSrc(value)` / `toHaveHref(value)` / `toHaveAlt(value)` - Attribute validation
+- `toHaveSelectedOption(label)` - Visible label of the selected `<select>` option(s)
 - `toHaveStyles({ ... })` - Several computed CSS properties at once
 - `toHaveCountGreaterThan(n)` / `toHaveCountBetween(min, max)` - Retrying element count ranges
 - `toHaveTextsInAscendingOrder()` / `toHaveTextsInDescendingOrder()` - Sorted table columns and lists
@@ -243,8 +245,15 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 
 - `toHaveCookie(name, value?, { domain, path })` - Cookie on a `Page` or `BrowserContext`
 - `toHaveLocalStorageItem(key, value?)` / `toHaveSessionStorageItem(key, value?)` - Web storage on a `Page`
+- `toHaveURLSearchParams({ q: "shoes" }, { exact? })` - Query parameters of the page URL, in any order
 
 [📖 View all page matchers →](./docs/PAGE_MATCHERS.md)
+
+### Response Matchers
+
+- `toHaveStatus(201 | "2xx")` - HTTP status of an `APIResponse` or `Response`, with the body in the failure message
+
+[📖 View all response matchers →](./docs/RESPONSE_MATCHERS.md)
 
 ### Object Array Matchers
 
@@ -267,6 +276,7 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 
 - `toBeInteger()` / `toBeFloat()` - Number type validation
 - `toBeEven()` / `toBeOdd()` / `toBeFinite()` - Number value validation
+- `toBeNear(expected, { tolerance } | { percent })` / `toBeWithin(min, max)` - Number tolerance and inclusive range
 - `toBeAnyOf(...values)` - Multiple value matching
 - `toSatisfy(predicate)` - Custom predicate
 - `toEqualPartially(expected, options)` - Partial object and array matching with configurable array modes
@@ -279,7 +289,8 @@ Accepts `Date`, strict ISO 8601 strings and Temporal values (native or polyfille
 
 - `toSatisfyAll(predicate)` / `toSatisfyAny(predicate)` - Array predicates
 - `toIncludeSameMembers(values)` / `toIncludeAllMembers(values)` / `toIncludeAnyMembers(values)` - Members in any order
-- `toContainKey(key)` / `toContainKeys(keys)` / `toContainAllKeys(keys)` / `toContainEntry(entry)` / `toBeEmptyObject()` - Object keys and entries
+- `toContainKey(key)` / `toContainKeys(keys)` / `toContainAllKeys(keys)` / `toContainAnyKeys(keys)` / `toContainEntry(entry)` / `toContainAnyEntries(entries)` / `toBeEmptyObject()` - Object keys and entries
+- `toContainValue(value)` / `toContainValues(values)` / `toContainAllValues(values)` / `toContainAnyValues(values)` - Object values
 - `toResolve()` / `toReject()` / `toThrowWithMessage(type, message)` - Promises and thrown errors
 
 [📖 View all collection and function matchers →](./docs/COLLECTION_MATCHERS.md)
@@ -439,7 +450,8 @@ Version 2 of `@cerios/playwright-expectly` and `@cerios/playwright-expectly-fuzz
 - [📖 Number Array Matchers](./docs/NUMBER_ARRAY_MATCHERS.md) - Sorting, statistics, range checks
 - [📖 Date Matchers](./docs/DATE_MATCHERS.md) - Dates, datetimes, time zones, durations and typed ISO strings
 - [📖 Locator Matchers](./docs/LOCATOR_MATCHERS.md) - DOM element text, attribute, style, count and order validation
-- [📖 Page Matchers](./docs/PAGE_MATCHERS.md) - Cookies, `localStorage` and `sessionStorage`
+- [📖 Page Matchers](./docs/PAGE_MATCHERS.md) - Cookies, `localStorage`, `sessionStorage` and URL search params
+- [📖 Response Matchers](./docs/RESPONSE_MATCHERS.md) - HTTP status codes of API and page responses
 - [📖 Object Array Matchers](./docs/OBJECT_ARRAY_MATCHERS.md) - Sorting and uniqueness by property
 - [📖 String Array Matchers](./docs/STRING_ARRAY_MATCHERS.md) - Alphabetical sorting and uniqueness
 - [📖 Generic Matchers](./docs/GENERIC_MATCHERS.md) - Type checking and partial matching

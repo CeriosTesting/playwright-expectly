@@ -11,6 +11,7 @@ import { expectlyLocatorMatchers, expectlyLocatorTextMatchers } from "./expectly
 import { expectlyNumberArrayMatchers } from "./expectly-number-array";
 import { expectlyObjectArrayMatchers } from "./expectly-object-array";
 import { expectlyPageMatchers } from "./expectly-page";
+import { expectlyResponseMatchers } from "./expectly-response";
 import type { ExpectWithReturn } from "./expectly-return";
 import { withReturn } from "./expectly-return";
 import { expectlyStringMatchers } from "./expectly-string";
@@ -175,6 +176,7 @@ export const expectlyMatchers = {
 	...expectlyNumberArrayMatchers,
 	...expectlyObjectArrayMatchers,
 	...expectlyPageMatchers,
+	...expectlyResponseMatchers,
 	...expectlyStringMatchers,
 	...expectlyStringArrayMatchers,
 	...expectlyTextMatchers,
@@ -187,6 +189,7 @@ export const expectlyMatchers = {
 	Omit<typeof expectlyNumberArrayMatchers, OverlappingArrayMatcherNames> &
 	typeof expectlyObjectArrayMatchers &
 	typeof expectlyPageMatchers &
+	typeof expectlyResponseMatchers &
 	Omit<typeof expectlyStringMatchers, OverlappingTextMatcherNames> &
 	Omit<typeof expectlyStringArrayMatchers, OverlappingArrayMatcherNames> &
 	typeof expectlyTextMatchers &
@@ -205,6 +208,7 @@ tagMatcherOrigin(expectlyMatchers, "@cerios/playwright-expectly");
  * - **Locator Matchers**: Assert on web elements, attributes, text patterns, and validation
  * - **Number Matchers**: Statistical checks, ordering, ranges, numeric validations
  * - **Object Array Matchers**: Sort validation and uniqueness checks for object collections
+ * - **Page and Response Matchers**: Cookies, web storage, URL search params and HTTP status codes
  * - **String Matchers**: Pattern matching, format validation, and text assertions
  * - **String Array Matchers**: Sorting, ordering, and uniqueness validations for string arrays
  *

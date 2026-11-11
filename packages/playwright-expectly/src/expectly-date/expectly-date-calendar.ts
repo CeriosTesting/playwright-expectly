@@ -4,7 +4,17 @@ import type { NormalizedDateTime } from "../date-time/inputs";
 import { isAbsolute, normalize } from "../date-time/inputs";
 import type { PlainDate } from "../date-time/temporal";
 import { ISO_CALENDAR } from "../date-time/temporal";
-import type { CalendarFieldOptions, DateInput, RelativeTimeOptions, TimeZoneOptions } from "../date-time/types";
+import type {
+	CalendarFieldOptions,
+	DateInput,
+	RelativeCalendarOptions,
+	RelativeTimeOptions,
+	RelativeWeekOptions,
+	TimeZoneOptions,
+	WeekNumberOptions,
+	WeekOptions,
+	WeekStart,
+} from "../date-time/types";
 import {
 	calendarDate,
 	carriedTimeZone,
@@ -211,24 +221,78 @@ function parseDay(expectedDay: DayOfWeek | number): number {
 	return expectedDay;
 }
 
+/** The weekday index (0 = Sunday) a week starts on. Default: Monday (ISO 8601). */
+function weekStartIndex(weekStartsOn: WeekStart | undefined): number {
+	if (weekStartsOn === undefined) return 1;
+	try {
+		return parseDay(weekStartsOn);
+	} catch (error) {
+		throw new Error(`Invalid weekStartsOn: ${(error as Error).message}`);
+	}
+}
+
+/** The first day of the week containing `date`. Weeks are made of days, so no calendar changes them. */
+function startOfWeek(date: PlainDate, start: number): PlainDate {
+	return date.subtract({ days: (dayIndex(date) - start + 7) % 7 });
+}
+
+function describeWeek(date: PlainDate, start: number): string {
+	const first = startOfWeek(date, start);
+	return `${first.toString()} (${DAY_NAMES[start]}) to ${first.add({ days: 6 }).toString()}`;
+}
+
+function isSameWeek(left: PlainDate, right: PlainDate, start: number): boolean {
+	return startOfWeek(left, start).equals(startOfWeek(right, start));
+}
+
+function isSameMonth(left: PlainDate, right: PlainDate): boolean {
+	return left.year === right.year && left.monthCode === right.monthCode;
+}
+
+/** The ISO 8601 week number and week-numbering year of an ISO calendar date. */
+function isoWeek(date: PlainDate): { week: number; year: number } {
+	const { weekOfYear: week, yearOfWeek: year } = date;
+	if (week === undefined || year === undefined) {
+		throw new Error(`ISO week numbers are undefined for ${date.toString()} in the "${date.calendarId}" calendar`);
+	}
+	return { week, year };
+}
+
+function describeIsoWeek(date: PlainDate): string {
+	const { week, year } = isoWeek(date);
+	return `week ${week} of ${year}`;
+}
+
 /** Local values have no zone line in `calendarLines`, but "today" was still read in a zone. */
 function relativeZoneLine(received: CalendarValue): MessageLine | undefined {
 	return isAbsolute(received.value) ? undefined : ["Time zone", received.timeZone];
 }
 
+/**
+ * Places the actual value on the calendar and returns "today" shifted by `offsetDays`. With `readsFields`,
+ * both are in the resolved calendar (`received.fields` and the returned `fields`); `date` is always ISO.
+ */
 function relativeDay(
 	actual: unknown,
-	options: RelativeTimeOptions | undefined,
+	options: RelativeCalendarOptions | undefined,
 	offsetDays: number,
-): [CalendarValue, PlainDate] {
+	readsFields = false,
+): [CalendarValue, { date: PlainDate; fields: PlainDate }] {
 	// "Today" is the day of `now` in one zone: the timeZone option, else the zone or offset the actual value
 	// spells out, else the one `now` spells out (so a local date is compared with today where `now` is),
 	// else the machine zone.
 	const actualZone = carriedTimeZone(normalize(actual, "actual date"));
 	const nowZone = options?.now === undefined ? undefined : carriedTimeZone(normalize(options.now, "now"));
-	const received = onCalendar(actual, { ...options, timeZone: options?.timeZone ?? actualZone ?? nowZone });
-	const today = currentInstant(options?.now).toZonedDateTimeISO(received.timeZone).toPlainDate();
-	return [received, today.add({ days: offsetDays })];
+	const received = onCalendar(
+		actual,
+		{ ...options, timeZone: options?.timeZone ?? actualZone ?? nowZone },
+		readsFields,
+	);
+	const today = currentInstant(options?.now)
+		.toZonedDateTimeISO(received.timeZone)
+		.toPlainDate()
+		.add({ days: offsetDays });
+	return [received, { date: today, fields: inCalendar(today, received.fields.calendarId) }];
 }
 
 /**
@@ -255,7 +319,7 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 		const [received, target] = onSameCalendar(actual, expected, options, true);
 		return dateMatcherResult(this, {
 			name: "toBeSameMonth",
-			pass: received.fields.year === target.fields.year && received.fields.monthCode === target.fields.monthCode,
+			pass: isSameMonth(received.fields, target.fields),
 			subject: "dates",
 			expectation: "be in the same month",
 			lines: calendarLines(received, target),
@@ -277,13 +341,71 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 		});
 	},
 
+	toBeSameWeek(actual: DateInput, expected: DateInput, options?: WeekOptions) {
+		const start = weekStartIndex(options?.weekStartsOn);
+		const [received, target] = onSameCalendar(actual, expected, options);
+		return dateMatcherResult(this, {
+			name: "toBeSameWeek",
+			pass: isSameWeek(received.date, target.date, start),
+			subject: "dates",
+			expectation: `be in the same week (starting ${DAY_NAMES[start]})`,
+			lines: () => [
+				...calendarLines(received, target)(),
+				["Expected week", describeWeek(target.date, start)],
+				["Received week", describeWeek(received.date, start)],
+			],
+			expected,
+			actual,
+		});
+	},
+
+	toBeInWeek(actual: DateInput, expectedWeek: number, options?: WeekNumberOptions) {
+		if (!Number.isInteger(expectedWeek) || expectedWeek < 1 || expectedWeek > 53) {
+			throw new Error(`Invalid week number: ${expectedWeek}. Must be an integer between 1 and 53`);
+		}
+		const expectedYear = options?.year;
+		if (expectedYear !== undefined && !Number.isInteger(expectedYear)) {
+			throw new Error(`Invalid year: ${expectedYear}. Must be an integer`);
+		}
+		const received = onCalendar(actual, options);
+		const { week, year } = isoWeek(received.date);
+		const label = expectedYear === undefined ? `week ${expectedWeek}` : `week ${expectedWeek} of ${expectedYear}`;
+		return dateMatcherResult(this, {
+			name: "toBeInWeek",
+			pass: week === expectedWeek && (expectedYear === undefined || year === expectedYear),
+			expectation: `be in ISO ${label}`,
+			lines: () => [["Received week", describeIsoWeek(received.date), "received"], ...calendarLines(received)()],
+			expected: expectedYear === undefined ? expectedWeek : { week: expectedWeek, year: expectedYear },
+			actual: expectedYear === undefined ? week : { week, year },
+		});
+	},
+
+	toBeInYear(actual: DateInput, expectedYear: number, options?: CalendarFieldOptions) {
+		if (!Number.isInteger(expectedYear)) {
+			throw new Error(`Invalid year: ${expectedYear}. Must be an integer`);
+		}
+		const received = onCalendar(actual, options, true);
+		return dateMatcherResult(this, {
+			name: "toBeInYear",
+			pass: received.fields.year === expectedYear,
+			expectation: `be in ${expectedYear}`,
+			lines: () => [["Received year", received.fields.year, "received"], ...calendarLines(received)()],
+			expected: expectedYear,
+			actual: received.fields.year,
+		});
+	},
+
 	toBeToday(actual: DateInput, options?: RelativeTimeOptions) {
 		const [received, today] = relativeDay(actual, options, 0);
 		return dateMatcherResult(this, {
 			name: "toBeToday",
-			pass: received.date.equals(today),
+			pass: received.date.equals(today.date),
 			expectation: "be today",
-			lines: () => [["Today", today.toString(), "expected"], ...calendarLines(received)(), relativeZoneLine(received)],
+			lines: () => [
+				["Today", today.date.toString(), "expected"],
+				...calendarLines(received)(),
+				relativeZoneLine(received),
+			],
 			actual,
 		});
 	},
@@ -292,10 +414,59 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 		const [received, yesterday] = relativeDay(actual, options, -1);
 		return dateMatcherResult(this, {
 			name: "toBeYesterday",
-			pass: received.date.equals(yesterday),
+			pass: received.date.equals(yesterday.date),
 			expectation: "be yesterday",
 			lines: () => [
-				["Yesterday", yesterday.toString(), "expected"],
+				["Yesterday", yesterday.date.toString(), "expected"],
+				...calendarLines(received)(),
+				relativeZoneLine(received),
+			],
+			actual,
+		});
+	},
+
+	toBeThisWeek(actual: DateInput, options?: RelativeWeekOptions) {
+		const start = weekStartIndex(options?.weekStartsOn);
+		const [received, today] = relativeDay(actual, options, 0);
+		return dateMatcherResult(this, {
+			name: "toBeThisWeek",
+			pass: isSameWeek(received.date, today.date, start),
+			expectation: `be this week (starting ${DAY_NAMES[start]})`,
+			lines: () => [
+				["This week", describeWeek(today.date, start), "expected"],
+				["Received week", describeWeek(received.date, start), "received"],
+				...calendarLines(received)(),
+				relativeZoneLine(received),
+			],
+			actual,
+		});
+	},
+
+	toBeThisMonth(actual: DateInput, options?: RelativeCalendarOptions) {
+		const [received, today] = relativeDay(actual, options, 0, true);
+		return dateMatcherResult(this, {
+			name: "toBeThisMonth",
+			pass: isSameMonth(received.fields, today.fields),
+			expectation: "be this month",
+			lines: () => [
+				["This month", `${describeMonth(today.fields)} ${today.fields.year}`, "expected"],
+				["Received month", `${describeMonth(received.fields)} ${received.fields.year}`, "received"],
+				...calendarLines(received)(),
+				relativeZoneLine(received),
+			],
+			actual,
+		});
+	},
+
+	toBeThisYear(actual: DateInput, options?: RelativeCalendarOptions) {
+		const [received, today] = relativeDay(actual, options, 0, true);
+		return dateMatcherResult(this, {
+			name: "toBeThisYear",
+			pass: received.fields.year === today.fields.year,
+			expectation: "be this year",
+			lines: () => [
+				["This year", today.fields.year, "expected"],
+				["Received year", received.fields.year, "received"],
 				...calendarLines(received)(),
 				relativeZoneLine(received),
 			],
@@ -307,10 +478,10 @@ export const expectlyDateCalendarMatchers = withMatcherState({
 		const [received, tomorrow] = relativeDay(actual, options, 1);
 		return dateMatcherResult(this, {
 			name: "toBeTomorrow",
-			pass: received.date.equals(tomorrow),
+			pass: received.date.equals(tomorrow.date),
 			expectation: "be tomorrow",
 			lines: () => [
-				["Tomorrow", tomorrow.toString(), "expected"],
+				["Tomorrow", tomorrow.date.toString(), "expected"],
 				...calendarLines(received)(),
 				relativeZoneLine(received),
 			],

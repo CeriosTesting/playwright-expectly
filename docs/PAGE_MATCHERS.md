@@ -1,10 +1,10 @@
 # Page Matchers
 
-Cookie and web storage matchers for Playwright pages and browser contexts.
+Cookie, web storage and URL matchers for Playwright pages and browser contexts.
 
 ## Module Organization
 
-The page matchers are available through `expectly`, through `expect` extended with `expectlyMatchers`, and as a granular import (`expectlyPage`, with the `CookieOptions` type).
+The page matchers are available through `expectly`, through `expect` extended with `expectlyMatchers`, and as a granular import (`expectlyPage`, with the `CookieOptions`, `ExpectedSearchParams` and `URLSearchParamsOptions` types).
 
 ```typescript
 // Option 1: Use the unified expectly interface (recommended)
@@ -20,8 +20,9 @@ await expectlyPage(page).toHaveLocalStorageItem("theme", "dark");
 
 - [toHaveCookie()](#tohavecookie)
 - [toHaveLocalStorageItem() / toHaveSessionStorageItem()](#tohavelocalstorageitem--tohavesessionstorageitem)
+- [toHaveURLSearchParams()](#tohaveurlsearchparams)
 
-All page matchers return a promise, so use `await`.
+All page matchers return a promise, so use `await`. For the HTTP status of a response, see [Response Matchers](./RESPONSE_MATCHERS.md).
 
 ## Retry Behavior
 
@@ -119,6 +120,57 @@ A failure shows the stored value, or `(no such item)`:
 ```text
 Expected page to have localStorage item "theme" with value "dark"
 Received: "light"
+```
+
+To check a stored JSON value as data instead of with a pattern, read it and use [`toBeValidJSON()`](./STRING_MATCHERS.md#tobevalidjson).
+
+## toHaveURLSearchParams()
+
+Asserts the query parameters of the page's URL, retrying until they match. Unlike a regular expression on `toHaveURL()`, it ignores parameter order and decodes values.
+
+**Signature:** `toHaveURLSearchParams(expected, options?)`
+
+| Parameter         | Type                                                                | Description                                         |
+| ----------------- | ------------------------------------------------------------------- | --------------------------------------------------- |
+| `expected`        | `Record<string, string \| RegExp \| string[] \| AsymmetricMatcher>` | The parameters to check (at least one)              |
+| `options.exact`   | `boolean`                                                           | Also fail on parameters not listed. Default `false` |
+| `options.timeout` | `number`                                                            | Maximum time to retry in ms                         |
+
+| Expected value                     | Passes when                                                |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `"red shoes"`                      | the parameter's (decoded) value equals it                  |
+| `/^\d+$/`                          | the parameter's value matches                              |
+| `expect.stringContaining("shoes")` | the parameter's value matches the asymmetric matcher       |
+| `expect.anything()`                | the parameter is present, with any value (also `?debug`)   |
+| `["red", "sale"]`                  | the parameter is repeated with these values, in this order |
+
+A string, pattern or asymmetric matcher reads the parameter like `URLSearchParams.get()`: its first value. A missing parameter matches none of them. Use an array to check every value of a repeated parameter.
+
+```typescript
+// /search?q=red%20shoes&page=2&tag=red&tag=sale
+await page.getByRole("searchbox").fill("red shoes");
+await page.keyboard.press("Enter");
+await expectly(page).toHaveURLSearchParams({ q: "red shoes", page: /^\d+$/ });
+
+// All values of a repeated parameter
+await expectly(page).toHaveURLSearchParams({ tag: ["red", "sale"] });
+
+// No other parameters
+await expectly(page).toHaveURLSearchParams({ q: "red shoes", page: "2", tag: ["red", "sale"] }, { exact: true });
+
+// An absent parameter
+await expectly(page).not.toHaveURLSearchParams({ debug: expect.anything() });
+```
+
+A parameter value is never `null`: `?debug` has the value `""`, and a missing parameter has no value. To assert that a parameter is absent, use `.not` with `expect.anything()`. Keep such a check in its own assertion: `.not` negates the whole object, so `.not.toHaveURLSearchParams({ q: "shoes", debug: expect.anything() })` passes as soon as either one does not match.
+
+The URL is read with `page.url()`, so client-side `history.pushState()` updates are seen without a navigation. A failure lists the received parameters, the mismatched and unexpected keys, and the URL:
+
+```text
+Expected URL to have search params: {"q": "boots"}
+Received: {"page": "2", "q": "red shoes", "tag": ["red", "sale"]}
+Mismatched: ["q"]
+URL:      https://shop.example/search?q=red%20shoes&page=2&tag=red&tag=sale
 ```
 
 ## Common Use Cases

@@ -29,6 +29,10 @@ Members and values are compared with `toEqual` semantics, so asymmetric matchers
 - [toIncludeAllMembers() / toIncludeAnyMembers()](#toincludeallmembers--toincludeanymembers)
 - [toContainKey() / toContainKeys()](#tocontainkey--tocontainkeys)
 - [toContainAllKeys()](#tocontainallkeys)
+- [toContainAnyKeys()](#tocontainanykeys)
+- [toContainValue() / toContainValues()](#tocontainvalue--tocontainvalues)
+- [toContainAllValues()](#tocontainallvalues)
+- [toContainAnyValues() / toContainAnyEntries()](#tocontainanyvalues--tocontainanyentries)
 - [toContainEntry() / toContainEntries()](#tocontainentry--tocontainentries)
 - [toBeEmptyObject()](#tobeemptyobject)
 
@@ -130,6 +134,56 @@ expectly(payload).toContainAllKeys(["id", "name", "createdAt"]);
 expectly({ id: 1, name: "Ada", debug: true }).not.toContainAllKeys(["id", "name"]);
 ```
 
+## toContainAnyKeys()
+
+Asserts that an object has at least one of the given own keys.
+
+```typescript
+// Error payloads use either field
+expectly(error).toContainAnyKeys(["message", "detail"]);
+expectly({ code: 500 }).not.toContainAnyKeys(["message", "detail"]);
+```
+
+## toContainValue() / toContainValues()
+
+`toContainValue()` asserts that one of an object's own values equals the given value. `toContainValues()` asserts that every given value occurs, under any key; the object may have other values. Values are compared with `toEqual` semantics, so nested objects and asymmetric matchers work.
+
+```typescript
+const statusByOrder = { "o-1": "shipped", "o-2": "pending" };
+
+expectly(statusByOrder).toContainValue("shipped");
+expectly(statusByOrder).not.toContainValue("cancelled");
+expectly(statusByOrder).toContainValues(["shipped", "pending"]);
+
+// Nested values and asymmetric matchers
+expectly(order).toContainValue({ name: "Ada" });
+expectly(order).toContainValue(expect.any(Number));
+```
+
+## toContainAllValues()
+
+Asserts that an object's own values are exactly the given values, in any order. Repeated values must appear as often, so `[1, 2]` does not match `{ a: 1, b: 2, c: 2 }`. A failure lists missing and unexpected values.
+
+```typescript
+expectly({ a: 1, b: 2, c: 2 }).toContainAllValues([2, 1, 2]);
+expectly({ a: 1, b: 2, c: 2 }).not.toContainAllValues([1, 2]);
+```
+
+## toContainAnyValues() / toContainAnyEntries()
+
+Assert that an object contains at least one of the given values, or at least one of the given `[key, value]` entries.
+
+```typescript
+expectly(featureFlags).toContainAnyValues([true]);
+
+expectly(user).toContainAnyEntries([
+	["role", "admin"],
+	["role", "owner"],
+]);
+```
+
+The "any" matchers (`toContainAnyKeys()`, `toContainAnyValues()`, `toContainAnyEntries()`) throw a `TypeError` for an empty list, because nothing could ever match and `.not` would pass vacuously.
+
 ## toContainEntry() / toContainEntries()
 
 Asserts that an object has an own entry (`[key, value]`) with an equal value, or all of the given entries. Values are compared with `toEqual` semantics.
@@ -166,7 +220,7 @@ expectly([]).not.toBeEmptyObject();
 expectly(null).not.toBeEmptyObject();
 ```
 
-The key and entry matchers (`toContainKey()` to `toContainEntries()`) require an object receiver and throw a `TypeError` for arrays, `null` and primitives, such as `toContainKey: received value must be an object, got: array`.
+The key, value and entry matchers (`toContainKey()` to `toContainAnyEntries()`) require an object receiver and throw a `TypeError` for arrays, `null` and primitives, such as `toContainKey: received value must be an object, got: array`.
 
 ## toResolve() / toReject()
 

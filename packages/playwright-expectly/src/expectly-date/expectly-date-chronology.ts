@@ -141,6 +141,44 @@ export const expectlyDateChronologyMatchers = withMatcherState({
 		});
 	},
 
+	toBeOnOrBefore(actual: DateInput, expected: DateInput, options?: TimeZoneOptions) {
+		const expectedValue = normalize(expected, "expected date");
+		const [received, target] = alignPoints(
+			[normalize(actual, "actual date"), expectedValue],
+			["actual date", "expected date"],
+			options?.timeZone,
+		);
+		// A calendar date compared as an instant covers its whole day, like the end of toBeBetween().
+		const end = rangeEnd(target, expectedValue);
+		const toEnd = comparePoints(received, end.point);
+		return dateMatcherResult(this, {
+			name: "toBeOnOrBefore",
+			pass: end.exclusive ? toEnd < 0 : toEnd <= 0,
+			expectation: "be on or before",
+			lines: () => [
+				["Expected", target.display, "expected"],
+				["Received", received.display, "received"],
+			],
+			expected,
+			actual,
+		});
+	},
+
+	toBeOnOrAfter(actual: DateInput, expected: DateInput, options?: TimeZoneOptions) {
+		const [received, target] = alignTwo(actual, expected, "expected date", options?.timeZone);
+		return dateMatcherResult(this, {
+			name: "toBeOnOrAfter",
+			pass: comparePoints(received, target) >= 0,
+			expectation: "be on or after",
+			lines: () => [
+				["Expected", target.display, "expected"],
+				["Received", received.display, "received"],
+			],
+			expected,
+			actual,
+		});
+	},
+
 	toBeBetween(actual: DateInput, startDate: DateInput, endDate: DateInput, options?: TimeZoneOptions) {
 		const endValue = normalize(endDate, "end date");
 		const [received, start, end] = alignPoints(
@@ -242,6 +280,44 @@ export const expectlyDateChronologyMatchers = withMatcherState({
 				["Received", display, "received"],
 				delta >= 0n ? ["Remaining", formatElapsed(delta)] : ["In the past by", formatElapsed(-delta)],
 				["Maximum", formatElapsed(limit)],
+			],
+			expected: duration,
+			actual,
+		});
+	},
+
+	toBeOlderThan(actual: DateInput, duration: DurationInput, options?: RelativeTimeOptions) {
+		const limit = elapsedLimit(duration, "duration");
+		const { now, delta, display } = fromNow(actual, options);
+		const age = -delta;
+		return dateMatcherResult(this, {
+			name: "toBeOlderThan",
+			pass: age > limit,
+			expectation: `be older than ${formatElapsed(limit)}`,
+			lines: () => [
+				["Now", now, "expected"],
+				["Received", display, "received"],
+				age >= 0n ? ["Age", formatElapsed(age)] : ["In the future by", formatElapsed(-age)],
+				["Minimum age", `more than ${formatElapsed(limit)}`],
+			],
+			expected: duration,
+			actual,
+		});
+	},
+
+	toBeNewerThan(actual: DateInput, duration: DurationInput, options?: RelativeTimeOptions) {
+		const limit = elapsedLimit(duration, "duration");
+		const { now, delta, display } = fromNow(actual, options);
+		const age = -delta;
+		return dateMatcherResult(this, {
+			name: "toBeNewerThan",
+			pass: age < limit,
+			expectation: `be newer than ${formatElapsed(limit)}`,
+			lines: () => [
+				["Now", now, "expected"],
+				["Received", display, "received"],
+				age >= 0n ? ["Age", formatElapsed(age)] : ["In the future by", formatElapsed(-age)],
+				["Maximum age", `less than ${formatElapsed(limit)}`],
 			],
 			expected: duration,
 			actual,

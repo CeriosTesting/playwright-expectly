@@ -157,6 +157,43 @@ export interface RelativeTimeOptions extends TimeZoneOptions {
 	now?: InstantInput;
 }
 
+export interface RelativeCalendarOptions extends RelativeTimeOptions, CalendarOptions {}
+
+/** The first day of a week: a day name, or `0` (Sunday) to `6` (Saturday). */
+export type WeekStart =
+	| "Sunday"
+	| "Monday"
+	| "Tuesday"
+	| "Wednesday"
+	| "Thursday"
+	| "Friday"
+	| "Saturday"
+	| 0
+	| 1
+	| 2
+	| 3
+	| 4
+	| 5
+	| 6;
+
+export interface WeekOptions extends TimeZoneOptions {
+	/** The first day of the week. Default: `"Monday"` (ISO 8601). */
+	weekStartsOn?: WeekStart;
+}
+
+export interface RelativeWeekOptions extends RelativeTimeOptions {
+	/** The first day of the week. Default: `"Monday"` (ISO 8601). */
+	weekStartsOn?: WeekStart;
+}
+
+export interface WeekNumberOptions extends TimeZoneOptions {
+	/**
+	 * The ISO week-numbering year the week belongs to. It can differ from the calendar year near
+	 * New Year: 2027-01-01 is in week 53 of 2026.
+	 */
+	year?: number;
+}
+
 export interface DurationRange {
 	/** Inclusive lower bound. */
 	min?: DurationInput;

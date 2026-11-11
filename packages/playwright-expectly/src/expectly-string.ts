@@ -3,6 +3,7 @@ import type { Expect, ExpectMatcherState } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
 import { assertReceivedType } from "./matchers/common-utils";
+import { isEqual } from "./matchers/equality";
 import type { ExpectlyMatcherResult } from "./matchers/matcher-result";
 import type { UrlValidationOptions, UUIDVersion } from "./matchers/text-validation-utils";
 import { matchesPattern } from "./matchers/text-validation-utils";
@@ -364,6 +365,38 @@ export const expectlyStringMatchers = withMatcherState({
 			name: assertionName,
 			actual: matcher,
 		};
+	},
+
+	toBeValidJSON(received: string, expected?: unknown) {
+		const assertionName = "toBeValidJSON";
+		assertReceivedType(assertionName, received, "string");
+		// JSON never parses to `undefined`, so an omitted `expected` only checks the syntax.
+		const hasExpected = expected !== undefined;
+		let parsed: unknown;
+		let parseError: string | undefined;
+		try {
+			parsed = JSON.parse(received);
+		} catch (error) {
+			parseError = error instanceof Error ? error.message : String(error);
+		}
+		const valid = parseError === undefined;
+		const pass = valid && (!hasExpected || isEqual(parsed, expected));
+
+		const message = (): string => {
+			const hint = this.utils.matcherHint(assertionName, undefined, hasExpected ? "expected" : "", {
+				isNot: this.isNot,
+			});
+			const expectation = hasExpected
+				? `be valid JSON equal to ${this.utils.printExpected(expected)}`
+				: "be valid JSON";
+			const details =
+				parseError === undefined
+					? `Parsed: ${this.utils.printReceived(parsed)}`
+					: `Received: ${this.utils.printReceived(received)}\nParse error: ${parseError}`;
+			return `${hint}\n\nExpected string to ${this.isNot ? "not " : ""}${expectation}\n${details}`;
+		};
+
+		return { message, pass, name: assertionName, expected, actual: valid ? parsed : received };
 	},
 });
 

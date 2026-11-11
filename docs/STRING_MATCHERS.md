@@ -12,6 +12,7 @@ String matchers require a string receiver. Any other value throws a `TypeError` 
 - [toBeAlphanumeric()](#tobealphanumeric)
 - [toBeNumericString()](#tobenumericstring)
 - [toBeHexadecimal()](#tobehexadecimal)
+- [toBeValidJSON()](#tobevalidjson)
 - [toStartWith()](#tostartwith)
 - [toEndWith()](#toendwith)
 - [toMatchPattern()](#tomatchpattern)
@@ -173,6 +174,27 @@ expectly("3b2efc9").toBeHexadecimal({ prefix: "forbidden" });
 expectly("0xZZ").not.toBeHexadecimal();
 expectly("").not.toBeHexadecimal();
 ```
+
+## toBeValidJSON()
+
+Validates that a string parses as JSON (`JSON.parse`). With an expected value, the parsed value must also equal it, using `toEqual` semantics, so asymmetric matchers work and `expect.objectContaining()` gives a partial match.
+
+```typescript
+import { expect } from "@playwright/test";
+
+// Syntax only: objects, arrays, strings, numbers, booleans and null are all JSON
+expectly(await response.text()).toBeValidJSON();
+expectly("{theme: 'dark'}").not.toBeValidJSON(); // unquoted key, single quotes
+
+// Parsed value
+expectly('{"theme":"dark","fontSize":14}').toBeValidJSON({ theme: "dark", fontSize: 14 });
+
+// Partial match on a stored setting
+const settings = await page.evaluate(() => localStorage.getItem("settings"));
+expectly(settings).toBeValidJSON(expect.objectContaining({ theme: "dark" }));
+```
+
+For invalid JSON, the failure message includes the parser's error, such as `Expected property name or '}' in JSON at position 1`. A missing `localStorage` item is `null`, which throws like any non-string receiver.
 
 ## toStartWith()
 

@@ -22,13 +22,13 @@ expectly(appointment.scheduledAt).toBeWithinTimeOfDay("09:00", "17:00", { timeZo
 - [Calendars](#calendars)
 - [Durations and precision](#durations-and-precision)
 - Matchers
-  - [Chronology](#chronology): `toBeBefore`, `toBeAfter`, `toBeBetween`, `toBeDateCloseTo`, `toBeSameInstant`
-  - [Relative to now](#relative-to-now): `toBeInThePast`, `toBeInTheFuture`, `toBeWithinLast`, `toBeWithinNext`
+  - [Chronology](#chronology): `toBeBefore`, `toBeAfter`, `toBeOnOrBefore`, `toBeOnOrAfter`, `toBeBetween`, `toBeDateCloseTo`, `toBeSameInstant`
+  - [Relative to now](#relative-to-now): `toBeInThePast`, `toBeInTheFuture`, `toBeWithinLast`, `toBeWithinNext`, `toBeOlderThan`, `toBeNewerThan`
   - [Event timing](#event-timing): `toBeWithinDurationAfter`
-  - [Calendar](#calendar): `toBeSameDay`, `toBeSameMonth`, `toBeSameYear`, `toBeToday`, `toBeYesterday`, `toBeTomorrow`, `toBeWeekday`, `toBeWeekend`, `toBeLeapYear`, `toBeInQuarter`, `toBeInMonth`, `toBeSpecificDayOfWeek`, `toBeStartOfMonth`, `toBeEndOfMonth`
+  - [Calendar](#calendar): `toBeSameDay`, `toBeSameWeek`, `toBeSameMonth`, `toBeSameYear`, `toBeToday`, `toBeYesterday`, `toBeTomorrow`, `toBeThisWeek`, `toBeThisMonth`, `toBeThisYear`, `toBeWeekday`, `toBeWeekend`, `toBeLeapYear`, `toBeInWeek`, `toBeInMonth`, `toBeInQuarter`, `toBeInYear`, `toBeSpecificDayOfWeek`, `toBeStartOfMonth`, `toBeEndOfMonth`
   - [Clock and time of day](#clock-and-time-of-day): `toBeSameHour`, `toBeSameMinute`, `toBeSameSecond`, `toBeSameTimeOfDay`, `toBeWithinTimeOfDay`, `toBeTruncatedTo`, `toBeAtStartOfDay`, `toBeAtEndOfDay`
   - [Validation, offsets and time zones](#validation-offsets-and-time-zones): `toBeValidISODate`, `toBeValidISODateTime`, `toHaveOffset`, `toHaveTimeZone`
-  - [Collections](#collections): `toHaveDatesAscendingOrder`, `toHaveDatesDescendingOrder`, `toHaveDateRange`, `toHaveConsecutiveDates`, `toHaveDatesWithinRange`, `toHaveUniqueDates`, `toHaveDateGapsLargerThan`, `toHaveMaximumDateGap`
+  - [Collections](#collections): `toHaveDatesAscendingOrder`, `toHaveDatesDescendingOrder`, `toHaveEarliestDate`, `toHaveLatestDate`, `toHaveDateRange`, `toHaveConsecutiveDates`, `toHaveDatesWithinRange`, `toHaveUniqueDates`, `toHaveDateGapsLargerThan`, `toHaveMaximumDateGap`
   - [Durations](#duration-matchers): `toBeShorterThan`, `toBeLongerThan`, `toBeDurationBetween`
 - [Unsupported and ambiguous combinations](#unsupported-and-ambiguous-combinations)
 - [Upgrading from 1.x](#upgrading-from-1x)
@@ -188,7 +188,8 @@ ISO strings and `Date` values are always in the ISO 8601 calendar. Temporal valu
 
 | Matcher                                                               | Reads                                                     |
 | --------------------------------------------------------------------- | --------------------------------------------------------- |
-| `toBeSameMonth`, `toBeSameYear`, `toBeLeapYear`                       | year, month code, leap year                               |
+| `toBeSameMonth`, `toBeSameYear`, `toBeLeapYear`, `toBeInYear`         | year, month code, leap year                               |
+| `toBeThisMonth`, `toBeThisYear`                                       | year, month code                                          |
 | `toBeInMonth`, `toBeInQuarter`, `toBeStartOfMonth`, `toBeEndOfMonth`  | month, day of month                                       |
 | `toHaveConsecutiveDates`                                              | consecutive months and years                              |
 | `toHaveDateRange`, `toHaveDateGapsLargerThan`, `toHaveMaximumDateGap` | adding years and months (weeks and smaller are unchanged) |
@@ -228,9 +229,14 @@ Comparisons use bigint epoch nanoseconds, so nanosecond precision is preserved. 
 ## Chronology
 
 ```typescript
-// Strictly before / after
+// Strictly before / after: equal values fail
 expectly(user.createdAt).toBeBefore(user.updatedAt);
 expectly("2026-10-25").toBeAfter("2026-10-20");
+
+// Inclusive: equal values pass
+expectly(submission.submittedAt).toBeOnOrBefore(deadline);
+expectly(booking.startDate).toBeOnOrAfter("2026-10-25");
+expectly("2026-10-25T18:00:00Z").toBeOnOrBefore("2026-10-25", { timeZone: "Europe/Amsterdam" }); // the whole day counts
 
 // Inclusive range; throws when the start is after the end
 expectly(eventDate).toBeBetween("2026-01-01", "2026-12-31");
@@ -245,6 +251,8 @@ expectly("2026-10-25T12:00:00Z").toBeSameInstant("2026-10-25T13:00:00+01:00");
 
 Absolute timestamps compare as instants. Calendar dates and local datetimes compare with values of their own kind. To mix kinds, pass `{ timeZone }`. `toBeSameInstant()` accepts absolute values only.
 
+When a calendar date is compared with a timestamp, the inclusive matchers treat it like the bounds of `toBeBetween()`: for `toBeOnOrAfter()` it means the start of that day, and for `toBeOnOrBefore()` the whole day counts. `toBeBefore()` and `toBeAfter()` always compare with the start of the day.
+
 ## Relative to now
 
 ```typescript
@@ -254,11 +262,18 @@ expectly(subscription.expiresAt).toBeInTheFuture();
 expectly(order.createdAt).toBeWithinLast({ minutes: 5 }); // 0 ≤ now − value ≤ 5 min
 expectly(token.expiresAt).toBeWithinNext({ minutes: 30 }); // 0 ≤ value − now ≤ 30 min
 
+expectly(archivedRecord.updatedAt).toBeOlderThan({ days: 30 }); // value < now − 30 days
+expectly(cache.refreshedAt).toBeNewerThan({ minutes: 5 }); // value > now − 5 min
+
 // Deterministic tests: pin "now"
 expectly("2026-10-25T11:55:00Z").toBeWithinLast({ minutes: 5 }, { now: "2026-10-25T12:00:00Z" });
 ```
 
-Boundaries are inclusive. `toBeWithinLast()` fails for future timestamps and `toBeWithinNext()` fails for past ones. Local values need `{ timeZone }`.
+`toBeWithinLast()` and `toBeWithinNext()` have inclusive boundaries. `toBeWithinLast()` fails for future timestamps and `toBeWithinNext()` fails for past ones.
+
+`toBeOlderThan()` and `toBeNewerThan()` are strict: a value exactly `duration` ago fails both. `toBeOlderThan()` fails for future values. `toBeNewerThan()` passes for them, which is how it differs from `toBeWithinLast()`; use `toBeWithinLast()` when the value must also be in the past.
+
+All of these use elapsed time, so years, months and weeks are rejected. Local values need `{ timeZone }`.
 
 ## Event timing
 
@@ -290,22 +305,34 @@ All calendar matchers accept `{ timeZone }` ([zone resolution](#time-zones)). Ma
 
 ```typescript
 expectly(eventDate).toBeSameDay(new Date());
+expectly("2026-10-26").toBeSameWeek("2026-11-01"); // Monday–Sunday (ISO 8601)
+expectly("2026-10-25").toBeSameWeek("2026-10-31", { weekStartsOn: "Sunday" }); // or 0 (Sunday) … 6 (Saturday)
 expectly(Temporal.PlainDate.from("2026-10-25")).toBeSameMonth("2026-10-01");
 expectly("2026-01-01").toBeSameYear("2026-12-31");
 
 expectly(order.createdAt).toBeToday({ timeZone: "Europe/Amsterdam" });
 expectly(lastLogin).toBeYesterday(); // calendar day, DST-safe
 expectly(scheduledDate).toBeTomorrow();
+expectly(report.generatedAt).toBeThisWeek({ weekStartsOn: "Sunday" });
+expectly(invoice.issuedAt).toBeThisMonth({ timeZone: "Europe/Amsterdam" });
+expectly(contract.signedAt).toBeThisYear();
 
 expectly(deliveryDate).toBeWeekday(); // Monday–Friday
 expectly(event.date).toBeWeekend(); // Saturday–Sunday
 expectly("2024-06-15").toBeLeapYear();
-expectly(date).toBeInQuarter(4); // Oct–Dec
+expectly("2026-10-25").toBeInWeek(43); // ISO week number (1–53)
+expectly("2027-01-01").toBeInWeek(53, { year: 2026 }); // ISO week-numbering year
 expectly(date).toBeInMonth("October"); // or 10 (1–12), or "M10"
+expectly(date).toBeInQuarter(4); // Oct–Dec
+expectly(date).toBeInYear(2026);
 expectly(meetingDate).toBeSpecificDayOfWeek("Monday"); // or 1 (0 = Sunday … 6 = Saturday)
 expectly("2026-02-01").toBeStartOfMonth();
 expectly("2026-02-28").toBeEndOfMonth();
 ```
+
+- **Weeks.** `toBeSameWeek()` and `toBeThisWeek()` start weeks on Monday (ISO 8601) unless `weekStartsOn` says otherwise. Weeks are made of days, so they are the same in every calendar.
+- **`toBeInWeek()`** uses ISO 8601 week numbers, which always start on Monday. Near New Year the week can belong to the neighbouring year: 2027-01-01 is in week 53 of 2026 and 2025-12-29 is in week 1 of 2026. Pass `{ year }` to check the week-numbering year as well.
+- **`toBeThisWeek()`, `toBeThisMonth()`, `toBeThisYear()`** read "now" like `toBeToday()`: `{ now }` pins it, and the zone follows the same rules.
 
 ## Clock and time of day
 
@@ -363,6 +390,10 @@ expectly(zonedDateTime).toHaveTimeZone("Europe/Amsterdam");
 ```typescript
 expectly(dates).toHaveDatesAscendingOrder(); // equal neighbours allowed
 expectly(timeline).toHaveDatesDescendingOrder();
+
+// Exact minimum / maximum, in any input order
+expectly(orders.map((order) => order.createdAt)).toHaveEarliestDate("2026-10-01T08:00:00Z");
+expectly(["2026-10-01", "2026-10-25", "2026-10-03"]).toHaveLatestDate("2026-10-25");
 
 // Exact span from earliest to latest value, calendar-aware, no tolerance
 expectly(["2026-01-01", "2026-01-15", "2026-01-31"]).toHaveDateRange({ days: 30 });
