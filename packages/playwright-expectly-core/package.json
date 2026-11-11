@@ -36,6 +36,7 @@
 	},
 	"scripts": {
 		"build": "tsdown",
+		"check-exports": "attw --pack .",
 		"test": "echo \"No tests for core package\""
 	},
 	"devDependencies": {

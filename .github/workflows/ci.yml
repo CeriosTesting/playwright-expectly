@@ -100,7 +100,20 @@ jobs:
       - name: Check published declarations without skipLibCheck
         run: |
           cd "$CONSUMER"
-          node node_modules/typescript/bin/tsc --noEmit --strict --target es2020 --types node --module commonjs consumer.spec.ts playwright.config.ts
+          node node_modules/typescript/bin/tsc --noEmit --strict --target es2020 --types node --module commonjs consumer.spec.ts playwright.config.ts support.ts clashing-matchers.ts
+      # Exercises the pre-1.60 loader location and the "not inspectable" path for expect instances.
+      - name: Check matcher names with the published command
+        run: |
+          set -o pipefail
+          cd "$CONSUMER"
+          npx playwright-expectly check-matchers
+          npx playwright-expectly check-matchers ./support.ts | tee check-matchers.txt
+          grep -q "support.ts#localMatchers" check-matchers.txt
+          grep -q "Not inspectable" check-matchers.txt
+          if npx playwright-expectly check-matchers ./clashing-matchers.ts; then
+            echo "expected exit code 1 for clashing-matchers.ts" >&2
+            exit 1
+          fi
       - name: Test minimum-version runtime and browser matchers
         run: |
           cd "$CONSUMER"

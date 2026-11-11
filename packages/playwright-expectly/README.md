@@ -15,6 +15,8 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 - 🍪 **Page State** — retrying cookie, `localStorage` and `sessionStorage` assertions
 - 📦 **Object Arrays** — sorting, uniqueness, and property validation
 - 🧺 **Collections & Functions** — array members, object keys and entries, promises, and thrown errors
+- 🔁 **Return-Aware Retries** — `pollAndReturn()` and `toPassAndReturn()` give you the value that passed
+- 🔍 **Duplicate Check** — `npx playwright-expectly check-matchers` finds matcher names that silently override each other
 - 🤖 **Fuzzy Matching** — AI-generated text validation (separate [`@cerios/playwright-expectly-fuzzy`](https://www.npmjs.com/package/@cerios/playwright-expectly-fuzzy) package)
 - 💪 **Type-Safe** — full TypeScript support
 - ⚡ **Lightweight** — only Playwright required
@@ -25,7 +27,7 @@ Comprehensive Playwright test matchers for strings, numbers, dates, arrays, obje
 npm install @cerios/playwright-expectly --save-dev
 ```
 
-> **Peer dependency:** requires `@playwright/test` to be installed.
+> **Peer dependency:** requires `@playwright/test` 1.40 or newer.
 
 ## Quick Start
 
@@ -69,12 +71,14 @@ expectly(subscription.expiresAt).toBeInTheFuture();
 await expectly(page.locator(".username")).toBeAlphanumeric();
 ```
 
+### Combining matcher sources
+
 Combining with `@cerios/playwright-expectly-fuzzy`, or your own matchers, via `mergeExpects()`:
 
 ```typescript
+// tests/support/expect.ts
 import { expectlyMatchers } from "@cerios/playwright-expectly";
 import { expectlyFuzzyMatchers } from "@cerios/playwright-expectly-fuzzy";
-// tests/support/expect.ts
 import { expect as baseExpect, mergeExpects, test as base } from "@playwright/test";
 
 const expectlyExpect = baseExpect.extend(expectlyMatchers);
@@ -95,29 +99,17 @@ export const expect = mergeExpects(baseExpect, expectly, expectlyFuzzy);
 export const test = base;
 ```
 
-> **Upgrading from 1.x:** the Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, the deprecated `setupExpectly()` is removed (use the `tests/support` pattern above instead), and the date matchers are rebuilt on Temporal with exact calendar semantics: `toBeValidISODate()` now validates `YYYY-MM-DD` and `toMatchTimeZone()` is replaced by `toHaveOffset()` / `toHaveTimeZone()`. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
+## Checking for duplicate matcher names
 
-## Available Matchers
+When two sources define the same matcher name, the later `.extend()` or spread silently wins. Point the `check-matchers` command at the module that builds your `expect`:
 
-- **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toBeHexadecimal()`, `toEqualCaseInsensitive()`, `toEqualIgnoringWhitespace()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
-- **Number Array** — `toHaveAscendingOrder()`, `toHaveAverage()`, `toBeAllPositive()`, `toBeMonotonic()`, and more — [📖 docs](../../docs/NUMBER_ARRAY_MATCHERS.md)
-- **Date & Time** — `Date`, ISO strings and Temporal values: `toBeWithinLast()`, `toBeWithinDurationAfter()`, `toBeSameInstant()`, `toBeSameDay()`, `toBeWithinTimeOfDay()`, `toHaveOffset()`, duration matchers, plus `parseISO*()` / `isISO*()` and typed ISO strings — [📖 docs](../../docs/DATE_MATCHERS.md)
-- **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveStyles()`, `toHaveCountGreaterThan()`, `toHaveCountBetween()`, `toHaveTextsInAscendingOrder()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
-- **Page** — `toHaveCookie()` on a `Page` or `BrowserContext`, `toHaveLocalStorageItem()`, `toHaveSessionStorageItem()` — [📖 docs](../../docs/PAGE_MATCHERS.md)
-- **Object Array** — `toHaveObjectsInAscendingOrderBy()`, `toHaveOnlyUniqueObjects()`, and more — [📖 docs](../../docs/OBJECT_ARRAY_MATCHERS.md)
-- **String Array** — `toHaveAscendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveUniqueValues()`, and more — [📖 docs](../../docs/STRING_ARRAY_MATCHERS.md)
-- **Generic** — `toBeInteger()`, `toBeAnyOf()`, `toSatisfy()`, `toBeEven()`, `toBeFinite()`, `toEqualPartially()`, `toBeNullish()`, and more — [📖 docs](../../docs/GENERIC_MATCHERS.md)
-- **Collection & Function** — `toSatisfyAll()`, `toIncludeSameMembers()`, `toContainKeys()`, `toContainEntry()`, `toBeEmptyObject()`, `toResolve()`, `toReject()`, `toThrowWithMessage()`, and more — [📖 docs](../../docs/COLLECTION_MATCHERS.md)
+```bash
+npx playwright-expectly check-matchers ./tests/support/expect.ts
+```
 
-## Links
+It reports names defined by two or more sources with a different implementation, and names that override a Playwright built-in matcher. It exits with 1 when it finds something and with 2 on usage or load errors. In code, `assertNoDuplicateMatchers()` throws a `DuplicateMatcherError` with the same report, and `findDuplicateMatchers()` returns it.
 
-- [Full project README](https://github.com/CeriosTesting/playwright-expectly#readme)
-- [Changelog](./CHANGELOG.md)
-- [Issues](https://github.com/CeriosTesting/playwright-expectly/issues)
-
-## License
-
-MIT © Cerios
+[📖 Options, output, JSON and the code API →](../../docs/CHECK_MATCHERS.md)
 
 ## Type-narrowing assertions
 
@@ -182,7 +174,7 @@ Apply `withReturn()` last, to the final expect: `mergeExpects()` and Playwright'
 
 ## Returning values from retrying assertions
 
-`expectly.pollAndReturn()` returns the value that satisfied the matcher. `expectly(callback).toPassAndReturn()` returns the result of the first callback attempt that completes without throwing. Both support synchronous and asynchronous callbacks without calling them again after success.
+`expectly.pollAndReturn()` returns the value that satisfied the matcher. `expectly(callback).toPassAndReturn()` returns the result of the first callback attempt that completes without throwing. Neither calls the callback again after success.
 
 ```typescript
 import { expectly } from "@cerios/playwright-expectly";
@@ -198,48 +190,50 @@ const readyOrder = await expectly(async () => {
 }).toPassAndReturn({ timeout: 5_000, intervals: [100, 250] });
 ```
 
-Here, `fetchOrder()` is your application helper. Polling supports `.not` and registered custom matchers. Retry options and custom messages follow the corresponding Playwright APIs; `toPassAndReturn()` uses native `toPass()` timeout behavior, so provide an explicit timeout when you need a bound.
-
-For your own configured or extended expect instance, apply `withReturn()` after composing matcher sources:
+Wrap your own expect instance with `withReturn()` to add both methods:
 
 ```typescript
 import { expectlyMatchers, withReturn } from "@cerios/playwright-expectly";
 import { expect as baseExpect } from "@playwright/test";
 
 export const expect = withReturn(baseExpect.extend(expectlyMatchers));
-const uuid = await expect.pollAndReturn(() => fetchUuid()).toBeUUID(4);
 ```
 
-Subsequent `.soft`, `.configure()` and `.extend()` calls preserve the return-aware methods and custom matcher types. When using `mergeExpects()`, wrap its result with `withReturn()`.
+Soft variants (`expectly.soft(callback).toPassAndReturn()`, `expectly.soft.pollAndReturn(callback)`) record the failure and let the test continue, resolving with `undefined` or the last polled value.
 
-**Failure behavior:** by default, return-aware assertions throw on failure, like other Playwright assertions.
+[📖 Options, soft assertions, types and failure locations →](../../docs/RETURNING_VALUES.md)
 
-**Soft assertions:** use `.soft` or `.configure({ soft: true })`. A failure is then recorded and the test continues, as with native soft assertions. Because the assertion did not pass, the result may not be a passing value:
+## Available Matchers
 
-- `toPassAndReturn()` resolves with `undefined`, because no attempt succeeded.
-- `pollAndReturn()` resolves with the last polled value, which did not satisfy the matcher. It resolves with `undefined` if the callback never returned a value.
+- **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toBeHexadecimal()`, `toEqualCaseInsensitive()`, `toEqualIgnoringWhitespace()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
+- **Number Array** — `toHaveAscendingOrder()`, `toHaveAverage()`, `toBeAllPositive()`, `toBeMonotonic()`, and more — [📖 docs](../../docs/NUMBER_ARRAY_MATCHERS.md)
+- **Date & Time** — `Date`, ISO strings and Temporal values: `toBeWithinLast()`, `toBeWithinDurationAfter()`, `toBeSameInstant()`, `toBeSameDay()`, `toBeWithinTimeOfDay()`, `toHaveOffset()`, duration matchers, plus `parseISO*()` / `isISO*()` and typed ISO strings — [📖 docs](../../docs/DATE_MATCHERS.md)
+- **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveStyles()`, `toHaveCountGreaterThan()`, `toHaveCountBetween()`, `toHaveTextsInAscendingOrder()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
+- **Page** — `toHaveCookie()` on a `Page` or `BrowserContext`, `toHaveLocalStorageItem()`, `toHaveSessionStorageItem()` — [📖 docs](../../docs/PAGE_MATCHERS.md)
+- **Object Array** — `toHaveObjectsInAscendingOrderBy()`, `toHaveOnlyUniqueObjects()`, and more — [📖 docs](../../docs/OBJECT_ARRAY_MATCHERS.md)
+- **String Array** — `toHaveAscendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveUniqueValues()`, and more — [📖 docs](../../docs/STRING_ARRAY_MATCHERS.md)
+- **Generic** — `toBeInteger()`, `toBeAnyOf()`, `toSatisfy()`, `toBeEven()`, `toBeFinite()`, `toEqualPartially()`, `toBeNullish()`, and more — [📖 docs](../../docs/GENERIC_MATCHERS.md)
+- **Collection & Function** — `toSatisfyAll()`, `toIncludeSameMembers()`, `toContainKeys()`, `toContainEntry()`, `toBeEmptyObject()`, `toResolve()`, `toReject()`, `toThrowWithMessage()`, and more — [📖 docs](../../docs/COLLECTION_MATCHERS.md)
 
-```typescript
-const order = await expectly.soft.pollAndReturn(() => fetchOrder()).toMatchObject({ status: "COMPLETED" });
-const readyOrder = await expectly.soft(() => fetchReadyOrder()).toPassAndReturn({ timeout: 5_000 });
-// Both are typed `Order | undefined`; the test is already marked as failed when a check did not pass.
-```
+## Edge-case behavior
 
-Soft return types are `T | undefined`. TypeScript can only track this when the soft flag is set on the wrapped instance (`expectly.soft`, `withReturn(expect).configure({ soft: true })`). `withReturn(expect.configure({ soft: true }))` behaves the same at runtime, but its types still say `T`.
-
-Regular assertions retain their configured behavior. Inside `toPassAndReturn()` callbacks, use throwing assertions for conditions that must trigger retries; soft assertions do not throw.
-
-**Failure locations:** return-aware assertions appear as boxed Playwright steps. The assertion step and reported failure point to the line where your test invokes the matcher, including detached matcher calls. Native retry steps remain nested underneath for diagnostics and may show internal implementation locations when expanded. Caught errors also point to the invocation while retaining their original message, matcher details, and cause. Regular assertions keep their native reporting.
-
-Ordinary Expectly matchers also report thrown validation and locator API errors at your assertion call site. Their original error type, message, cause, and metadata are preserved. Expanded native equality, polling, and browser API steps can still show implementation locations.
-
-### Edge-case behavior
-
+- Ordinary Expectly matchers report thrown validation and locator API errors at your assertion call site. Their original error type, message, cause, and metadata are preserved. Expanded native equality, polling, and browser API steps can still show implementation locations.
 - Object uniqueness compares current values using Node's deep strict equality, including Dates, Maps, Sets, bigint, and cycles. There is no cache across assertions. Property order does not matter; prototypes and explicit `undefined` properties do. This comparison can take quadratic time for large arrays.
 - Regex assertions test from index zero without modifying the supplied expression's `lastIndex`, including global and sticky expressions.
 - Partial matching supports shared references but rejects circular plain objects and arrays in either input with a clear error, including under `.not`.
 - Numeric comparisons reject `NaN` and infinities. Sum, average, median and range tolerate the rounding error of the whole computation, which grows with the number of values and their magnitude, so `[0.01, 2.03, 1.2]` sums to `3.24`; pass `{ tolerance }` for an explicit absolute bound. Empty arrays have no average or median and never match.
 - Consecutive months compare calendar months, independent of the day of month. ISO validation rejects impossible calendar dates such as `2026-02-30`; see the [date matchers](../../docs/DATE_MATCHERS.md) for the accepted formats.
-- A `pollAndReturn()` assertion object can be reused or invoked concurrently; each matcher invocation captures its own successful value.
 
-CI tests packaged libraries against the minimum supported Playwright version, 1.40, as well as the project's current version. The minimum-version declaration check uses TypeScript 5.9 because TypeScript 7 rejects legacy syntax in Playwright 1.40's own declarations.
+## Upgrading from 1.x
+
+The Date matcher `toBeCloseTo` is renamed to `toBeDateCloseTo`, the deprecated `setupExpectly()` is removed (use the `tests/support` pattern above instead), and the date matchers are rebuilt on Temporal with exact calendar semantics: `toBeValidISODate()` now validates `YYYY-MM-DD` and `toMatchTimeZone()` is replaced by `toHaveOffset()` / `toHaveTimeZone()`. See the [root README](../../README.md#upgrading-from-1x) for migration examples.
+
+## Links
+
+- [Full project README](https://github.com/CeriosTesting/playwright-expectly#readme)
+- [Changelog](./CHANGELOG.md)
+- [Issues](https://github.com/CeriosTesting/playwright-expectly/issues)
+
+## License
+
+MIT © Cerios

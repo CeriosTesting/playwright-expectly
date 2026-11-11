@@ -15,6 +15,7 @@ import type { ExpectWithReturn } from "./expectly-return";
 import { withReturn } from "./expectly-return";
 import { expectlyStringMatchers } from "./expectly-string";
 import { expectlyStringArrayMatchers } from "./expectly-string-array";
+import { tagMatcherOrigin } from "./matcher-origin";
 import type { StringOrderOptions } from "./matchers/common-utils";
 import type { UrlValidationOptions, UUIDVersion } from "./matchers/text-validation-utils";
 function isLocatorMatcherTarget(received: string | Locator): received is Locator {
@@ -190,6 +191,8 @@ export const expectlyMatchers = {
 	Omit<typeof expectlyStringArrayMatchers, OverlappingArrayMatcherNames> &
 	typeof expectlyTextMatchers &
 	typeof expectlyArrayOrderMatchers;
+
+tagMatcherOrigin(expectlyMatchers, "@cerios/playwright-expectly");
 
 /**
  * Expectly - Enhanced Playwright Test Assertions
