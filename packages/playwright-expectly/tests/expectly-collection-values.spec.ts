@@ -48,6 +48,12 @@ test.describe("toContainAllValues", () => {
 		expectlyCollection({}).toContainAllValues([]);
 	});
 
+	test("pairs overlapping asymmetric matchers so that every expectation is satisfied", () => {
+		// expect.any(Number) must leave 1 for the literal 1 and take 2 instead.
+		expectlyCollection({ a: 1, b: 2 }).toContainAllValues([expect.any(Number), 1]);
+		expectlyCollection({ a: 1, b: "x" }).not.toContainAllValues([expect.any(Number), 1]);
+	});
+
 	test("lists missing and unexpected values", () => {
 		const error = getRejectedErrorSync(() => expectlyCollection({ a: 1, b: 2 }).toContainAllValues([1, 3]));
 		const message = stripAnsi(error.message);

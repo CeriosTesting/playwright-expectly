@@ -46,6 +46,8 @@ function isAsymmetricMatcher(value: unknown): value is { asymmetricMatch(other: 
 /** A missing parameter matches nothing, so `.not` with `expect.anything()` asserts that it is absent. */
 function searchParamMatches(params: URLSearchParams, key: string, expected: ExpectedSearchParamValue): boolean {
 	if (Array.isArray(expected)) {
+		// getAll() returns [] for a missing key; a missing parameter must not match an empty array.
+		if (!params.has(key)) return false;
 		const values = params.getAll(key);
 		return values.length === expected.length && values.every((value, index) => value === expected[index]);
 	}
@@ -261,6 +263,7 @@ export const expectlyPageMatchers = withMatcherState({
 		const page = pageOf(assertionName, received);
 		validateExpectedSearchParams(assertionName, expected);
 		const expectedKeys = Object.keys(expected);
+		const expectedKeySet = new Set(expectedKeys);
 		let url = "";
 		let params = new URLSearchParams();
 		let mismatched: string[] = [];
@@ -274,7 +277,7 @@ export const expectlyPageMatchers = withMatcherState({
 				url = page.url();
 				params = searchParamsOf(url);
 				mismatched = expectedKeys.filter((key) => !searchParamMatches(params, key, expected[key]));
-				unexpected = options?.exact ? [...new Set(params.keys())].filter((key) => !(key in expected)) : [];
+				unexpected = options?.exact ? [...new Set(params.keys())].filter((key) => !expectedKeySet.has(key)) : [];
 				return Promise.resolve(mismatched.length === 0 && unexpected.length === 0);
 			},
 			{ target: page },

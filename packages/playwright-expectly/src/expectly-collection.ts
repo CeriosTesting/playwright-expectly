@@ -10,16 +10,37 @@ function containsEqual(values: readonly unknown[], expected: unknown): boolean {
 	return values.some((value) => isEqual(value, expected));
 }
 
-/** Pairs every expected member with a distinct received member, so duplicates must appear as often. */
-function unmatchedMembers(received: readonly unknown[], expected: readonly unknown[]): unknown[] {
-	const used = new Set<number>();
-	const unmatched: unknown[] = [];
-	for (const member of expected) {
-		const index = received.findIndex((value, i) => !used.has(i) && isEqual(value, member));
-		if (index === -1) unmatched.push(member);
-		else used.add(index);
-	}
-	return unmatched;
+/**
+ * Pairs received and expected members one-to-one (a maximum bipartite matching), so duplicates must appear as often
+ * and overlapping asymmetric matchers such as `[expect.any(Number), 1]` are paired the way that satisfies both.
+ * Returns the expected members left without a partner (`missing`) and the received members left over (`extra`).
+ */
+function matchMembers(
+	received: readonly unknown[],
+	expected: readonly unknown[],
+): { missing: unknown[]; extra: unknown[] } {
+	const candidates = expected.map((member) =>
+		received.flatMap((value, index) => (isEqual(value, member) ? [index] : [])),
+	);
+	/** For each received index, the index of the expected member it is paired with, or -1. */
+	const pairedWith = Array.from({ length: received.length }, () => -1);
+
+	const assign = (expectedIndex: number, visited: Set<number>): boolean => {
+		for (const receivedIndex of candidates[expectedIndex]) {
+			if (visited.has(receivedIndex)) continue;
+			visited.add(receivedIndex);
+			// Take a free member, or move its current partner to another of that partner's candidates.
+			if (pairedWith[receivedIndex] === -1 || assign(pairedWith[receivedIndex], visited)) {
+				pairedWith[receivedIndex] = expectedIndex;
+				return true;
+			}
+		}
+		return false;
+	};
+
+	const missing = expected.filter((_, index) => !assign(index, new Set()));
+	const extra = received.filter((_, index) => pairedWith[index] === -1);
+	return { missing, extra };
 }
 
 function assertObject(assertionName: string, received: unknown): asserts received is Record<PropertyKey, unknown> {
@@ -123,8 +144,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		const assertionName = "toIncludeSameMembers";
 		assertReceivedType(assertionName, received, "array");
 		assertArgumentArray(assertionName, "expected", expected);
-		const missing = unmatchedMembers(received, expected);
-		const extra = unmatchedMembers(expected, received);
+		const { missing, extra } = matchMembers(received, expected);
 		return result(
 			this,
 			assertionName,
@@ -142,7 +162,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		const assertionName = "toIncludeAllMembers";
 		assertReceivedType(assertionName, received, "array");
 		assertArgumentArray(assertionName, "expected", expected);
-		const missing = unmatchedMembers(received, expected);
+		const { missing } = matchMembers(received, expected);
 		return result(
 			this,
 			assertionName,
@@ -280,8 +300,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		assertObject(assertionName, received);
 		assertArgumentArray(assertionName, "values", values);
 		const actualValues = ownValues(received);
-		const missing = unmatchedMembers(actualValues, values);
-		const extra = unmatchedMembers(values, actualValues);
+		const { missing, extra } = matchMembers(actualValues, values);
 		return result(
 			this,
 			assertionName,

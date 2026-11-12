@@ -30,6 +30,13 @@ test.describe("toBeNear", () => {
 		expectlyAny(0).toBeNear(0, { percent: 5 });
 	});
 
+	test("does not overflow the percentage allowance for large finite values", () => {
+		// |1e308| * 10 overflows to Infinity; the allowance itself is only 1e307.
+		expectlyAny(0).not.toBeNear(1e308, { percent: 10 });
+		expectlyAny(9.5e307).toBeNear(1e308, { percent: 10 });
+		expectlyAny(8.9e307).not.toBeNear(1e308, { percent: 10 });
+	});
+
 	test("fails for values that are not finite numbers", () => {
 		expectlyAny(Number.NaN).not.toBeNear(0, { tolerance: 1 });
 		expectlyAny(Number.POSITIVE_INFINITY).not.toBeNear(0, { tolerance: 1 });

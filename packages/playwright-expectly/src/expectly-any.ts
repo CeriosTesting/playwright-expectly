@@ -483,7 +483,8 @@ function nearAllowance(
 		);
 	}
 	if (tolerance !== undefined) return { allowed: tolerance, label: `±${formatNumber(tolerance)}` };
-	const allowed = (Math.abs(expected) * amount) / 100;
+	// Divide first: |expected| * percent can overflow to Infinity for large finite inputs (1e308 * 10).
+	const allowed = (Math.abs(expected) / 100) * amount;
 	return { allowed, label: `±${formatNumber(amount)}% (±${formatNumber(allowed)})` };
 }
 

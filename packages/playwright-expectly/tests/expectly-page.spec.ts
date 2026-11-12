@@ -109,6 +109,10 @@ test.describe("toHaveURLSearchParams", () => {
 		await expectlyPage(page).toHaveURLSearchParams({ tag: expect.anything() });
 	});
 
+	test("does not treat an empty array as an absent parameter", async ({ page }) => {
+		await expectlyPage(page).not.toHaveURLSearchParams({ debug: [] });
+	});
+
 	test("treats a parameter without a value as an empty string", async ({ page }) => {
 		await page.goto(`${ORIGIN}/search?debug`);
 		await expectlyPage(page).toHaveURLSearchParams({ debug: "" });
@@ -126,6 +130,13 @@ test.describe("toHaveURLSearchParams", () => {
 			{ exact: true },
 		);
 		await expectlyPage(page).not.toHaveURLSearchParams({ q: "red shoes" }, { exact: true });
+	});
+
+	test("exact rejects parameters named like inherited object properties", async ({ page }) => {
+		for (const name of ["constructor", "toString", "__proto__"]) {
+			await page.goto(`${ORIGIN}/search?q=shoes&${name}=unexpected`);
+			await expectlyPage(page).not.toHaveURLSearchParams({ q: "shoes" }, { exact: true });
+		}
 	});
 
 	test("retries until the URL changes", async ({ page }) => {
