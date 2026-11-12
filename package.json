@@ -23,7 +23,7 @@
 		"test": "playwright test --config=./playwright.config.ts",
 		"test:integration": "playwright test --config=./playwright.config.ts --project=integration",
 		"report:show": "npx playwright show-report",
-		"version-packages": "changeset version",
+		"version-packages": "changeset version && npm install --package-lock-only --ignore-scripts",
 		"version-packages:prepare-release": "npm run version-packages && npm run format"
 	},
 	"devDependencies": {
