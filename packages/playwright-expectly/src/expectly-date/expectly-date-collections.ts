@@ -91,6 +91,41 @@ function orderResult(
 	});
 }
 
+/** Asserts on the earliest (`direction` 1) or latest (`direction` -1) value; the first one wins a tie. */
+function extremeResult(
+	state: Parameters<typeof dateMatcherResult>[0],
+	name: string,
+	actual: unknown,
+	expected: unknown,
+	options: TimeZoneOptions | undefined,
+	direction: 1 | -1,
+): ReturnType<typeof dateMatcherResult> {
+	const values = normalizeDateArray(actual, 1);
+	const [target, ...points] = alignPoints(
+		[normalize(expected, "expected date"), ...values],
+		["expected date", ...indexLabels(values)],
+		options?.timeZone,
+	);
+	const index = points.reduce(
+		(best, point, current) => (comparePoints(point, points[best]) * direction < 0 ? current : best),
+		0,
+	);
+	const label = direction === 1 ? "earliest" : "latest";
+	return dateMatcherResult(state, {
+		name,
+		pass: comparePoints(points[index], target) === 0,
+		subject: `${label} date`,
+		expectation: "be the expected date",
+		lines: () => [
+			["Expected", target.display, "expected"],
+			[`Actual ${label} (index ${index})`, points[index].display, "received"],
+			["Received", displays(points)],
+		],
+		expected,
+		actual,
+	});
+}
+
 /** Both dates are in the same calendar; months are matched by code, so 13-month years work. */
 function isConsecutive(previous: PlainDate, current: PlainDate, unit: ConsecutiveUnit): boolean {
 	if (unit === "day") return previous.add({ days: 1 }).equals(current);
@@ -122,6 +157,14 @@ export const expectlyDateCollectionMatchers = withMatcherState({
 
 	toHaveDatesDescendingOrder(actual: DateInput[], options?: TimeZoneOptions) {
 		return orderResult(this, "toHaveDatesDescendingOrder", actual, options, -1);
+	},
+
+	toHaveEarliestDate(actual: DateInput[], expected: DateInput, options?: TimeZoneOptions) {
+		return extremeResult(this, "toHaveEarliestDate", actual, expected, options, 1);
+	},
+
+	toHaveLatestDate(actual: DateInput[], expected: DateInput, options?: TimeZoneOptions) {
+		return extremeResult(this, "toHaveLatestDate", actual, expected, options, -1);
 	},
 
 	toHaveDateRange(actual: DateInput[], expectedRange: DurationInput, options?: CalendarFieldOptions) {

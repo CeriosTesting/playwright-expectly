@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { getRejectedErrorSync } from "../../../tests/common/assertion-utils";
+import { getRejectedErrorSync, stripAnsi } from "../../../tests/common/assertion-utils";
 import { expectlyDate } from "../src/expectly-date";
 
 /**
@@ -1187,5 +1187,394 @@ test.describe("toBeInMonth", () => {
 		expect(() => {
 			expectlyDate(localDate("2024-01-01")).toBeInMonth(13);
 		}).toThrow(/Invalid month/);
+	});
+});
+
+test.describe("toBeOnOrBefore", () => {
+	test("should pass for an equal date, unlike toBeBefore", () => {
+		const date = new Date("2026-10-25T12:00:00Z");
+		expectlyDate(date).toBeOnOrBefore(new Date(date));
+		expectlyDate(date).not.toBeBefore(new Date(date));
+	});
+
+	test("should pass for an earlier date and fail for a later one", () => {
+		expectlyDate("2026-10-24").toBeOnOrBefore("2026-10-25");
+		expectlyDate("2026-10-26").not.toBeOnOrBefore("2026-10-25");
+		expectlyDate("2026-10-25T11:59:59.999999999Z").toBeOnOrBefore("2026-10-25T12:00:00Z");
+		expectlyDate("2026-10-25T12:00:00.000000001Z").not.toBeOnOrBefore("2026-10-25T12:00:00Z");
+	});
+
+	test("should compare instants regardless of offset", () => {
+		expectlyDate("2026-10-25T13:00:00+01:00").toBeOnOrBefore("2026-10-25T12:00:00Z");
+	});
+
+	test("should count the whole day of a calendar date compared as an instant", () => {
+		expectlyDate("2026-10-25T18:00:00Z").toBeOnOrBefore("2026-10-25", { timeZone: "UTC" });
+		expectlyDate("2026-10-25T23:59:59.999Z").toBeOnOrBefore("2026-10-25", { timeZone: "UTC" });
+		expectlyDate("2026-10-26T00:00:00Z").not.toBeOnOrBefore("2026-10-25", { timeZone: "UTC" });
+	});
+
+	test("should use the day in the given time zone", () => {
+		// Europe/Amsterdam is UTC+1 after 2026-10-25 03:00, so the day ends at 23:00Z.
+		expectlyDate("2026-10-25T22:59:59Z").toBeOnOrBefore("2026-10-25", { timeZone: "Europe/Amsterdam" });
+		expectlyDate("2026-10-25T23:00:00Z").not.toBeOnOrBefore("2026-10-25", { timeZone: "Europe/Amsterdam" });
+	});
+
+	test("should throw when mixing kinds without a time zone", () => {
+		expect(() => {
+			expectlyDate("2026-10-25T12:00:00Z").toBeOnOrBefore("2026-10-25");
+		}).toThrow(/timeZone/);
+	});
+
+	test("should show a clear error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-26").toBeOnOrBefore("2026-10-25");
+		});
+		expect(error.message).toContain("on or before");
+		expect(error.message).toContain("2026-10-25");
+		expect(error.message).toContain("2026-10-26");
+	});
+});
+
+test.describe("toBeOnOrAfter", () => {
+	test("should pass for an equal date, unlike toBeAfter", () => {
+		expectlyDate("2026-10-25").toBeOnOrAfter("2026-10-25");
+		expectlyDate("2026-10-25").not.toBeAfter("2026-10-25");
+	});
+
+	test("should pass for a later date and fail for an earlier one", () => {
+		expectlyDate("2026-10-26T00:00:00").toBeOnOrAfter("2026-10-25T23:59:59");
+		expectlyDate("2026-10-24").not.toBeOnOrAfter("2026-10-25");
+	});
+
+	test("should treat a calendar date compared as an instant as the start of the day", () => {
+		expectlyDate("2026-10-25T00:00:00Z").toBeOnOrAfter("2026-10-25", { timeZone: "UTC" });
+		expectlyDate("2026-10-24T23:59:59.999Z").not.toBeOnOrAfter("2026-10-25", { timeZone: "UTC" });
+	});
+
+	test("should show a clear error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-24").toBeOnOrAfter("2026-10-25");
+		});
+		expect(error.message).toContain("on or after");
+	});
+});
+
+test.describe("toBeOlderThan", () => {
+	const now = "2026-10-25T12:00:00Z";
+
+	test("should pass when the date is more than the duration ago", () => {
+		expectlyDate("2026-10-25T11:50:00Z").toBeOlderThan({ minutes: 5 }, { now });
+		expectlyDate("2026-09-01").toBeOlderThan({ days: 30 }, { now, timeZone: "UTC" });
+	});
+
+	test("should be strict at the boundary", () => {
+		expectlyDate("2026-10-25T11:50:00Z").not.toBeOlderThan({ minutes: 10 }, { now });
+		expectlyDate("2026-10-25T11:49:59.999Z").toBeOlderThan({ minutes: 10 }, { now });
+	});
+
+	test("should fail for future dates", () => {
+		expectlyDate("2026-10-25T12:05:00Z").not.toBeOlderThan({ minutes: 0 }, { now });
+	});
+
+	test("should throw for calendar units and negative durations", () => {
+		expect(() => {
+			expectlyDate("2026-10-25T11:50:00Z").toBeOlderThan({ months: 1 }, { now });
+		}).toThrow();
+		expect(() => {
+			expectlyDate("2026-10-25T11:50:00Z").toBeOlderThan({ minutes: -5 }, { now });
+		}).toThrow(/must not be negative/);
+	});
+
+	test("should show the age in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-25T11:58:00Z").toBeOlderThan({ minutes: 5 }, { now });
+		});
+		expect(error.message).toContain("older than 5 minutes");
+		expect(stripAnsi(error.message)).toMatch(/Age:\s+2 minutes/);
+		expect(stripAnsi(error.message)).toMatch(/Minimum age:\s+more than 5 minutes/);
+	});
+
+	test("should report future dates in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-25T12:03:00Z").toBeOlderThan({ minutes: 5 }, { now });
+		});
+		expect(stripAnsi(error.message)).toMatch(/In the future by:\s+3 minutes/);
+	});
+});
+
+test.describe("toBeNewerThan", () => {
+	const now = "2026-10-25T12:00:00Z";
+
+	test("should pass when the date is less than the duration ago", () => {
+		expectlyDate("2026-10-25T11:58:00Z").toBeNewerThan({ minutes: 5 }, { now });
+		expectlyDate("2026-10-25T11:50:00Z").not.toBeNewerThan({ minutes: 5 }, { now });
+	});
+
+	test("should be strict at the boundary", () => {
+		expectlyDate("2026-10-25T11:55:00Z").not.toBeNewerThan({ minutes: 5 }, { now });
+		expectlyDate("2026-10-25T11:55:00.000000001Z").toBeNewerThan({ minutes: 5 }, { now });
+	});
+
+	test("should pass for future dates, unlike toBeWithinLast", () => {
+		expectlyDate("2026-10-25T12:05:00Z").toBeNewerThan({ minutes: 5 }, { now });
+		expectlyDate("2026-10-25T12:05:00Z").not.toBeWithinLast({ minutes: 5 }, { now });
+	});
+
+	test("should show the age in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-25T11:00:00Z").toBeNewerThan({ minutes: 5 }, { now });
+		});
+		expect(error.message).toContain("newer than 5 minutes");
+		expect(stripAnsi(error.message)).toMatch(/Age:\s+1 hour/);
+		expect(stripAnsi(error.message)).toMatch(/Maximum age:\s+less than 5 minutes/);
+	});
+});
+
+test.describe("toBeSameWeek", () => {
+	test("should pass for Monday and Sunday of one ISO week", () => {
+		expectlyDate("2026-10-26").toBeSameWeek("2026-11-01");
+		expectlyDate("2026-10-25").not.toBeSameWeek("2026-10-26");
+	});
+
+	test("should honour weekStartsOn", () => {
+		// 2026-10-25 is a Sunday.
+		expectlyDate("2026-10-25").toBeSameWeek("2026-10-31", { weekStartsOn: "Sunday" });
+		expectlyDate("2026-10-25").toBeSameWeek("2026-10-31", { weekStartsOn: 0 });
+		expectlyDate("2026-10-25").not.toBeSameWeek("2026-10-31");
+		expectlyDate("2026-10-24").toBeSameWeek("2026-10-30", { weekStartsOn: "Saturday" });
+	});
+
+	test("should work across years", () => {
+		expectlyDate("2026-12-31").toBeSameWeek("2027-01-03");
+	});
+
+	test("should read absolute values in the time zone", () => {
+		// 23:30Z on Sunday is 00:30 on Monday in Amsterdam.
+		expectlyDate("2026-10-25T23:30:00Z").toBeSameWeek("2026-10-26T12:00:00Z", { timeZone: "Europe/Amsterdam" });
+		expectlyDate("2026-10-25T23:30:00Z").not.toBeSameWeek("2026-10-26T12:00:00Z");
+	});
+
+	test("should throw for an invalid weekStartsOn", () => {
+		expect(() => {
+			expectlyDate("2026-10-25").toBeSameWeek("2026-10-26", { weekStartsOn: 7 as 0 });
+		}).toThrow(/Invalid weekStartsOn/);
+		expect(() => {
+			expectlyDate("2026-10-25").toBeSameWeek("2026-10-26", { weekStartsOn: "Funday" as "Monday" });
+		}).toThrow(/Invalid weekStartsOn/);
+	});
+
+	test("should show both weeks in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-25").toBeSameWeek("2026-10-26");
+		});
+		expect(error.message).toContain("same week (starting Monday)");
+		expect(stripAnsi(error.message)).toMatch(/Expected week:\s+2026-10-26 \(Monday\) to 2026-11-01/);
+		expect(stripAnsi(error.message)).toMatch(/Received week:\s+2026-10-19 \(Monday\) to 2026-10-25/);
+	});
+});
+
+test.describe("toBeInWeek", () => {
+	test("should pass for the ISO week number", () => {
+		expectlyDate("2026-10-25").toBeInWeek(43);
+		expectlyDate("2026-10-26").toBeInWeek(44);
+		expectlyDate("2026-10-25").not.toBeInWeek(44);
+	});
+
+	test("should use the ISO week-numbering year", () => {
+		expectlyDate("2026-12-31").toBeInWeek(53, { year: 2026 });
+		expectlyDate("2027-01-01").toBeInWeek(53, { year: 2026 });
+		expectlyDate("2027-01-01").not.toBeInWeek(53, { year: 2027 });
+		expectlyDate("2021-01-03").toBeInWeek(53, { year: 2020 });
+		expectlyDate("2027-01-04").toBeInWeek(1, { year: 2027 });
+	});
+
+	test("should read absolute values in the time zone", () => {
+		expectlyDate("2026-10-25T23:30:00Z").toBeInWeek(44, { timeZone: "Europe/Amsterdam" });
+		expectlyDate("2026-10-25T23:30:00Z").toBeInWeek(43);
+	});
+
+	test("should throw for invalid week numbers and years", () => {
+		for (const week of [0, 54, 1.5]) {
+			expect(() => {
+				expectlyDate("2026-10-25").toBeInWeek(week);
+			}).toThrow(/Invalid week number/);
+		}
+		expect(() => {
+			expectlyDate("2026-10-25").toBeInWeek(43, { year: 2026.5 });
+		}).toThrow(/Invalid year/);
+	});
+
+	test("should show the received week in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2027-01-01").toBeInWeek(1, { year: 2027 });
+		});
+		expect(error.message).toContain("ISO week 1 of 2027");
+		expect(stripAnsi(error.message)).toMatch(/Received week:\s+"?week 53 of 2026/);
+	});
+});
+
+test.describe("toBeInYear", () => {
+	test("should pass for the ISO year", () => {
+		expectlyDate("2026-10-25").toBeInYear(2026);
+		expectlyDate("2026-10-25").not.toBeInYear(2027);
+	});
+
+	test("should read the year in the time zone", () => {
+		expectlyDate("2026-12-31T23:30:00Z").toBeInYear(2027, { timeZone: "Europe/Amsterdam" });
+		expectlyDate("2026-12-31T23:30:00Z").toBeInYear(2026);
+	});
+
+	test("should use the calendar option", () => {
+		expectlyDate("2026-10-25").toBeInYear(5787, { calendar: "hebrew" });
+		expectlyDate("2026-09-01").toBeInYear(5786, { calendar: "hebrew" });
+	});
+
+	test("should throw for a non-integer year", () => {
+		expect(() => {
+			expectlyDate("2026-10-25").toBeInYear(2026.5);
+		}).toThrow(/Invalid year/);
+	});
+});
+
+test.describe("toBeThisWeek", () => {
+	// 2026-10-28 is a Wednesday.
+	const now = "2026-10-28T12:00:00Z";
+
+	test("should pass for dates in the current week", () => {
+		expectlyDate("2026-10-26").toBeThisWeek({ now });
+		expectlyDate("2026-11-01").toBeThisWeek({ now });
+		expectlyDate("2026-10-25").not.toBeThisWeek({ now });
+		expectlyDate("2026-11-02").not.toBeThisWeek({ now });
+	});
+
+	test("should honour weekStartsOn", () => {
+		expectlyDate("2026-10-25").toBeThisWeek({ now, weekStartsOn: "Sunday" });
+		expectlyDate("2026-11-01").not.toBeThisWeek({ now, weekStartsOn: "Sunday" });
+	});
+
+	test("should read absolute values in the time zone", () => {
+		expectlyDate("2026-10-25T23:30:00Z").toBeThisWeek({ now, timeZone: "Europe/Amsterdam" });
+		expectlyDate("2026-10-25T23:30:00Z").not.toBeThisWeek({ now });
+	});
+
+	test("should show the weeks in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-25").toBeThisWeek({ now });
+		});
+		expect(stripAnsi(error.message)).toMatch(/This week:\s+"?2026-10-26 \(Monday\) to 2026-11-01/);
+		expect(stripAnsi(error.message)).toMatch(/Received week:\s+"?2026-10-19 \(Monday\) to 2026-10-25/);
+	});
+});
+
+test.describe("toBeThisMonth", () => {
+	const now = "2026-11-11T12:00:00Z";
+
+	test("should pass for dates in the current month", () => {
+		expectlyDate("2026-11-01").toBeThisMonth({ now });
+		expectlyDate("2026-11-30").toBeThisMonth({ now });
+		expectlyDate("2026-10-31").not.toBeThisMonth({ now });
+		expectlyDate("2025-11-11").not.toBeThisMonth({ now });
+	});
+
+	test("should read absolute values in the time zone", () => {
+		// 23:30Z on 31 October is 00:30 on 1 November in Amsterdam.
+		expectlyDate("2026-10-31T23:30:00Z").toBeThisMonth({ now, timeZone: "Europe/Amsterdam" });
+		expectlyDate("2026-10-31T23:30:00Z").not.toBeThisMonth({ now });
+	});
+
+	test("should use the calendar option", () => {
+		// 2026-10-25 and 2026-11-05 are both in Cheshvan 5787.
+		const hebrewNow = "2026-10-25T12:00:00Z";
+		expectlyDate("2026-11-05").toBeThisMonth({ now: hebrewNow, calendar: "hebrew" });
+		expectlyDate("2026-11-05").not.toBeThisMonth({ now: hebrewNow });
+		expectlyDate("2026-11-12").not.toBeThisMonth({ now: hebrewNow, calendar: "hebrew" });
+	});
+
+	test("should show the months in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2026-10-31").toBeThisMonth({ now });
+		});
+		expect(stripAnsi(error.message)).toMatch(/This month:\s+"?November 2026/);
+		expect(stripAnsi(error.message)).toMatch(/Received month:\s+"?October 2026/);
+	});
+});
+
+test.describe("toBeThisYear", () => {
+	const now = "2026-11-11T12:00:00Z";
+
+	test("should pass for dates in the current year", () => {
+		expectlyDate("2026-01-01").toBeThisYear({ now });
+		expectlyDate("2025-12-31").not.toBeThisYear({ now });
+	});
+
+	test("should use the calendar option", () => {
+		// 5787 began on 2026-09-12.
+		expectlyDate("2026-09-14").toBeThisYear({ now, calendar: "hebrew" });
+		expectlyDate("2026-09-01").not.toBeThisYear({ now, calendar: "hebrew" });
+		expectlyDate("2026-09-01").toBeThisYear({ now });
+	});
+
+	test("should show the years in the error message", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate("2025-12-31").toBeThisYear({ now });
+		});
+		expect(stripAnsi(error.message)).toMatch(/This year:\s+2026/);
+		expect(stripAnsi(error.message)).toMatch(/Received year:\s+2025/);
+	});
+});
+
+test.describe("toHaveEarliestDate", () => {
+	test("should pass when the minimum equals the expected date", () => {
+		expectlyDate(["2026-10-03", "2026-10-01", "2026-10-25"]).toHaveEarliestDate("2026-10-01");
+		expectlyDate(["2026-10-03", "2026-10-01", "2026-10-25"]).not.toHaveEarliestDate("2026-10-03");
+	});
+
+	test("should pass with ties and single-element arrays", () => {
+		expectlyDate(["2026-10-01", "2026-10-03", "2026-10-01"]).toHaveEarliestDate("2026-10-01");
+		expectlyDate(["2026-10-01"]).toHaveEarliestDate("2026-10-01");
+	});
+
+	test("should compare instants with nanosecond precision", () => {
+		expectlyDate(["2026-10-25T13:00:00+01:00", "2026-10-25T12:30:00Z"]).toHaveEarliestDate("2026-10-25T12:00:00Z");
+		expectlyDate(["2026-10-25T12:00:00.000000001Z", "2026-10-25T12:00:00.000000002Z"]).not.toHaveEarliestDate(
+			"2026-10-25T12:00:00Z",
+		);
+	});
+
+	test("should throw for an empty array or mixed kinds without a time zone", () => {
+		expect(() => {
+			expectlyDate([]).toHaveEarliestDate("2026-10-01");
+		}).toThrow();
+		expect(() => {
+			expectlyDate(["2026-10-01", "2026-10-25T12:00:00Z"]).toHaveEarliestDate("2026-10-01");
+		}).toThrow(/timeZone/);
+	});
+
+	test("should name the actual earliest date and its index", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate(["2026-10-03", "2026-10-01", "2026-10-25"]).toHaveEarliestDate("2026-10-03");
+		});
+		expect(stripAnsi(error.message)).toMatch(/Actual earliest \(index 1\):\s+"?2026-10-01/);
+	});
+});
+
+test.describe("toHaveLatestDate", () => {
+	test("should pass when the maximum equals the expected date", () => {
+		expectlyDate(["2026-10-03", "2026-10-25", "2026-10-01"]).toHaveLatestDate("2026-10-25");
+		expectlyDate(["2026-10-03", "2026-10-25", "2026-10-01"]).not.toHaveLatestDate("2026-10-03");
+	});
+
+	test("should compare a mix of Date values and ISO strings as instants", () => {
+		expectlyDate([new Date("2026-10-25T12:00:00Z"), "2026-10-25T14:00:00+01:00"]).toHaveLatestDate(
+			"2026-10-25T13:00:00Z",
+		);
+	});
+
+	test("should name the actual latest date and its index", () => {
+		const error = getRejectedErrorSync(() => {
+			expectlyDate(["2026-10-03", "2026-10-25", "2026-10-01"]).toHaveLatestDate("2026-10-03");
+		});
+		expect(stripAnsi(error.message)).toMatch(/Actual latest \(index 1\):\s+"?2026-10-25/);
 	});
 });

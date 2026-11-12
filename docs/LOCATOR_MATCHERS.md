@@ -61,6 +61,7 @@ The option types `CountOptions`, `TextOrderOptions` and `StylesOptions` are expo
 - [toHaveAriaLabel()](#tohavearialabel)
 - [toBeRequired()](#toberequired)
 - [toBeReadOnly()](#tobereadonly)
+- [toHaveSelectedOption()](#tohaveselectedoption)
 - [toHaveStyles()](#tohavestyles)
 
 ### Positioning Matchers (`expectlyLocatorPositioning`)
@@ -362,6 +363,26 @@ await expectly(page.locator("textarea.readonly-field")).toBeReadOnly();
 await expectly(page.locator("#disabled-input")).toBeReadOnly();
 await expectly(page.locator("#editable-input")).not.toBeReadOnly();
 ```
+
+## toHaveSelectedOption()
+
+Asserts the visible label of the selected option(s) of a `<select>` element, retrying until it matches. Playwright's built-in `toHaveValue()` / `toHaveValues()` check the `value` attribute; this checks what the user sees.
+
+```typescript
+// <option value="nl">Netherlands</option>
+await expectly(page.getByLabel("Country")).toHaveSelectedOption("Netherlands");
+await expectly(page.getByLabel("Country")).toHaveSelectedOption(/^Nether/);
+
+// Multi-select: every selected option, in order
+await expectly(page.getByLabel("Toppings")).toHaveSelectedOption(["Cheese", "Ham & pineapple"]);
+
+// Nothing selected
+await expectly(page.getByLabel("Toppings")).toHaveSelectedOption([]);
+```
+
+- The label is the option's `label` attribute or, without one, its text with whitespace collapsed (`HTMLOptionElement.label`).
+- One expected label means exactly one selected option, so it fails on a multi-select with two selections. An array must match all selected options, in order, like `toHaveValues()`.
+- An element that is not a `<select>` fails with `(element is not a <select>)`. Custom comboboxes built from ARIA roles have no selected options in the DOM; assert those with `toHaveText()` or `toHaveAccessibleName()` instead.
 
 ## toHaveStyles()
 

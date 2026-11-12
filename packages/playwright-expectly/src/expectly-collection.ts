@@ -10,16 +10,37 @@ function containsEqual(values: readonly unknown[], expected: unknown): boolean {
 	return values.some((value) => isEqual(value, expected));
 }
 
-/** Pairs every expected member with a distinct received member, so duplicates must appear as often. */
-function unmatchedMembers(received: readonly unknown[], expected: readonly unknown[]): unknown[] {
-	const used = new Set<number>();
-	const unmatched: unknown[] = [];
-	for (const member of expected) {
-		const index = received.findIndex((value, i) => !used.has(i) && isEqual(value, member));
-		if (index === -1) unmatched.push(member);
-		else used.add(index);
-	}
-	return unmatched;
+/**
+ * Pairs received and expected members one-to-one (a maximum bipartite matching), so duplicates must appear as often
+ * and overlapping asymmetric matchers such as `[expect.any(Number), 1]` are paired the way that satisfies both.
+ * Returns the expected members left without a partner (`missing`) and the received members left over (`extra`).
+ */
+function matchMembers(
+	received: readonly unknown[],
+	expected: readonly unknown[],
+): { missing: unknown[]; extra: unknown[] } {
+	const candidates = expected.map((member) =>
+		received.flatMap((value, index) => (isEqual(value, member) ? [index] : [])),
+	);
+	/** For each received index, the index of the expected member it is paired with, or -1. */
+	const pairedWith = Array.from({ length: received.length }, () => -1);
+
+	const assign = (expectedIndex: number, visited: Set<number>): boolean => {
+		for (const receivedIndex of candidates[expectedIndex]) {
+			if (visited.has(receivedIndex)) continue;
+			visited.add(receivedIndex);
+			// Take a free member, or move its current partner to another of that partner's candidates.
+			if (pairedWith[receivedIndex] === -1 || assign(pairedWith[receivedIndex], visited)) {
+				pairedWith[receivedIndex] = expectedIndex;
+				return true;
+			}
+		}
+		return false;
+	};
+
+	const missing = expected.filter((_, index) => !assign(index, new Set()));
+	const extra = received.filter((_, index) => pairedWith[index] === -1);
+	return { missing, extra };
 }
 
 function assertObject(assertionName: string, received: unknown): asserts received is Record<PropertyKey, unknown> {
@@ -60,6 +81,22 @@ function result(
 /** Own enumerable string and symbol keys. */
 function ownKeys(value: Record<PropertyKey, unknown>): PropertyKey[] {
 	return Reflect.ownKeys(value).filter((key) => Object.prototype.propertyIsEnumerable.call(value, key));
+}
+
+/** Values of the own enumerable string and symbol keys. */
+function ownValues(value: Record<PropertyKey, unknown>): unknown[] {
+	return ownKeys(value).map((key) => value[key]);
+}
+
+/** An empty list would make an "any of" matcher fail always, so its `.not` would pass vacuously. */
+function assertNonEmpty(assertionName: string, label: string, value: readonly unknown[]): void {
+	if (value.length === 0) throw new TypeError(`${assertionName}: ${label} must not be empty`);
+}
+
+function hasEntry(received: Record<PropertyKey, unknown>, entry: unknown): boolean {
+	if (!Array.isArray(entry) || entry.length !== 2) return false;
+	const [key, value] = entry as [PropertyKey, unknown];
+	return Object.prototype.hasOwnProperty.call(received, key) && isEqual(received[key], value);
 }
 
 /**
@@ -107,8 +144,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		const assertionName = "toIncludeSameMembers";
 		assertReceivedType(assertionName, received, "array");
 		assertArgumentArray(assertionName, "expected", expected);
-		const missing = unmatchedMembers(received, expected);
-		const extra = unmatchedMembers(expected, received);
+		const { missing, extra } = matchMembers(received, expected);
 		return result(
 			this,
 			assertionName,
@@ -126,7 +162,7 @@ export const expectlyCollectionMatchers = withMatcherState({
 		const assertionName = "toIncludeAllMembers";
 		assertReceivedType(assertionName, received, "array");
 		assertArgumentArray(assertionName, "expected", expected);
-		const missing = unmatchedMembers(received, expected);
+		const { missing } = matchMembers(received, expected);
 		return result(
 			this,
 			assertionName,
@@ -209,6 +245,94 @@ export const expectlyCollectionMatchers = withMatcherState({
 			received,
 		);
 	},
+	toContainAnyKeys(received: object, keys: PropertyKey[]) {
+		const assertionName = "toContainAnyKeys";
+		assertObject(assertionName, received);
+		assertArgumentArray(assertionName, "keys", keys);
+		assertNonEmpty(assertionName, "keys", keys);
+		const found = keys.filter((key) => Object.prototype.hasOwnProperty.call(received, key));
+		return result(
+			this,
+			assertionName,
+			found.length > 0,
+			`have at least one of the own keys ${this.utils.printExpected(keys)}`,
+			() =>
+				(found.length > 0 ? `Found keys: ${this.utils.printReceived(found)}\n` : "") +
+				`Received keys: ${this.utils.printReceived(ownKeys(received))}`,
+			keys,
+			received,
+		);
+	},
+	toContainValue(received: object, value: unknown) {
+		const assertionName = "toContainValue";
+		assertObject(assertionName, received);
+		const values = ownValues(received);
+		return result(
+			this,
+			assertionName,
+			containsEqual(values, value),
+			`have value ${this.utils.printExpected(value)}`,
+			() => `Received values: ${this.utils.printReceived(values)}`,
+			value,
+			received,
+		);
+	},
+	toContainValues(received: object, values: unknown[]) {
+		const assertionName = "toContainValues";
+		assertObject(assertionName, received);
+		assertArgumentArray(assertionName, "values", values);
+		const actualValues = ownValues(received);
+		const missing = values.filter((value) => !containsEqual(actualValues, value));
+		return result(
+			this,
+			assertionName,
+			missing.length === 0,
+			`have all values ${this.utils.printExpected(values)}`,
+			() =>
+				(missing.length > 0 ? `Missing values: ${this.utils.printExpected(missing)}\n` : "") +
+				`Received values: ${this.utils.printReceived(actualValues)}`,
+			values,
+			received,
+		);
+	},
+	toContainAllValues(received: object, values: unknown[]) {
+		const assertionName = "toContainAllValues";
+		assertObject(assertionName, received);
+		assertArgumentArray(assertionName, "values", values);
+		const actualValues = ownValues(received);
+		const { missing, extra } = matchMembers(actualValues, values);
+		return result(
+			this,
+			assertionName,
+			missing.length === 0 && extra.length === 0,
+			`have exactly the values ${this.utils.printExpected(values)} in any order`,
+			() =>
+				(missing.length > 0 ? `Missing values: ${this.utils.printExpected(missing)}\n` : "") +
+				(extra.length > 0 ? `Unexpected values: ${this.utils.printReceived(extra)}\n` : "") +
+				`Received values: ${this.utils.printReceived(actualValues)}`,
+			values,
+			received,
+		);
+	},
+	toContainAnyValues(received: object, values: unknown[]) {
+		const assertionName = "toContainAnyValues";
+		assertObject(assertionName, received);
+		assertArgumentArray(assertionName, "values", values);
+		assertNonEmpty(assertionName, "values", values);
+		const actualValues = ownValues(received);
+		const found = values.filter((value) => containsEqual(actualValues, value));
+		return result(
+			this,
+			assertionName,
+			found.length > 0,
+			`have at least one of the values ${this.utils.printExpected(values)}`,
+			() =>
+				(found.length > 0 ? `Found values: ${this.utils.printReceived(found)}\n` : "") +
+				`Received values: ${this.utils.printReceived(actualValues)}`,
+			values,
+			received,
+		);
+	},
 	toContainEntry(received: object, entry: [PropertyKey, unknown]) {
 		const assertionName = "toContainEntry";
 		assertObject(assertionName, received);
@@ -244,6 +368,27 @@ export const expectlyCollectionMatchers = withMatcherState({
 			`have all entries ${this.utils.printExpected(entries)}`,
 			() =>
 				(mismatched.length > 0 ? `Missing or different: ${this.utils.printExpected(mismatched)}\n` : "") +
+				`Received: ${this.utils.printReceived(received)}`,
+			entries,
+			received,
+		);
+	},
+	toContainAnyEntries(received: object, entries: [PropertyKey, unknown][]) {
+		const assertionName = "toContainAnyEntries";
+		assertObject(assertionName, received);
+		assertArgumentArray(assertionName, "entries", entries);
+		assertNonEmpty(assertionName, "entries", entries);
+		if (entries.some((entry) => !Array.isArray(entry) || entry.length !== 2)) {
+			throw new TypeError(`${assertionName}: every entry must be a [key, value] pair`);
+		}
+		const found = entries.filter((entry) => hasEntry(received, entry));
+		return result(
+			this,
+			assertionName,
+			found.length > 0,
+			`have at least one of the entries ${this.utils.printExpected(entries)}`,
+			() =>
+				(found.length > 0 ? `Found entries: ${this.utils.printReceived(found)}\n` : "") +
 				`Received: ${this.utils.printReceived(received)}`,
 			entries,
 			received,

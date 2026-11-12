@@ -11,17 +11,23 @@ import type {
 	EndOfDayOptions,
 	ISODateTimeValidationOptions,
 	InstantInput,
+	RelativeCalendarOptions,
 	RelativeTimeOptions,
+	RelativeWeekOptions,
 	TimeInput,
 	TimeOfDayOptions,
 	TimeZoneOptions,
 	TruncationUnit,
 	UniqueDatesOptions,
+	WeekNumberOptions,
+	WeekOptions,
 } from "../date-time/types";
+import type { NearOptions } from "../expectly-any";
 import type { StylesOptions } from "../expectly-locator/expectly-locator-attributes";
 import type { CountOptions } from "../expectly-locator/expectly-locator-count";
 import type { TextOrderOptions } from "../expectly-locator/expectly-locator-order";
-import type { CookieOptions } from "../expectly-page";
+import type { CookieOptions, ExpectedSearchParams, URLSearchParamsOptions } from "../expectly-page";
+import type { HttpStatusClass } from "../expectly-response";
 import type { NumericToleranceOptions, StringOrderOptions } from "../matchers/common-utils";
 import type { UrlValidationOptions, UUIDVersion } from "../matchers/text-validation-utils";
 
@@ -279,6 +285,18 @@ declare global {
 			toBeUUID(version?: UUIDVersion, options?: PollOptions): T extends Locator ? Promise<R> : R;
 
 			/**
+			 * Asserts that a string is valid JSON and, when `expected` is given, that the parsed value equals
+			 * it (`toEqual` semantics, so `expect.objectContaining()` gives a partial match).
+			 *
+			 * @example
+			 * expect(responseText).toBeValidJSON();
+			 * expect(await page.evaluate(() => localStorage.getItem('settings'))).toBeValidJSON(
+			 *   expect.objectContaining({ theme: 'dark' }),
+			 * );
+			 */
+			toBeValidJSON(expected?: unknown): R;
+
+			/**
 			 * Asserts that a date is within an elapsed-time deviation of another date (inclusive).
 			 *
 			 * Days count as 24 hours; years, months and weeks are rejected. Nanosecond precision is preserved.
@@ -328,6 +346,25 @@ declare global {
 			 * expect("2026-10-25").toBeAfter("2026-10-20");
 			 */
 			toBeAfter(expectedDate: DateInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a date is before or equal to another date (inclusive counterpart of `toBeBefore`).
+			 * When a calendar date is compared as an instant (with `timeZone`), its whole day counts.
+			 *
+			 * @example
+			 * expect(submission.submittedAt).toBeOnOrBefore(deadline);
+			 * expect("2026-10-25T18:00:00Z").toBeOnOrBefore("2026-10-25", { timeZone: "UTC" });
+			 */
+			toBeOnOrBefore(expectedDate: DateInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that a date is after or equal to another date (inclusive counterpart of `toBeAfter`).
+			 * When a calendar date is compared as an instant (with `timeZone`), it means the start of that day.
+			 *
+			 * @example
+			 * expect(booking.startDate).toBeOnOrAfter("2026-10-25");
+			 */
+			toBeOnOrAfter(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that a date falls between two dates (inclusive). Throws when the start is after the end.
@@ -382,6 +419,36 @@ declare global {
 			toBeSameYear(expectedDate: DateInput, options?: CalendarFieldOptions): R;
 
 			/**
+			 * Asserts that two dates are in the same week. Weeks start on Monday (ISO 8601) unless
+			 * `weekStartsOn` says otherwise.
+			 *
+			 * @example
+			 * expect("2026-10-26").toBeSameWeek("2026-11-01"); // Monday and Sunday of one ISO week
+			 * expect("2026-10-25").toBeSameWeek("2026-10-31", { weekStartsOn: "Sunday" });
+			 */
+			toBeSameWeek(expectedDate: DateInput, options?: WeekOptions): R;
+
+			/**
+			 * Asserts that a date is in an ISO 8601 week (1-53). Pass `year` to also check the ISO
+			 * week-numbering year, which can differ from the calendar year near New Year.
+			 *
+			 * @example
+			 * expect("2026-10-25").toBeInWeek(43);
+			 * expect("2027-01-01").toBeInWeek(53, { year: 2026 });
+			 */
+			toBeInWeek(expectedWeek: number, options?: WeekNumberOptions): R;
+
+			/**
+			 * Asserts that a date is in a year.
+			 * Uses the `calendar` option, else the values' own non-ISO calendar, else ISO 8601.
+			 *
+			 * @example
+			 * expect(invoice.issuedAt).toBeInYear(2026);
+			 * expect("2026-10-25").toBeInYear(5787, { calendar: "hebrew" });
+			 */
+			toBeInYear(expectedYear: number, options?: CalendarFieldOptions): R;
+
+			/**
 			 * Asserts that a date is today. "Now" is captured once (`now` option, else the current time).
 			 *
 			 * @example
@@ -405,6 +472,33 @@ declare global {
 			 * expect(scheduledDate).toBeTomorrow();
 			 */
 			toBeTomorrow(options?: RelativeTimeOptions): R;
+
+			/**
+			 * Asserts that a date is in the current week. Weeks start on Monday (ISO 8601) unless
+			 * `weekStartsOn` says otherwise.
+			 *
+			 * @example
+			 * expect(report.generatedAt).toBeThisWeek({ timeZone: "Europe/Amsterdam" });
+			 */
+			toBeThisWeek(options?: RelativeWeekOptions): R;
+
+			/**
+			 * Asserts that a date is in the current month.
+			 * Uses the `calendar` option, else the value's own non-ISO calendar, else ISO 8601.
+			 *
+			 * @example
+			 * expect(invoice.issuedAt).toBeThisMonth();
+			 */
+			toBeThisMonth(options?: RelativeCalendarOptions): R;
+
+			/**
+			 * Asserts that a date is in the current year.
+			 * Uses the `calendar` option, else the value's own non-ISO calendar, else ISO 8601.
+			 *
+			 * @example
+			 * expect(contract.signedAt).toBeThisYear();
+			 */
+			toBeThisYear(options?: RelativeCalendarOptions): R;
 
 			/**
 			 * Asserts that a date falls on a weekday (Monday through Friday).
@@ -455,6 +549,24 @@ declare global {
 			 * expect(token.expiresAt).toBeWithinNext({ minutes: 30 });
 			 */
 			toBeWithinNext(duration: DurationInput, options?: RelativeTimeOptions): R;
+
+			/**
+			 * Asserts that a date lies more than `duration` before now (strict). Future dates fail.
+			 * Elapsed time: years, months and weeks are rejected.
+			 *
+			 * @example
+			 * expect(archivedRecord.updatedAt).toBeOlderThan({ days: 30 });
+			 */
+			toBeOlderThan(duration: DurationInput, options?: RelativeTimeOptions): R;
+
+			/**
+			 * Asserts that a date lies less than `duration` before now (strict). Future dates pass;
+			 * use `toBeWithinLast` to also require the date to be in the past.
+			 *
+			 * @example
+			 * expect(cache.refreshedAt).toBeNewerThan({ minutes: 5 });
+			 */
+			toBeNewerThan(duration: DurationInput, options?: RelativeTimeOptions): R;
 
 			/**
 			 * Asserts that an event happened after `start`, within a maximum elapsed time or a
@@ -623,6 +735,22 @@ declare global {
 			 * expect(["2026-01-31", "2026-02-28"]).toHaveDateRange({ months: 1 });
 			 */
 			toHaveDateRange(expectedRange: DurationInput, options?: CalendarFieldOptions): R;
+
+			/**
+			 * Asserts that the earliest date in an array is exactly the expected date (nanosecond precision).
+			 *
+			 * @example
+			 * expect(orders.map((order) => order.createdAt)).toHaveEarliestDate("2026-10-01T08:00:00Z");
+			 */
+			toHaveEarliestDate(expectedDate: DateInput, options?: TimeZoneOptions): R;
+
+			/**
+			 * Asserts that the latest date in an array is exactly the expected date (nanosecond precision).
+			 *
+			 * @example
+			 * expect(["2026-10-01", "2026-10-25", "2026-10-03"]).toHaveLatestDate("2026-10-25");
+			 */
+			toHaveLatestDate(expectedDate: DateInput, options?: TimeZoneOptions): R;
 
 			/**
 			 * Asserts that an array of dates is consecutive by the specified unit (sorted first).
@@ -1094,6 +1222,17 @@ declare global {
 			toBeReadOnly(options?: PollOptions): Promise<R>;
 
 			/**
+			 * Asserts the visible label of the selected option(s) of a `<select>`, retrying until it matches.
+			 * The built-in `toHaveValue` checks the `value` attribute instead. One expected label means exactly
+			 * one selected option; an array matches all selected options in order.
+			 *
+			 * @example
+			 * await expect(page.getByLabel('Country')).toHaveSelectedOption('Netherlands');
+			 * await expect(page.getByLabel('Toppings')).toHaveSelectedOption(['Cheese', /^Ham/]);
+			 */
+			toHaveSelectedOption(expected: string | RegExp | readonly (string | RegExp)[], options?: PollOptions): Promise<R>;
+
+			/**
 			 * Asserts that the locator's element is positioned above another element.
 			 * Compares the bottom edge of the current element with the top edge of the other element.
 			 *
@@ -1275,6 +1414,29 @@ declare global {
 			toHaveSessionStorageItem(key: string, value?: string | RegExp, options?: PollOptions): Promise<R>;
 
 			/**
+			 * Asserts the query parameters of the page URL, retrying until they match. Other parameters are
+			 * ignored unless `exact` is set. A string, pattern or asymmetric matcher checks the first value (like
+			 * `URLSearchParams.get()`); a string array checks all values of a repeated parameter, in order.
+			 *
+			 * @example
+			 * await expect(page).toHaveURLSearchParams({ q: 'shoes', page: /^\d+$/ });
+			 * await expect(page).toHaveURLSearchParams({ tag: ['red', 'sale'] }, { exact: true });
+			 * // Absent parameter
+			 * await expect(page).not.toHaveURLSearchParams({ debug: expect.anything() });
+			 */
+			toHaveURLSearchParams(expected: ExpectedSearchParams, options?: URLSearchParamsOptions): Promise<R>;
+
+			/**
+			 * Asserts the HTTP status of an `APIResponse` or `Response`: an exact code or a class such as
+			 * `"2xx"`. A failure shows the status text, URL and response body.
+			 *
+			 * @example
+			 * await expect(await request.post('/api/users', { data })).toHaveStatus(201);
+			 * await expect(await page.request.get('/health')).toHaveStatus('2xx');
+			 */
+			toHaveStatus(expected: number | HttpStatusClass): Promise<R>;
+
+			/**
 			 * Asserts that the received value satisfies a predicate.
 			 *
 			 * @example
@@ -1349,6 +1511,47 @@ declare global {
 			toContainAllKeys(keys: readonly PropertyKey[]): R;
 
 			/**
+			 * Asserts that an object has at least one of the given own keys.
+			 *
+			 * @example
+			 * expect(error).toContainAnyKeys(['message', 'detail']);
+			 */
+			toContainAnyKeys(keys: readonly PropertyKey[]): R;
+
+			/**
+			 * Asserts that one of an object's own values equals `value` (`toEqual` semantics).
+			 *
+			 * @example
+			 * expect(statusByOrder).toContainValue('shipped');
+			 */
+			toContainValue(value: unknown): R;
+
+			/**
+			 * Asserts that an object contains all of the given values, in any key.
+			 *
+			 * @example
+			 * expect(roles).toContainValues(['admin', 'editor']);
+			 */
+			toContainValues(values: readonly unknown[]): R;
+
+			/**
+			 * Asserts that an object's own values are exactly the given values, in any order. Repeated
+			 * values must appear as often.
+			 *
+			 * @example
+			 * expect({ a: 1, b: 2, c: 2 }).toContainAllValues([2, 1, 2]);
+			 */
+			toContainAllValues(values: readonly unknown[]): R;
+
+			/**
+			 * Asserts that an object contains at least one of the given values.
+			 *
+			 * @example
+			 * expect(featureFlags).toContainAnyValues([true]);
+			 */
+			toContainAnyValues(values: readonly unknown[]): R;
+
+			/**
 			 * Asserts that an object has an own entry with an equal value (`toEqual` semantics).
 			 *
 			 * @example
@@ -1363,6 +1566,14 @@ declare global {
 			 * expect(user).toContainEntries([['role', 'admin'], ['active', true]]);
 			 */
 			toContainEntries(entries: readonly (readonly [PropertyKey, unknown])[]): R;
+
+			/**
+			 * Asserts that an object has at least one of the given `[key, value]` entries.
+			 *
+			 * @example
+			 * expect(user).toContainAnyEntries([['role', 'admin'], ['role', 'owner']]);
+			 */
+			toContainAnyEntries(entries: readonly (readonly [PropertyKey, unknown])[]): R;
 
 			/**
 			 * Asserts that the received value is an object (not an array) without own enumerable keys; a Map or Set
@@ -1423,6 +1634,25 @@ declare global {
 			 * expect(ratio).toBeFinite();
 			 */
 			toBeFinite(): R;
+
+			/**
+			 * Asserts that a number is within an absolute `tolerance` or a `percent` of `|expected|`
+			 * (inclusive). Unlike `toBeCloseTo`, the deviation is not expressed in decimal digits.
+			 *
+			 * @example
+			 * expect(totalPrice).toBeNear(99.99, { tolerance: 0.01 });
+			 * expect(loadTimeMs).toBeNear(1200, { percent: 10 });
+			 */
+			toBeNear(expected: number, options: NearOptions): R;
+
+			/**
+			 * Asserts that a number lies between `min` and `max`, both inclusive. (jest-extended's
+			 * `toBeWithin` excludes `max`.)
+			 *
+			 * @example
+			 * expect(rating).toBeWithin(1, 5);
+			 */
+			toBeWithin(min: number, max: number): R;
 
 			/**
 			 * Asserts that a promise (or a function returning one) resolves.

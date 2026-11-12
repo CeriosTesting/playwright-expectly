@@ -47,6 +47,22 @@ test.describe("members", () => {
 		expectlyCollection([1, "a"]).toIncludeSameMembers([expect.any(String), expect.any(Number)]);
 	});
 
+	test("pairs overlapping asymmetric matchers so that every member is matched", () => {
+		// expect.any(Number) must leave 1 for the literal 1 and take 2 instead.
+		expectlyCollection([1, 2]).toIncludeSameMembers([expect.any(Number), 1]);
+		expectlyCollection([1, 2, "x"]).toIncludeAllMembers([expect.any(Number), 1]);
+		expectlyCollection([1, "x"]).not.toIncludeAllMembers([expect.any(Number), 1]);
+	});
+
+	test("reports the members left over after the best pairing", () => {
+		const error = getRejectedErrorSync(() =>
+			expectlyCollection([1, 2, "x"]).toIncludeSameMembers([expect.any(Number), 1, 3]),
+		);
+		const message = stripAnsi(error.message);
+		expect(message).toContain("Missing: [3]");
+		expect(message).toContain('Unexpected: ["x"]');
+	});
+
 	test("reports missing and unexpected members", () => {
 		const error = getRejectedErrorSync(() => expectlyCollection([1, 2, 4]).toIncludeSameMembers([1, 2, 3]));
 		const message = stripAnsi(error.message);

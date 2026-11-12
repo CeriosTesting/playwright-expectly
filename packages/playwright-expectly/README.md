@@ -205,15 +205,16 @@ Soft variants (`expectly.soft(callback).toPassAndReturn()`, `expectly.soft.pollA
 
 ## Available Matchers
 
-- **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toBeHexadecimal()`, `toEqualCaseInsensitive()`, `toEqualIgnoringWhitespace()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
+- **String** — `toBeValidEmail()`, `toBeValidUrl()`, `toBeUUID()`, `toBeAlphanumeric()`, `toBeHexadecimal()`, `toBeValidJSON()`, `toEqualCaseInsensitive()`, `toEqualIgnoringWhitespace()`, `toMatchPattern()`, and more — [📖 docs](../../docs/STRING_MATCHERS.md)
 - **Number Array** — `toHaveAscendingOrder()`, `toHaveAverage()`, `toBeAllPositive()`, `toBeMonotonic()`, and more — [📖 docs](../../docs/NUMBER_ARRAY_MATCHERS.md)
 - **Date & Time** — `Date`, ISO strings and Temporal values: `toBeWithinLast()`, `toBeWithinDurationAfter()`, `toBeSameInstant()`, `toBeSameDay()`, `toBeWithinTimeOfDay()`, `toHaveOffset()`, duration matchers, plus `parseISO*()` / `isISO*()` and typed ISO strings — [📖 docs](../../docs/DATE_MATCHERS.md)
-- **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveStyles()`, `toHaveCountGreaterThan()`, `toHaveCountBetween()`, `toHaveTextsInAscendingOrder()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
-- **Page** — `toHaveCookie()` on a `Page` or `BrowserContext`, `toHaveLocalStorageItem()`, `toHaveSessionStorageItem()` — [📖 docs](../../docs/PAGE_MATCHERS.md)
+- **Locator** — `toBeAlphanumeric()`, `toBeUpperCase()`, `toHaveSrc()`, `toHaveSelectedOption()`, `toHaveStyles()`, `toHaveCountGreaterThan()`, `toHaveCountBetween()`, `toHaveTextsInAscendingOrder()`, and more — [📖 docs](../../docs/LOCATOR_MATCHERS.md)
+- **Page** — `toHaveCookie()` on a `Page` or `BrowserContext`, `toHaveLocalStorageItem()`, `toHaveSessionStorageItem()`, `toHaveURLSearchParams()` — [📖 docs](../../docs/PAGE_MATCHERS.md)
+- **Response** — `toHaveStatus()` for an `APIResponse` or `Response`, by code or class (`"2xx"`) — [📖 docs](../../docs/RESPONSE_MATCHERS.md)
 - **Object Array** — `toHaveObjectsInAscendingOrderBy()`, `toHaveOnlyUniqueObjects()`, and more — [📖 docs](../../docs/OBJECT_ARRAY_MATCHERS.md)
 - **String Array** — `toHaveAscendingOrder()`, `toHaveStrictlyAscendingOrder()`, `toHaveUniqueValues()`, and more — [📖 docs](../../docs/STRING_ARRAY_MATCHERS.md)
-- **Generic** — `toBeInteger()`, `toBeAnyOf()`, `toSatisfy()`, `toBeEven()`, `toBeFinite()`, `toEqualPartially()`, `toBeNullish()`, and more — [📖 docs](../../docs/GENERIC_MATCHERS.md)
-- **Collection & Function** — `toSatisfyAll()`, `toIncludeSameMembers()`, `toContainKeys()`, `toContainEntry()`, `toBeEmptyObject()`, `toResolve()`, `toReject()`, `toThrowWithMessage()`, and more — [📖 docs](../../docs/COLLECTION_MATCHERS.md)
+- **Generic** — `toBeInteger()`, `toBeAnyOf()`, `toSatisfy()`, `toBeEven()`, `toBeFinite()`, `toBeNear()`, `toBeWithin()`, `toEqualPartially()`, `toBeNullish()`, and more — [📖 docs](../../docs/GENERIC_MATCHERS.md)
+- **Collection & Function** — `toSatisfyAll()`, `toIncludeSameMembers()`, `toContainKeys()`, `toContainValues()`, `toContainAnyValues()`, `toContainEntry()`, `toBeEmptyObject()`, `toResolve()`, `toReject()`, `toThrowWithMessage()`, and more — [📖 docs](../../docs/COLLECTION_MATCHERS.md)
 
 ## Edge-case behavior
 

@@ -414,7 +414,84 @@ export const expectlyAnyMatchers = withMatcherState({
 			actual: received,
 		};
 	},
+	toBeNear(this: ExpectMatcherState, received: unknown, expected: number, options: NearOptions): MatcherReturnType {
+		const assertionName = "toBeNear";
+		assertFiniteArgument(assertionName, "expected", expected);
+		const { allowed, label } = nearAllowance(assertionName, expected, options);
+		const isNumber = typeof received === "number" && Number.isFinite(received);
+		const difference = isNumber ? Math.abs(received - expected) : undefined;
+		// Decimal inputs are binary approximations: 20 - 19.99 is 0.010000000000001563, which must still be
+		// within a tolerance of 0.01. Allow the rounding error of the subtraction (a few ULPs of the operands).
+		const slack = isNumber ? 4 * Number.EPSILON * Math.max(Math.abs(received), Math.abs(expected), allowed) : 0;
+		const pass = difference !== undefined && difference <= allowed + slack;
+		return {
+			message: () =>
+				`${this.utils.matcherHint(assertionName, undefined, "expected", { isNot: this.isNot })}\n\n` +
+				`Expected value to ${this.isNot ? "not " : ""}be within ${label} of ${this.utils.printExpected(expected)}\n` +
+				`Received:   ${this.utils.printReceived(received)}${isNumber ? "" : " (not a finite number)"}` +
+				(difference === undefined ? "" : `\nDifference: ${formatNumber(difference)}`) +
+				`\nAllowed:    ${label}`,
+			pass,
+			name: assertionName,
+			expected,
+			actual: received,
+		};
+	},
+	toBeWithin(this: ExpectMatcherState, received: unknown, min: number, max: number): MatcherReturnType {
+		const assertionName = "toBeWithin";
+		assertFiniteArgument(assertionName, "min", min);
+		assertFiniteArgument(assertionName, "max", max);
+		if (min > max) throw new TypeError(`${assertionName}: min (${min}) must not be greater than max (${max})`);
+		const isNumber = typeof received === "number" && !Number.isNaN(received);
+		const pass = isNumber && received >= min && received <= max;
+		return {
+			message: () =>
+				`${this.utils.matcherHint(assertionName, undefined, "min, max", { isNot: this.isNot })}\n\n` +
+				`Expected value to ${this.isNot ? "not " : ""}be within ${this.utils.printExpected(min)} and ${this.utils.printExpected(max)} (inclusive)\n` +
+				`Received: ${this.utils.printReceived(received)}${isNumber ? "" : " (not a number)"}`,
+			pass,
+			name: assertionName,
+			expected: { min, max },
+			actual: received,
+		};
+	},
 });
+
+/** The allowed deviation of `toBeNear()`: an absolute `tolerance` or a `percent` of `|expected|`. */
+export type NearOptions = { tolerance: number; percent?: never } | { percent: number; tolerance?: never };
+
+function assertFiniteArgument(assertionName: string, label: string, value: unknown): asserts value is number {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		throw new TypeError(`${assertionName}: ${label} must be a finite number, got: ${String(value)}`);
+	}
+}
+
+function nearAllowance(
+	assertionName: string,
+	expected: number,
+	options: NearOptions | undefined,
+): { allowed: number; label: string } {
+	const tolerance = options?.tolerance;
+	const percent = options?.percent;
+	if ((tolerance === undefined) === (percent === undefined)) {
+		throw new TypeError(`${assertionName}: pass exactly one of { tolerance } or { percent }`);
+	}
+	const amount = (tolerance ?? percent) as number;
+	if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
+		throw new TypeError(
+			`${assertionName}: ${tolerance === undefined ? "percent" : "tolerance"} must be a non-negative finite number, got: ${String(amount)}`,
+		);
+	}
+	if (tolerance !== undefined) return { allowed: tolerance, label: `±${formatNumber(tolerance)}` };
+	// Divide first: |expected| * percent can overflow to Infinity for large finite inputs (1e308 * 10).
+	const allowed = (Math.abs(expected) / 100) * amount;
+	return { allowed, label: `±${formatNumber(amount)}% (±${formatNumber(allowed)})` };
+}
+
+/** Rounds away floating-point noise such as `0.30000000000000004` for display. */
+function formatNumber(value: number): string {
+	return String(Number(value.toPrecision(12)));
+}
 
 /** Integers (numbers or BigInts) that are even or odd; other values never match either. */
 function parityResult(

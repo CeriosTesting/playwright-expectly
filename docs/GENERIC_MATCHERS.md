@@ -9,6 +9,8 @@ Type checking and partial matching matchers that work with any data type.
 - [toBeInteger() / toBeFloat()](#tobeinteger--tobefloat)
 - [toBeEven() / toBeOdd()](#tobeeven--tobeodd)
 - [toBeFinite()](#tobefinite)
+- [toBeNear()](#tobenear)
+- [toBeWithin()](#tobewithin)
 - [toBePrimitive()](#tobeprimitive)
 - [toBeArray() / toBeObject()](#tobearray--tobeobject)
 - [toSatisfy()](#tosatisfy)
@@ -142,6 +144,41 @@ expectly(42n).not.toBeFinite();
 const conversionRate = orders / visitors;
 expectly(conversionRate).toBeFinite();
 ```
+
+## toBeNear()
+
+Asserts that a number is within an allowed deviation of the expected number, inclusive. Pass exactly one of:
+
+- `tolerance`: an absolute deviation, such as `0.01` for cents
+- `percent`: a percentage of `|expected|`, such as `10` for ±10%
+
+```typescript
+expectly(cart.total).toBeNear(99.99, { tolerance: 0.01 });
+expectly(loadTimeMs).toBeNear(1200, { percent: 10 }); // 1080–1320
+expectly(19.99).toBeNear(20, { tolerance: 0.01 }); // passes despite binary rounding
+expectly(19.98).not.toBeNear(20, { tolerance: 0.01 });
+```
+
+Playwright's built-in `toBeCloseTo(expected, numDigits)` expresses the deviation in decimal digits. `toBeNear()` takes the deviation you actually mean. Decimal inputs are binary approximations (`20 - 19.99` is `0.010000000000001563`), so a few units of floating-point rounding are absorbed. `NaN`, `±Infinity` and non-numbers fail. An invalid or missing option, or a non-finite `expected`, throws. A failure shows the difference and the allowed deviation:
+
+```text
+Expected value to be within ±10% (±100) of 1000
+Received:   1150
+Difference: 150
+Allowed:    ±10% (±100)
+```
+
+## toBeWithin()
+
+Asserts that a number lies between `min` and `max`, **both inclusive**.
+
+```typescript
+expectly(review.rating).toBeWithin(1, 5);
+expectly(progress).toBeWithin(0, 100);
+expectly(0).not.toBeWithin(1, 5);
+```
+
+`NaN` and non-numbers fail. Non-finite bounds, or `min > max`, throw. Note that jest-extended's `toBeWithin` excludes `max`; expectly includes it, matching `toBeBetween()` for dates and `toHaveCountBetween()` for locators.
 
 ## toBePrimitive()
 

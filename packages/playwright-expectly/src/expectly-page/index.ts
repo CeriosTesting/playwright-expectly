@@ -3,6 +3,7 @@ import { PollOptions } from "@cerios/playwright-expectly-core";
 import type { BrowserContext, Cookie, Expect, ExpectMatcherState, Page } from "@playwright/test";
 import { expect as baseExpect } from "@playwright/test";
 
+import { isEqual } from "../matchers/equality";
 import type { ExpectlyMatcherResult } from "../matchers/matcher-result";
 import { matchesPattern } from "../matchers/text-validation-utils";
 
@@ -12,6 +13,93 @@ export type CookieOptions = PollOptions & {
 	/** Only consider cookies with this path. */
 	path?: string;
 };
+
+/**
+ * An asymmetric matcher such as `expect.anything()`. Playwright types them as `Record<string, any>`, which this
+ * accepts; that a value really is one is checked at runtime.
+ */
+type AsymmetricMatcher = Record<string, unknown>;
+
+/**
+ * The expected value of one query parameter:
+ * - a string, pattern or asymmetric matcher (`expect.anything()`) for its value, read like
+ *   `URLSearchParams.get()`: the first occurrence;
+ * - a string array for all of its values (`?tag=a&tag=b`), in order.
+ */
+export type ExpectedSearchParamValue = string | RegExp | readonly string[] | AsymmetricMatcher;
+
+export type ExpectedSearchParams = Record<string, ExpectedSearchParamValue>;
+
+export type URLSearchParamsOptions = PollOptions & {
+	/** Also fail when the URL has parameters that `expected` does not list. Default: `false`. */
+	exact?: boolean;
+};
+
+function isAsymmetricMatcher(value: unknown): value is { asymmetricMatch(other: unknown): boolean } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		typeof (value as { asymmetricMatch?: unknown }).asymmetricMatch === "function"
+	);
+}
+
+/** A missing parameter matches nothing, so `.not` with `expect.anything()` asserts that it is absent. */
+function searchParamMatches(params: URLSearchParams, key: string, expected: ExpectedSearchParamValue): boolean {
+	if (Array.isArray(expected)) {
+		// getAll() returns [] for a missing key; a missing parameter must not match an empty array.
+		if (!params.has(key)) return false;
+		const values = params.getAll(key);
+		return values.length === expected.length && values.every((value, index) => value === expected[index]);
+	}
+	const value = params.get(key);
+	if (value === null) return false;
+	if (isAsymmetricMatcher(expected)) return isEqual(value, expected);
+	return valueMatches(value, expected as string | RegExp);
+}
+
+/** The query parameters of a URL; none for a URL that does not parse (such as an empty one). */
+function searchParamsOf(url: string): URLSearchParams {
+	try {
+		return new URL(url).searchParams;
+	} catch {
+		return new URLSearchParams();
+	}
+}
+
+/** The query of a URL as `{ key: value }`, with an array for repeated keys. */
+function describeSearchParams(params: URLSearchParams): Record<string, string | string[]> {
+	const described: Record<string, string | string[]> = {};
+	for (const key of new Set(params.keys())) {
+		const values = params.getAll(key);
+		described[key] = values.length === 1 ? values[0] : values;
+	}
+	return described;
+}
+
+function validateExpectedSearchParams(
+	assertionName: string,
+	expected: unknown,
+): asserts expected is ExpectedSearchParams {
+	if (typeof expected !== "object" || expected === null || Array.isArray(expected) || expected instanceof RegExp) {
+		throw new TypeError(`${assertionName}: expected must be an object of query parameters`);
+	}
+	const entries = Object.entries(expected);
+	if (entries.length === 0) throw new TypeError(`${assertionName}: expected must list at least one parameter`);
+	for (const [key, value] of entries) {
+		const valid =
+			typeof value === "string" ||
+			value instanceof RegExp ||
+			isAsymmetricMatcher(value) ||
+			(Array.isArray(value) && value.every((item) => typeof item === "string"));
+		if (!valid) {
+			// A parameter value is never null: `?debug` is "" and a missing one has no value at all.
+			const absence = value === null ? "; to assert absence use .not with expect.anything()" : "";
+			throw new TypeError(
+				`${assertionName}: parameter ${JSON.stringify(key)} must be a string, RegExp, string array or asymmetric matcher${absence}`,
+			);
+		}
+	}
+}
 
 function isBrowserContext(received: unknown): received is BrowserContext {
 	return (
@@ -169,6 +257,46 @@ export const expectlyPageMatchers = withMatcherState({
 	},
 	async toHaveSessionStorageItem(received: Page, key: string, expected?: string | RegExp, options?: PollOptions) {
 		return storageMatcher(this, "toHaveSessionStorageItem", "sessionStorage", received, key, expected, options);
+	},
+	async toHaveURLSearchParams(received: Page, expected: ExpectedSearchParams, options?: URLSearchParamsOptions) {
+		const assertionName = "toHaveURLSearchParams";
+		const page = pageOf(assertionName, received);
+		validateExpectedSearchParams(assertionName, expected);
+		const expectedKeys = Object.keys(expected);
+		const expectedKeySet = new Set(expectedKeys);
+		let url = "";
+		let params = new URLSearchParams();
+		let mismatched: string[] = [];
+		let unexpected: string[] = [];
+
+		const pass = await runPolledMatcher(
+			this,
+			options && { timeout: options.timeout, intervals: options.intervals },
+			() => {
+				// page.url() is a synchronous getter, so polling adds no steps to the report.
+				url = page.url();
+				params = searchParamsOf(url);
+				mismatched = expectedKeys.filter((key) => !searchParamMatches(params, key, expected[key]));
+				unexpected = options?.exact ? [...new Set(params.keys())].filter((key) => !expectedKeySet.has(key)) : [];
+				return Promise.resolve(mismatched.length === 0 && unexpected.length === 0);
+			},
+			{ target: page },
+		);
+
+		const message = (): string => {
+			const hint = this.utils.matcherHint(assertionName, undefined, "expected", { isNot: this.isNot });
+			const scope = options?.exact ? " (and no others)" : "";
+			return (
+				`${hint}\n\n` +
+				`Expected URL to ${this.isNot ? "not " : ""}have search params${scope}: ${this.utils.printExpected(expected)}\n` +
+				`Received: ${this.utils.printReceived(describeSearchParams(params))}\n` +
+				(mismatched.length > 0 ? `Mismatched: ${this.utils.printReceived(mismatched)}\n` : "") +
+				(unexpected.length > 0 ? `Unexpected: ${this.utils.printReceived(unexpected)}\n` : "") +
+				`URL:      ${url}`
+			);
+		};
+
+		return { message, pass, name: assertionName, expected, actual: describeSearchParams(params) };
 	},
 });
 

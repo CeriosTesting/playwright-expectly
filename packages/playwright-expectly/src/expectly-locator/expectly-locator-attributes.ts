@@ -272,7 +272,71 @@ export const expectlyLocatorAttributesMatchers = withMatcherState({
 			actual,
 		};
 	},
+	async toHaveSelectedOption(
+		locator: Locator,
+		expected: string | RegExp | readonly (string | RegExp)[],
+		options?: PollOptions,
+	) {
+		const assertionName = "toHaveSelectedOption";
+		const expectedLabels = validateSelectedOptions(assertionName, expected);
+
+		const { pass, snapshot } = await pollLocators(
+			this,
+			options,
+			[locator],
+			(actionOptions) =>
+				locator.evaluate(
+					// `label` is the option's label attribute or, without one, its whitespace-collapsed text.
+					(element) =>
+						element instanceof HTMLSelectElement ? Array.from(element.selectedOptions, (option) => option.label) : null,
+					undefined,
+					actionOptions,
+				),
+			(actual) => actual !== null && selectedLabelsMatch(actual, expectedLabels),
+		);
+		const actual = snapshot?.found ? snapshot.value : null;
+
+		const message = (): string => {
+			const notFound = locatorNotFoundMessage(this, assertionName, snapshot);
+			if (notFound) return notFound;
+			const hint = this.utils.matcherHint(assertionName, undefined, "expected", { isNot: this.isNot });
+			const what = Array.isArray(expected) ? "selected options" : "selected option";
+			const received =
+				actual === null
+					? "(element is not a <select>)"
+					: actual.length === 0
+						? "(no option selected)"
+						: this.utils.printReceived(Array.isArray(expected) ? actual : actual.join(", "));
+			return (
+				`${hint}\n\n` +
+				`Expected element to ${this.isNot ? "not " : ""}have ${what}: ${this.utils.printExpected(expected)}\n` +
+				`Received: ${received}`
+			);
+		};
+
+		return { message, pass, name: assertionName, expected, actual };
+	},
 });
+
+/** Normalizes the expected labels: one value means exactly one selected option. */
+function validateSelectedOptions(assertionName: string, expected: unknown): readonly (string | RegExp)[] {
+	const labels = Array.isArray(expected) ? expected : [expected];
+	if (labels.some((label) => typeof label !== "string" && !(label instanceof RegExp))) {
+		throw new TypeError(`${assertionName}: expected must be a string, RegExp or an array of them`);
+	}
+	return labels as readonly (string | RegExp)[];
+}
+
+/** The selected labels match the expected ones in order, with no extra selections (like `toHaveValues`). */
+function selectedLabelsMatch(actual: readonly string[], expected: readonly (string | RegExp)[]): boolean {
+	return (
+		actual.length === expected.length &&
+		actual.every((label, index) => {
+			const want = expected[index];
+			return typeof want === "string" ? label === want : matchesPattern(label, want);
+		})
+	);
+}
 
 export const expectlyLocatorAttributes: Expect<typeof expectlyLocatorAttributesMatchers> = baseExpect.extend(
 	expectlyLocatorAttributesMatchers,
